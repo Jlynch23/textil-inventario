@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title/text()}, ~{::section})}">
+<head><title>Ubicaciones</title></head>
+<body>
+<section>
+    <div th:if="${mensaje}" class="alert alert-success alert-dismissible fade show">
+        <span th:text="${mensaje}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <div class="row g-4">
+        <!-- FORMULARIO -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold mb-3">Nueva Ubicación</h6>
+                    <form th:action="@{/catalogo/ubicaciones/guardar}" th:object="${ubicacion}" method="post">
+                        <input type="hidden" th:field="*{id}">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Código</label>
+                            <input type="text" class="form-control" th:field="*{codigo}"
+                                   placeholder="Ej: PRADERAS" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Nombre</label>
+                            <input type="text" class="form-control" th:field="*{nombre}"
+                                   placeholder="Ej: Praderas" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Tipo</label>
+                            <select class="form-select" th:field="*{tipo}" required>
+                                <option value="">Seleccionar...</option>
+                                <option value="ALMACEN">Almacén</option>
+                                <option value="TIENDA">Tienda</option>
+                            </select>
+                        </div>
+                        <div class="mb-4 form-check">
+                            <input type="checkbox" class="form-check-input" th:field="*{esPrincipal}" id="esPrincipal">
+                            <label class="form-check-label" for="esPrincipal">Es almacén principal</label>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-save me-2"></i>Guardar Ubicación
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- TABLA -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body p-0">
+                    <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                        <span class="fw-bold">Ubicaciones Registradas</span>
+                        <span class="badge bg-secondary" th:text="${ubicaciones.size()} + ' ubicaciones'"></span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Nombre</th>
+                                    <th>Tipo</th>
+                                    <th>Principal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="u : ${ubicaciones}">
+                                    <td><code th:text="${u.codigo}"></code></td>
+                                    <td th:text="${u.nombre}"></td>
+                                    <td>
+                                        <span th:text="${u.tipo}"
+                                              th:class="${u.tipo.name() == 'TIENDA'} ? 'badge bg-success' : 'badge bg-primary'">
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <i th:if="${u.esPrincipal}" class="bi bi-star-fill text-warning"></i>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+</body>
+</html>

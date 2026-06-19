@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title/text()}, ~{::section})}">
+<head><title>Artículos</title></head>
+<body>
+<section>
+    <div th:if="${mensaje}" class="alert alert-success alert-dismissible fade show">
+        <span th:text="${mensaje}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <div class="row g-4">
+        <!-- FORMULARIO -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold mb-3">Nuevo Artículo</h6>
+                    <form th:action="@{/catalogo/articulos/guardar}" method="post">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Tipo de Tela</label>
+                            <select class="form-select" name="tipoTelaId" required>
+                                <option value="">Seleccionar...</option>
+                                <option th:each="t : ${tiposTela}"
+                                        th:value="${t.id}"
+                                        th:text="${t.nombre}"></option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Título (Gramaje)</label>
+                            <select class="form-select" name="tituloId" required>
+                                <option value="">Seleccionar...</option>
+                                <option th:each="t : ${titulos}"
+                                        th:value="${t.id}"
+                                        th:text="${t.valor}"></option>
+                            </select>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Color</label>
+                            <select class="form-select" name="colorId" required>
+                                <option value="">Seleccionar...</option>
+                                <option th:each="c : ${colores}"
+                                        th:value="${c.id}"
+                                        th:text="${c.nombreOficial}"></option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-save me-2"></i>Guardar Artículo
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- TABLA -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body p-0">
+                    <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                        <span class="fw-bold">Artículos Registrados</span>
+                        <span class="badge bg-secondary" th:text="${articulos.size()} + ' artículos'"></span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Tipo de Tela</th>
+                                    <th>Título</th>
+                                    <th>Color</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="a : ${articulos}">
+                                    <td><code th:text="${a.codigoInterno}"></code></td>
+                                    <td th:text="${a.tipoTela.nombre}"></td>
+                                    <td th:text="${a.titulo.valor}"></td>
+                                    <td th:text="${a.color.nombreOficial}"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+</body>
+</html>

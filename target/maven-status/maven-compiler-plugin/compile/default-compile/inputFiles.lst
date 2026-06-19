@@ -1,6 +1,8 @@
 /home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/InventarioApplication.java
 /home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/catalogo/Articulo.java
 /home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/catalogo/ArticuloRepository.java
+/home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/catalogo/CatalogoController.java
+/home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/catalogo/CatalogoService.java
 /home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/catalogo/Color.java
 /home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/catalogo/ColorRepository.java
 /home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/catalogo/Empresa.java

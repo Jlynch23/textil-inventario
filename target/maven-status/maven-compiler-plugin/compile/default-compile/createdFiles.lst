@@ -8,8 +8,10 @@ com/textil/inventario/catalogo/ColorRepository.class
 com/textil/inventario/seguridad/UsuarioDetailsService.class
 com/textil/inventario/catalogo/EmpresaRepository.class
 com/textil/inventario/catalogo/Articulo.class
+com/textil/inventario/catalogo/CatalogoService.class
 com/textil/inventario/catalogo/TipoTelaRepository.class
 com/textil/inventario/InventarioApplication.class
+com/textil/inventario/catalogo/CatalogoController.class
 com/textil/inventario/seguridad/UsuarioRepository.class
 com/textil/inventario/catalogo/Ubicacion$TipoUbicacion.class
 com/textil/inventario/catalogo/ArticuloRepository.class

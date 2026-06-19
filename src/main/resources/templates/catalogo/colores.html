@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title/text()}, ~{::section})}">
+<head><title>Carta de Colores</title></head>
+<body>
+<section>
+    <div th:if="${mensaje}" class="alert alert-success alert-dismissible fade show">
+        <span th:text="${mensaje}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <div class="row g-4">
+        <!-- FORMULARIO -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold mb-3"
+                        th:text="${color.id != null} ? 'Editar Color' : 'Nuevo Color'">Nuevo Color</h6>
+                    <form th:action="@{/catalogo/colores/guardar}" th:object="${color}" method="post">
+                        <input type="hidden" th:field="*{id}">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Nombre Oficial</label>
+                            <input type="text" class="form-control" th:field="*{nombreOficial}"
+                                   placeholder="Ej: Verde Botella" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Código FAST DYE</label>
+                            <input type="text" class="form-control" th:field="*{codigoFastDye}"
+                                   placeholder="Ej: 132015">
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Familia</label>
+                            <select class="form-select" th:field="*{familia}">
+                                <option value="">Seleccionar...</option>
+                                <option value="Oscuros">Oscuros</option>
+                                <option value="Claros">Claros</option>
+                                <option value="Verdes">Verdes</option>
+                                <option value="Azules">Azules</option>
+                                <option value="Rojos">Rojos</option>
+                                <option value="Jaspeados">Jaspeados</option>
+                                <option value="Otros">Otros</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-save me-2"></i>Guardar Color
+                        </button>
+                        <a th:href="@{/catalogo/colores}" class="btn btn-light w-100 mt-2">Cancelar</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- TABLA -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body p-0">
+                    <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                        <span class="fw-bold">Carta de Colores</span>
+                        <span class="badge bg-secondary" th:text="${colores.size()} + ' colores'"></span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Nombre Oficial</th>
+                                    <th>Código FAST DYE</th>
+                                    <th>Familia</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="c : ${colores}">
+                                    <td th:text="${c.nombreOficial}"></td>
+                                    <td><code th:text="${c.codigoFastDye}"></code></td>
+                                    <td>
+                                        <span class="badge bg-light text-dark" th:text="${c.familia}"></span>
+                                    </td>
+                                    <td>
+                                        <a th:href="@{/catalogo/colores/editar/{id}(id=${c.id})}"
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a th:href="@{/catalogo/colores/inactivar/{id}(id=${c.id})}"
+                                           class="btn btn-sm btn-outline-danger"
+                                           onclick="return confirm('¿Inactivar este color?')">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+</body>
+</html>
