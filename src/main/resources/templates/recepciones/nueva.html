@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title/text()}, ~{::section})}">
+<head><title>Nueva Recepción</title></head>
+<body>
+<section>
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold mb-4">Datos de la Guía de Remisión</h6>
+                    <form th:action="@{/recepciones/crear}" method="post">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Empresa</label>
+                            <select class="form-select" name="empresaId" required>
+                                <option value="">Seleccionar empresa...</option>
+                                <option th:each="e : ${empresas}"
+                                        th:value="${e.id}"
+                                        th:text="${e.nombre}"></option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Número de Guía</label>
+                            <input type="text" class="form-control" name="numeroGuia"
+                                   placeholder="Ej: TG01-00022558" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Fecha de la Guía</label>
+                            <input type="date" class="form-control" name="fechaGuia" required>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Observaciones</label>
+                            <textarea class="form-control" name="observaciones" rows="2"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-arrow-right me-2"></i>Continuar — Agregar Productos
+                        </button>
+                        <a th:href="@{/recepciones}" class="btn btn-light w-100 mt-2">Cancelar</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+</body>
+</html>

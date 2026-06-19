@@ -16,6 +16,16 @@
 /home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/common/BaseEntity.java
 /home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/config/SecurityConfig.java
 /home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/dashboard/HomeController.java
+/home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/inventario/KardexMovimiento.java
+/home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/inventario/KardexMovimientoRepository.java
+/home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/inventario/StockActual.java
+/home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/inventario/StockActualRepository.java
+/home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/recepciones/Recepcion.java
+/home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/recepciones/RecepcionController.java
+/home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/recepciones/RecepcionDetalle.java
+/home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/recepciones/RecepcionDetalleRepository.java
+/home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/recepciones/RecepcionRepository.java
+/home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/recepciones/RecepcionService.java
 /home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/seguridad/Rol.java
 /home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/seguridad/RolRepository.java
 /home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/seguridad/Usuario.java

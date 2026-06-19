@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title/text()}, ~{::section})}">
+<head><title>Confirmar Recepción</title></head>
+<body>
+<section>
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle me-2"></i>
+        Ingresa los rollos <strong>físicamente recibidos</strong> para cada línea.
+        Si hay diferencias con la guía, quedarán registradas automáticamente.
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body p-4">
+            <div class="row">
+                <div class="col-md-4">
+                    <small class="text-muted">Empresa</small>
+                    <p class="fw-bold mb-0" th:text="${recepcion.empresa.nombre}"></p>
+                </div>
+                <div class="col-md-4">
+                    <small class="text-muted">Guía</small>
+                    <p class="fw-bold mb-0"><code th:text="${recepcion.numeroGuia}"></code></p>
+                </div>
+                <div class="col-md-4">
+                    <small class="text-muted">Fecha</small>
+                    <p class="fw-bold mb-0" th:text="${recepcion.fechaGuia}"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form th:action="@{/recepciones/{id}/confirmar(id=${recepcion.id})}" method="post">
+        <div class="card">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Artículo</th>
+                                <th>Programa</th>
+                                <th>Rollos Guía</th>
+                                <th>Rollos Recibidos</th>
+                                <th>Observación</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="d : ${recepcion.detalles}">
+                                <input type="hidden" name="detalleIds" th:value="${d.id}">
+                                <td th:text="${d.articulo.tipoTela.nombre + ' ' + d.articulo.titulo.valor + ' / ' + d.articulo.color.nombreOficial}"></td>
+                                <td><code th:text="${d.programaTenido}"></code></td>
+                                <td th:text="${d.rollosGuia}"></td>
+                                <td>
+                                    <input type="number" class="form-control form-control-sm"
+                                           name="rollosRecibidos"
+                                           th:value="${d.rollosGuia}"
+                                           min="0" required style="width:90px">
+                                </td>
+                                <td>
+                                    <input type="text" class="form-control form-control-sm"
+                                           name="observacionesDetalle"
+                                           placeholder="Opcional">
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2 mt-3 justify-content-end">
+            <a th:href="@{/recepciones/{id}/detalle(id=${recepcion.id})}"
+               class="btn btn-light">Cancelar</a>
+            <button type="submit" class="btn btn-success">
+                <i class="bi bi-check-lg me-2"></i>Confirmar y Actualizar Stock
+            </button>
+        </div>
+    </form>
+</section>
+</body>
+</html>

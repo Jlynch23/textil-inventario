@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title/text()}, ~{::section})}">
+<head><title>Recepciones</title></head>
+<body>
+<section>
+    <div th:if="${mensaje}" class="alert alert-success alert-dismissible fade show">
+        <span th:text="${mensaje}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <div class="d-flex justify-content-end mb-3">
+        <a th:href="@{/recepciones/nueva}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-2"></i>Nueva Recepción
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Empresa</th>
+                            <th>Guía</th>
+                            <th>Fecha Guía</th>
+                            <th>Fecha Recepción</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:if="${recepciones.isEmpty()}">
+                            <td colspan="7" class="text-center text-muted py-4">No hay recepciones registradas.</td>
+                        </tr>
+                        <tr th:each="r : ${recepciones}">
+                            <td th:text="${r.id}"></td>
+                            <td th:text="${r.empresa.nombre}"></td>
+                            <td><code th:text="${r.numeroGuia}"></code></td>
+                            <td th:text="${r.fechaGuia}"></td>
+                            <td th:text="${r.fechaRecepcion}"></td>
+                            <td>
+                                <span th:text="${r.estado}"
+                                      th:class="${r.estado.name() == 'CONFIRMADA'} ? 'badge bg-success' :
+                                                (${r.estado.name() == 'CON_DIFERENCIAS'} ? 'badge bg-warning text-dark' :
+                                                'badge bg-secondary')">
+                                </span>
+                            </td>
+                            <td>
+                                <a th:href="@{/recepciones/{id}/detalle(id=${r.id})}"
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a th:if="${r.estado.name() == 'PENDIENTE'}"
+                                   th:href="@{/recepciones/{id}/confirmar(id=${r.id})}"
+                                   class="btn btn-sm btn-outline-success">
+                                    <i class="bi bi-check-lg"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+</body>
+</html>

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title/text()}, ~{::section})}">
+<head><title>Detalle de Recepción</title></head>
+<body>
+<section>
+    <div th:if="${mensaje}" class="alert alert-success alert-dismissible fade show">
+        <span th:text="${mensaje}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <!-- CABECERA -->
+    <div class="card mb-4">
+        <div class="card-body p-4">
+            <div class="row">
+                <div class="col-md-3">
+                    <small class="text-muted">Empresa</small>
+                    <p class="fw-bold mb-0" th:text="${recepcion.empresa.nombre}"></p>
+                </div>
+                <div class="col-md-3">
+                    <small class="text-muted">Guía</small>
+                    <p class="fw-bold mb-0"><code th:text="${recepcion.numeroGuia}"></code></p>
+                </div>
+                <div class="col-md-3">
+                    <small class="text-muted">Fecha Guía</small>
+                    <p class="fw-bold mb-0" th:text="${recepcion.fechaGuia}"></p>
+                </div>
+                <div class="col-md-3">
+                    <small class="text-muted">Estado</small>
+                    <p class="mb-0">
+                        <span th:text="${recepcion.estado}"
+                              th:class="${recepcion.estado.name() == 'CONFIRMADA'} ? 'badge bg-success' :
+                                        (${recepcion.estado.name() == 'CON_DIFERENCIAS'} ? 'badge bg-warning text-dark' :
+                                        'badge bg-secondary')">
+                        </span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- FORMULARIO AGREGAR LÍNEA -->
+        <div class="col-md-4" th:if="${recepcion.estado.name() == 'PENDIENTE'}">
+            <div class="card">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold mb-3">Agregar Producto</h6>
+                    <form th:action="@{/recepciones/{id}/agregar-linea(id=${recepcion.id})}" method="post">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Artículo</label>
+                            <select class="form-select" name="articuloId" required>
+                                <option value="">Seleccionar...</option>
+                                <option th:each="a : ${articulos}"
+                                        th:value="${a.id}"
+                                        th:text="${a.tipoTela.nombre + ' ' + a.titulo.valor + ' / ' + a.color.nombreOficial}">
+                                </option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Programa de Teñido</label>
+                            <input type="text" class="form-control" name="programaTenido"
+                                   placeholder="Ej: 626" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Rollos según Guía</label>
+                            <input type="number" class="form-control" name="rollosGuia"
+                                   min="1" required>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Peso Bruto Total (kg)</label>
+                            <input type="number" class="form-control" name="pesoBrutoKg"
+                                   step="0.01" placeholder="Ej: 322.85">
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-plus-lg me-2"></i>Agregar Línea
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- TABLA DE LÍNEAS -->
+        <div th:class="${recepcion.estado.name() == 'PENDIENTE'} ? 'col-md-8' : 'col-md-12'">
+            <div class="card">
+                <div class="card-body p-0">
+                    <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                        <span class="fw-bold">Líneas de Recepción</span>
+                        <a th:if="${recepcion.estado.name() == 'PENDIENTE' and !recepcion.detalles.empty}"
+                           th:href="@{/recepciones/{id}/confirmar(id=${recepcion.id})}"
+                           class="btn btn-success btn-sm">
+                            <i class="bi bi-check-lg me-1"></i>Confirmar Recepción
+                        </a>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Artículo</th>
+                                    <th>Programa</th>
+                                    <th>Rollos Guía</th>
+                                    <th>Peso Bruto</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:if="${recepcion.detalles.empty}">
+                                    <td colspan="4" class="text-center text-muted py-4">
+                                        Sin líneas. Agrega productos desde el formulario.
+                                    </td>
+                                </tr>
+                                <tr th:each="d : ${recepcion.detalles}">
+                                    <td th:text="${d.articulo.tipoTela.nombre + ' ' + d.articulo.titulo.valor + ' / ' + d.articulo.color.nombreOficial}"></td>
+                                    <td><code th:text="${d.programaTenido}"></code></td>
+                                    <td th:text="${d.rollosGuia}"></td>
+                                    <td th:text="${d.pesoBrutoKg} + ' kg'"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+</body>
+</html>
