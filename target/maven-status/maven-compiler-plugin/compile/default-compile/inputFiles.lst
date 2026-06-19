@@ -12,8 +12,10 @@
 /home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/catalogo/Ubicacion.java
 /home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/catalogo/UbicacionRepository.java
 /home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/common/BaseEntity.java
+/home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/config/SecurityConfig.java
 /home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/dashboard/HomeController.java
 /home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/seguridad/Rol.java
 /home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/seguridad/RolRepository.java
 /home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/seguridad/Usuario.java
+/home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/seguridad/UsuarioDetailsService.java
 /home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/seguridad/UsuarioRepository.java

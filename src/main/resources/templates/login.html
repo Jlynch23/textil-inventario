@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión - Textil Inventario</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f0f4f8;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .login-card {
+            width: 100%;
+            max-width: 420px;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+        }
+        .login-header {
+            background-color: #1F4E79;
+            color: white;
+            border-radius: 12px 12px 0 0;
+            padding: 32px;
+            text-align: center;
+        }
+        .login-header h4 {
+            margin: 0;
+            font-weight: 700;
+            font-size: 1.3rem;
+        }
+        .login-header p {
+            margin: 6px 0 0;
+            opacity: 0.8;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card card border-0">
+        <div class="login-header">
+            <h4>Sistema de Inventario Textil</h4>
+            <p>Textil Laura &amp; Textil Clemente</p>
+        </div>
+        <div class="card-body p-4">
+            <div th:if="${param.error}" class="alert alert-danger py-2">
+                Email o contraseña incorrectos.
+            </div>
+            <div th:if="${param.logout}" class="alert alert-success py-2">
+                Sesión cerrada correctamente.
+            </div>
+            <form th:action="@{/login}" method="post">
+                <div class="mb-3">
+                    <label for="username" class="form-label fw-semibold">Email</label>
+                    <input type="email" class="form-control" id="username" name="username"
+                           placeholder="correo@textil.com" required autofocus>
+                </div>
+                <div class="mb-4">
+                    <label for="password" class="form-label fw-semibold">Contraseña</label>
+                    <input type="password" class="form-control" id="password" name="password"
+                           placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn w-100 text-white fw-bold"
+                        style="background-color: #1F4E79;">
+                    Ingresar
+                </button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
