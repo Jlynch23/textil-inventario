@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title/text()}, ~{::section})}">
+<head><title>Stock Actual</title></head>
+<body>
+<section>
+    <h2 class="mb-4">Stock Actual</h2>
+
+    <form method="get" th:action="@{/inventario/stock}" class="row g-2 mb-4">
+        <div class="col-md-3">
+            <select name="ubicacionId" class="form-select" onchange="this.form.submit()">
+                <option value="">Todas las ubicaciones</option>
+                <option th:each="u : ${ubicaciones}"
+                        th:value="${u.id}"
+                        th:selected="${u.id == filtroUbicacionId}"
+                        th:text="${u.nombre}"></option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select name="tipoTelaId" class="form-select" onchange="this.form.submit()">
+                <option value="">Todos los tipos de tela</option>
+                <option th:each="t : ${tiposTela}"
+                        th:value="${t.id}"
+                        th:selected="${t.id == filtroTipoTelaId}"
+                        th:text="${t.nombre}"></option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select name="tituloId" class="form-select" onchange="this.form.submit()">
+                <option value="">Todos los títulos</option>
+                <option th:each="ti : ${titulos}"
+                        th:value="${ti.id}"
+                        th:selected="${ti.id == filtroTituloId}"
+                        th:text="${ti.valor}"></option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select name="colorId" class="form-select" onchange="this.form.submit()">
+                <option value="">Todos los colores</option>
+                <option th:each="c : ${colores}"
+                        th:value="${c.id}"
+                        th:selected="${c.id == filtroColorId}"
+                        th:text="${c.nombreOficial}"></option>
+            </select>
+        </div>
+    </form>
+
+    <table class="table table-striped table-hover">
+        <thead>
+        <tr>
+            <th>Tipo Tela</th>
+            <th>Título</th>
+            <th>Color</th>
+            <th>Ubicación</th>
+            <th>Rollos</th>
+            <th>Peso (kg)</th>
+            <th>Kardex</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="s : ${stockList}">
+            <td th:text="${s.articulo.tipoTela.nombre}"></td>
+            <td th:text="${s.articulo.titulo.valor}"></td>
+            <td th:text="${s.articulo.color.nombreOficial}"></td>
+            <td th:text="${s.ubicacion.nombre}"></td>
+            <td th:text="${s.rollos}"></td>
+            <td th:text="${s.pesoKg}"></td>
+            <td>
+                <a th:href="@{/inventario/kardex(articuloId=${s.articulo.id})}" class="btn btn-sm btn-outline-primary">Ver Kardex</a>
+            </td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(stockList)}">
+            <td colspan="7" class="text-center text-muted">No hay stock disponible con estos filtros.</td>
+        </tr>
+        </tbody>
+    </table>
+</section>
+</body>
+</html>

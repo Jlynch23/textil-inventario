@@ -20,6 +20,7 @@
 /home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/inventario/KardexMovimientoRepository.java
 /home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/inventario/StockActual.java
 /home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/inventario/StockActualRepository.java
+/home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/inventario/StockController.java
 /home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/recepciones/Recepcion.java
 /home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/recepciones/RecepcionController.java
 /home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/recepciones/RecepcionDetalle.java

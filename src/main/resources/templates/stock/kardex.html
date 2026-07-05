@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title/text()}, ~{::section})}">
+<head><title>Kardex</title></head>
+<body>
+<section>
+    <h2 class="mb-2">Kardex de Movimientos</h2>
+
+    <h5 class="text-muted mb-4" th:if="${articulo != null}">
+        <span th:text="${articulo.tipoTela.nombre}"></span> -
+        <span th:text="${articulo.titulo.valor}"></span> -
+        <span th:text="${articulo.color.nombreOficial}"></span>
+        (<span th:text="${articulo.codigoInterno}"></span>)
+    </h5>
+
+    <form method="get" th:action="@{/inventario/kardex}" class="row g-2 mb-4">
+        <div class="col-md-4">
+            <select name="articuloId" class="form-select" onchange="this.form.submit()">
+                <option value="">Todos los artículos</option>
+                <option th:each="a : ${articulos}"
+                        th:value="${a.id}"
+                        th:selected="${a.id == filtroArticuloId}"
+                        th:text="${a.tipoTela.nombre + ' - ' + a.titulo.valor + ' - ' + a.color.nombreOficial}"></option>
+            </select>
+        </div>
+    </form>
+
+    <a th:href="@{/inventario/stock}" class="btn btn-sm btn-secondary mb-3">&larr; Volver a Stock</a>
+
+    <table class="table table-striped table-hover">
+        <thead>
+        <tr>
+            <th>Fecha</th>
+            <th>Tipo Movimiento</th>
+            <th>Artículo</th>
+            <th>Origen</th>
+            <th>Destino</th>
+            <th>Rollos</th>
+            <th>Peso (kg)</th>
+            <th>Usuario</th>
+            <th>Observaciones</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="m : ${movimientos}">
+            <td th:text="${#temporals.format(m.fecha, 'dd/MM/yyyy HH:mm')}"></td>
+            <td th:text="${m.tipoMovimiento}"></td>
+            <td th:text="${m.articulo.tipoTela.nombre + ' - ' + m.articulo.titulo.valor + ' - ' + m.articulo.color.nombreOficial}"></td>
+            <td th:text="${m.ubicacionOrigen != null ? m.ubicacionOrigen.nombre : '-'}"></td>
+            <td th:text="${m.ubicacionDestino != null ? m.ubicacionDestino.nombre : '-'}"></td>
+            <td th:text="${m.rollos}"></td>
+            <td th:text="${m.pesoKg}"></td>
+            <td th:text="${m.usuario.nombre}"></td>
+            <td th:text="${m.observaciones}"></td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(movimientos)}">
+            <td colspan="9" class="text-center text-muted">No hay movimientos registrados.</td>
+        </tr>
+        </tbody>
+    </table>
+</section>
+</body>
+</html>
