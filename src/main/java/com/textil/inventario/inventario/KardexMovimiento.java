@@ -30,7 +30,7 @@ public class KardexMovimiento {
     private Articulo articulo;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "empresa_id", nullable = false)
+    @JoinColumn(name = "empresa_id")
     private Empresa empresa;
 
     @ManyToOne(fetch = FetchType.LAZY)

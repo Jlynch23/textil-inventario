@@ -32,3 +32,11 @@
 /home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/seguridad/Usuario.java
 /home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/seguridad/UsuarioDetailsService.java
 /home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/seguridad/UsuarioRepository.java
+/home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/transferencias/Transferencia.java
+/home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/transferencias/TransferenciaController.java
+/home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/transferencias/TransferenciaDetalle.java
+/home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/transferencias/TransferenciaDetalleRepository.java
+/home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/transferencias/TransferenciaDistribucion.java
+/home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/transferencias/TransferenciaDistribucionRepository.java
+/home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/transferencias/TransferenciaRepository.java
+/home/joseph/textil-inventario/inventario/src/main/java/com/textil/inventario/transferencias/TransferenciaService.java

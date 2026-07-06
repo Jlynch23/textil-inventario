@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title/text()}, ~{::section})}">
+<head><title>Transferencias</title></head>
+<body>
+<section>
+    <div th:if="${mensaje}" class="alert alert-success alert-dismissible fade show">
+        <span th:text="${mensaje}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="fw-bold mb-0">Transferencias</h4>
+        <a href="/transferencias/nueva" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-2"></i>Nueva Transferencia
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Número</th>
+                            <th>Origen</th>
+                            <th>Fecha Solicitud</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:if="${transferencias.empty}">
+                            <td colspan="5" class="text-center text-muted py-4">
+                                No hay transferencias registradas.
+                            </td>
+                        </tr>
+                        <tr th:each="t : ${transferencias}">
+                            <td><code th:text="${t.numero}"></code></td>
+                            <td th:text="${t.ubicacionOrigen.nombre}"></td>
+                            <td th:text="${t.fechaSolicitud}"></td>
+                            <td>
+                                <span th:text="${t.estado}"
+                                      th:class="${t.estado.name() == 'CONFIRMADA_LLEGADA'} ? 'badge bg-success' :
+                                                (${t.estado.name() == 'CON_DIFERENCIA'} ? 'badge bg-warning text-dark' :
+                                                (${t.estado.name() == 'CONFIRMADA_SALIDA'} ? 'badge bg-info text-dark' :
+                                                (${t.estado.name() == 'ANULADA'} ? 'badge bg-danger' : 'badge bg-secondary')))">
+                                </span>
+                            </td>
+                            <td>
+                                <a th:if="${t.estado.name() == 'BORRADOR'}"
+                                   th:href="@{/transferencias/{id}/detalle(id=${t.id})}"
+                                   class="btn btn-sm btn-outline-primary">Agregar líneas</a>
+                                <a th:if="${t.estado.name() == 'BORRADOR'}"
+                                   th:href="@{/transferencias/{id}/confirmar-salida(id=${t.id})}"
+                                   class="btn btn-sm btn-outline-success">Confirmar salida</a>
+                                <a th:if="${t.estado.name() == 'CONFIRMADA_SALIDA'}"
+                                   th:href="@{/transferencias/{id}/confirmar-llegada(id=${t.id})}"
+                                   class="btn btn-sm btn-outline-success">Confirmar llegada</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+</body>
+</html>

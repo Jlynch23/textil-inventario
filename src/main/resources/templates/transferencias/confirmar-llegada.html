@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title/text()}, ~{::section})}">
+<head><title>Confirmar Llegada</title></head>
+<body>
+<section>
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle me-2"></i>
+        Reparte la cantidad recibida de cada artículo entre las ubicaciones donde quedará.
+        La suma por artículo debe coincidir con lo confirmado en la salida.
+    </div>
+    <div class="card mb-4">
+        <div class="card-body p-4">
+            <small class="text-muted">Número</small>
+            <p class="fw-bold mb-0"><code th:text="${transferencia.numero}"></code></p>
+        </div>
+    </div>
+    <form th:action="@{/transferencias/{id}/confirmar-llegada(id=${transferencia.id})}" method="post" id="formLlegada" novalidate>
+        <div class="card">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table mb-0 align-middle">
+                        <thead>
+                            <tr>
+                                <th>Artículo</th>
+                                <th class="text-center">Salida Confirmada</th>
+                                <th th:each="u : ${ubicacionesDestino}" class="text-center" th:text="${u.nombre}"></th>
+                                <th class="text-center">Total Repartido</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="d : ${transferencia.detalles}">
+                                <td th:text="${d.articulo.tipoTela.nombre + ' ' + d.articulo.titulo.valor + ' / ' + d.articulo.color.nombreOficial}"></td>
+                                <td class="text-center fw-bold" th:text="${d.cantidadConfirmadaSalida}"></td>
+                                <td th:each="u : ${ubicacionesDestino}" class="text-center">
+                                    <input type="number" class="form-control form-control-sm reparto-input"
+                                           th:name="${'reparto_' + d.id + '_' + u.id}"
+                                           th:data-detalle="${d.id}"
+                                           min="0" value="0" style="width:80px; margin:auto">
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-secondary total-detalle" th:attr="data-detalle=${d.id}">0</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="d-flex gap-2 mt-3 justify-content-end">
+            <a href="/transferencias" class="btn btn-light">Cancelar</a>
+            <button type="submit" class="btn btn-success">
+                <i class="bi bi-check-lg me-2"></i>Confirmar Llegada
+            </button>
+        </div>
+    </form>
+</section>
+
+<script>
+    function recalcularTotales() {
+        document.querySelectorAll('.total-detalle').forEach(function(span) {
+            var detalleId = span.getAttribute('data-detalle');
+            var suma = 0;
+            document.querySelectorAll('.reparto-input[data-detalle="' + detalleId + '"]').forEach(function(input) {
+                suma += parseInt(input.value || '0', 10);
+            });
+            span.textContent = suma;
+        });
+    }
+    document.querySelectorAll('.reparto-input').forEach(function(input) {
+        input.addEventListener('input', recalcularTotales);
+    });
+    recalcularTotales();
+</script>
+</body>
+</html>

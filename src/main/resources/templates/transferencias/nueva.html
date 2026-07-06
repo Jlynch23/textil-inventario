@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title/text()}, ~{::section})}">
+<head><title>Nueva Transferencia</title></head>
+<body>
+<section>
+    <h4 class="fw-bold mb-4">Nueva Transferencia</h4>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body p-4">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Toda transferencia sale de Praderas hacia Gamarra. El almacén o tienda final
+                        (1006, 213, 2127, 138 o 139) se define al confirmar la llegada.
+                    </div>
+                    <form th:action="@{/transferencias/crear}" method="post">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Origen</label>
+                            <input type="text" class="form-control" value="Praderas" disabled>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Observaciones</label>
+                            <textarea class="form-control" name="observaciones" rows="2"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-arrow-right-circle me-2"></i>Crear y Agregar Artículos
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+</body>
+</html>

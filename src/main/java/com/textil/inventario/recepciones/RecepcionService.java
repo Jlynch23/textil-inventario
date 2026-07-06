@@ -77,20 +77,18 @@ public class RecepcionService {
                 tieneDiferencias = true;
             }
 
-            // Actualizar stock
+            // Actualizar stock (pool único por artículo+ubicación, sin partición por empresa)
             int rollos = d.getRollosRecibidos();
             java.math.BigDecimal peso = d.getPesoBrutoKg() != null
                 ? d.getPesoBrutoKg().multiply(new java.math.BigDecimal(rollos)).divide(new java.math.BigDecimal(d.getRollosGuia()), 2, java.math.RoundingMode.HALF_UP)
                 : java.math.BigDecimal.ZERO;
 
             StockActual stock = stockActualRepository
-                .findByArticuloIdAndUbicacionIdAndEmpresaId(
-                    d.getArticulo().getId(), praderas.getId(), r.getEmpresa().getId())
+                .findByArticuloIdAndUbicacionId(d.getArticulo().getId(), praderas.getId())
                 .orElseGet(() -> {
                     StockActual s = new StockActual();
                     s.setArticulo(d.getArticulo());
                     s.setUbicacion(praderas);
-                    s.setEmpresa(r.getEmpresa());
                     s.setRollos(0);
                     s.setPesoKg(java.math.BigDecimal.ZERO);
                     return s;
@@ -100,7 +98,7 @@ public class RecepcionService {
             stock.setPesoKg(stock.getPesoKg().add(peso));
             stockActualRepository.save(stock);
 
-            // Kardex
+            // Kardex: la Recepción sí registra la empresa (dato informativo/trazabilidad)
             KardexMovimiento k = new KardexMovimiento();
             k.setArticulo(d.getArticulo());
             k.setEmpresa(r.getEmpresa());

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title/text()}, ~{::section})}">
+<head><title>Detalle de Transferencia</title></head>
+<body>
+<section>
+    <div th:if="${mensaje}" class="alert alert-success alert-dismissible fade show">
+        <span th:text="${mensaje}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body p-4">
+            <div class="row">
+                <div class="col-md-4">
+                    <small class="text-muted">Número</small>
+                    <p class="fw-bold mb-0"><code th:text="${transferencia.numero}"></code></p>
+                </div>
+                <div class="col-md-4">
+                    <small class="text-muted">Origen</small>
+                    <p class="fw-bold mb-0" th:text="${transferencia.ubicacionOrigen.nombre}"></p>
+                </div>
+                <div class="col-md-4">
+                    <small class="text-muted">Estado</small>
+                    <p class="mb-0"><span class="badge bg-secondary" th:text="${transferencia.estado}"></span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-4" th:if="${transferencia.estado.name() == 'BORRADOR'}">
+            <div class="card">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold mb-3">Agregar Artículo</h6>
+                    <form th:action="@{/transferencias/{id}/agregar-linea(id=${transferencia.id})}" method="post">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Artículo</label>
+                            <select class="form-select" name="articuloId" required>
+                                <option value="">Seleccionar...</option>
+                                <option th:each="a : ${articulos}"
+                                        th:value="${a.id}"
+                                        th:text="${a.tipoTela.nombre + ' ' + a.titulo.valor + ' / ' + a.color.nombreOficial}">
+                                </option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Cantidad Solicitada (rollos)</label>
+                            <input type="number" class="form-control" name="cantidadSolicitada" min="1" required>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Observaciones</label>
+                            <input type="text" class="form-control" name="observaciones">
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-plus-lg me-2"></i>Agregar Línea
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div th:class="${transferencia.estado.name() == 'BORRADOR'} ? 'col-md-8' : 'col-md-12'">
+            <div class="card">
+                <div class="card-body p-0">
+                    <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                        <span class="fw-bold">Líneas de Transferencia</span>
+                        <a th:if="${transferencia.estado.name() == 'BORRADOR' and !transferencia.detalles.empty}"
+                           th:href="@{/transferencias/{id}/confirmar-salida(id=${transferencia.id})}"
+                           class="btn btn-success btn-sm">
+                            <i class="bi bi-check-lg me-1"></i>Confirmar Salida
+                        </a>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Artículo</th>
+                                    <th>Cant. Solicitada</th>
+                                    <th>Observaciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:if="${transferencia.detalles.empty}">
+                                    <td colspan="3" class="text-center text-muted py-4">
+                                        Sin líneas. Agrega artículos desde el formulario.
+                                    </td>
+                                </tr>
+                                <tr th:each="d : ${transferencia.detalles}">
+                                    <td th:text="${d.articulo.tipoTela.nombre + ' ' + d.articulo.titulo.valor + ' / ' + d.articulo.color.nombreOficial}"></td>
+                                    <td th:text="${d.cantidadSolicitada}"></td>
+                                    <td th:text="${d.observaciones}"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+</body>
+</html>

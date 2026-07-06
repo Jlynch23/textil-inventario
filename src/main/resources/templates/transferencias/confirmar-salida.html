@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title/text()}, ~{::section})}">
+<head><title>Confirmar Salida</title></head>
+<body>
+<section>
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle me-2"></i>
+        Ingresa la cantidad <strong>físicamente despachada</strong> de Praderas para cada artículo.
+        El stock se descontará según lo confirmado aquí. El destino final se definirá al confirmar la llegada.
+    </div>
+    <div class="card mb-4">
+        <div class="card-body p-4">
+            <div class="row">
+                <div class="col-md-6">
+                    <small class="text-muted">Número</small>
+                    <p class="fw-bold mb-0"><code th:text="${transferencia.numero}"></code></p>
+                </div>
+                <div class="col-md-6">
+                    <small class="text-muted">Origen</small>
+                    <p class="fw-bold mb-0" th:text="${transferencia.ubicacionOrigen.nombre}"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <form th:action="@{/transferencias/{id}/confirmar-salida(id=${transferencia.id})}" method="post">
+        <div class="card">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Artículo</th>
+                                <th>Cant. Solicitada</th>
+                                <th>Cant. Confirmada Salida</th>
+                                <th>Observación</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="d : ${transferencia.detalles}">
+                                <td th:text="${d.articulo.tipoTela.nombre + ' ' + d.articulo.titulo.valor + ' / ' + d.articulo.color.nombreOficial}"></td>
+                                <td th:text="${d.cantidadSolicitada}"></td>
+                                <td>
+                                    <input type="number" class="form-control form-control-sm"
+                                           name="cantidades"
+                                           th:value="${d.cantidadSolicitada}"
+                                           min="0" required style="width:90px">
+                                </td>
+                                <td>
+                                    <input type="text" class="form-control form-control-sm"
+                                           name="observacionesDetalle"
+                                           th:value="${d.observaciones}"
+                                           placeholder="Opcional">
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="d-flex gap-2 mt-3 justify-content-end">
+            <a th:href="@{/transferencias/{id}/detalle(id=${transferencia.id})}"
+               class="btn btn-light">Cancelar</a>
+            <button type="submit" class="btn btn-success">
+                <i class="bi bi-check-lg me-2"></i>Confirmar Salida
+            </button>
+        </div>
+    </form>
+</section>
+</body>
+</html>
