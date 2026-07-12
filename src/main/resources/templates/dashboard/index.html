@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Dashboard</title>
+</head>
+<body>
+<section th:replace="~{layout/base :: layout(~{::title/text()}, ~{::div.dashboard-content})}">
+<div class="dashboard-content">
+    <h2 class="mb-4"><i class="bi bi-speedometer2"></i> Dashboard</h2>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h6 class="card-title">Stock Total</h6>
+                    <p class="display-6 mb-0" th:text="${totalRollos}">0</p>
+                    <small>rollos en todas las ubicaciones</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h6 class="card-title">Stock en Praderas</h6>
+                    <p class="display-6 mb-0" th:text="${totalRollosPraderas}">0</p>
+                    <small>almacén principal</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <h6 class="card-title">Transferencias en Tránsito</h6>
+                    <p class="display-6 mb-0" th:text="${transferenciasEnTransito.size()}">0</p>
+                    <small>salida confirmada, sin llegada</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <h6 class="card-title">Recepciones Pendientes</h6>
+                    <p class="display-6 mb-0" th:text="${recepcionesPendientes.size()}">0</p>
+                    <small>por validar</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h5 class="mb-3">Stock por Ubicación</h5>
+    <div class="row g-3 mb-4">
+        <div class="col-md-3" th:each="entry : ${stockPorUbicacion}">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h6 class="card-title" th:text="${entry.key}">Ubicación</h6>
+                    <p class="fs-3 fw-bold mb-0" th:text="${entry.value}">0</p>
+                    <small class="text-muted">rollos</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-md-6">
+            <div class="card border-warning">
+                <div class="card-header bg-warning-subtle">
+                    <i class="bi bi-exclamation-triangle"></i> Transferencias en Tránsito
+                </div>
+                <div class="card-body">
+                    <p th:if="${transferenciasEnTransito.isEmpty()}" class="text-muted mb-0">Sin transferencias pendientes de llegada.</p>
+                    <ul class="list-group list-group-flush" th:unless="${transferenciasEnTransito.isEmpty()}">
+                        <li class="list-group-item" th:each="t : ${transferenciasEnTransito}">
+                            <strong th:text="${t.numero}">TRF</strong> —
+                            desde <span th:text="${t.ubicacionOrigen.nombre}">Origen</span>
+                            <br><small class="text-muted">
+                                Salida confirmada: <span th:text="${#temporals.format(t.fechaConfirmacionSalida, 'dd/MM/yyyy HH:mm')}"></span>
+                            </small>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-danger">
+                <div class="card-header bg-danger-subtle">
+                    <i class="bi bi-exclamation-circle"></i> Stock Bajo (menos de <span th:text="${umbralStockBajo}">10</span> rollos)
+                </div>
+                <div class="card-body">
+                    <p th:if="${articulosStockBajo.isEmpty()}" class="text-muted mb-0">No hay artículos con stock bajo.</p>
+                    <ul class="list-group list-group-flush" th:unless="${articulosStockBajo.isEmpty()}">
+                        <li class="list-group-item d-flex justify-content-between" th:each="s : ${articulosStockBajo}">
+                            <span>
+                                <span th:text="${s.articulo.tipoTela.nombre}"></span> -
+                                <span th:text="${s.articulo.titulo.valor}"></span> -
+                                <span th:text="${s.articulo.color.nombreOficial}"></span>
+                            </span>
+                            <span class="badge bg-danger" th:text="|${totalPorArticulo.get(s.articulo.id)} rollos|"></span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</section>
+</body>
+</html>
