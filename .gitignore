@@ -1,8 +1,6 @@
 target/
 *.class
-*.jar
-.mvn/
-*.iml
 .idea/
-.vscode/
-*.log
+*.iml
+.DS_Store
+application-local.yml
