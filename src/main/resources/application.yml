@@ -46,3 +46,6 @@ logging:
 
 anthropic:
   api-key: ${ANTHROPIC_API_KEY:}
+
+documentos:
+  ruta-base: ${DOCUMENTOS_PATH:./documentos}

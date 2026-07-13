@@ -14,6 +14,9 @@ public class Empresa extends BaseEntity {
     @Column(nullable = false, length = 100)
     private String nombre;
 
+    @Column(length = 50)
+    private String carpeta;
+
     @Column(nullable = false, unique = true, length = 11)
     private String ruc;
 

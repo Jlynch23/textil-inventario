@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title/text()}, ~{::section})}">
+<head><title>Asignar Factura</title></head>
+<body>
+<section>
+    <div class="row justify-content-center">
+        <div class="col-md-9">
+
+            <div class="card mb-4 border-primary">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold mb-3"><i class="bi bi-file-earmark-arrow-up me-2"></i>Subir PDF de Factura (opcional)</h6>
+                    <p class="text-muted small mb-3">Sube la factura y el sistema leerá el número automáticamente.</p>
+                    <div class="input-group">
+                        <input type="file" id="pdfFactura" class="form-control" accept="application/pdf">
+                        <button type="button" class="btn btn-primary" id="btnExtraerFactura">
+                            <i class="bi bi-magic me-1"></i>Leer Factura
+                        </button>
+                    </div>
+                    <div id="estadoFactura" class="mt-2"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold mb-3">Asignar a Guías Pendientes de Facturar</h6>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Número de Factura</label>
+                            <input type="text" class="form-control" id="numeroFacturaInput" placeholder="Ej: F001-38205">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Fecha de Factura</label>
+                            <input type="date" class="form-control" id="fechaFacturaInput">
+                        </div>
+                    </div>
+
+                    <div class="table-responsive mb-3" style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th style="width: 40px;"></th>
+                                    <th>Guía</th>
+                                    <th>Empresa</th>
+                                    <th>Fecha</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:if="${recepciones.empty}">
+                                    <td colspan="5" class="text-center text-muted py-4">No hay guías pendientes de facturar.</td>
+                                </tr>
+                                <tr th:each="r : ${recepciones}">
+                                    <td><input type="checkbox" class="form-check-input chk-recepcion" th:value="${r.id}"></td>
+                                    <td><code th:text="${r.numeroGuia}"></code></td>
+                                    <td th:text="${r.empresa.nombre}"></td>
+                                    <td th:text="${r.fechaGuia}"></td>
+                                    <td>
+                                        <span th:text="${r.estado}"
+                                              th:class="${r.estado.name() == 'CONFIRMADA'} ? 'badge bg-success' : 'badge bg-secondary'"></span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div id="errorAsignar" class="text-danger small mb-2"></div>
+                    <button type="button" class="btn btn-primary w-100" id="btnAsignarFactura">
+                        <i class="bi bi-check-lg me-1"></i>Asignar Factura a Guías Seleccionadas
+                    </button>
+                    <a th:href="@{/recepciones}" class="btn btn-light w-100 mt-2">Volver</a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('btnExtraerFactura').addEventListener('click', async () => {
+            const fileInput = document.getElementById('pdfFactura');
+            if (!fileInput.files.length) {
+                alert('Selecciona un archivo PDF primero.');
+                return;
+            }
+
+            const estadoDiv = document.getElementById('estadoFactura');
+            estadoDiv.innerHTML = '<span class="text-primary"><i class="bi bi-hourglass-split me-1"></i>Leyendo factura...</span>';
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            try {
+                const resp = await fetch('/recepciones/extraer-factura', { method: 'POST', body: formData });
+                const data = await resp.json();
+
+                if (!resp.ok) {
+                    estadoDiv.innerHTML = '<span class="text-danger">Error: ' + (data.error || 'No se pudo procesar el PDF') + '</span>';
+                    return;
+                }
+
+                document.getElementById('numeroFacturaInput').value = data.numeroFactura || '';
+                document.getElementById('fechaFacturaInput').value = data.fechaFactura || '';
+
+                function normalizarGuia(str) {
+                    const match = str.trim().toUpperCase().match(/^([A-Z0-9]+)-(\d+)$/);
+                    if (match) {
+                        return match[1] + '-' + parseInt(match[2], 10);
+                    }
+                    return str.trim().toUpperCase();
+                }
+
+                let coincidencias = 0;
+                const guiasRef = data.guiasReferenciadas || [];
+                const guiasRefNormalizadas = guiasRef.map(normalizarGuia);
+
+                if (guiasRef.length > 0) {
+                    document.querySelectorAll('.chk-recepcion').forEach(chk => {
+                        const numeroGuiaFila = chk.closest('tr').querySelector('code').textContent.trim();
+                        if (guiasRefNormalizadas.includes(normalizarGuia(numeroGuiaFila))) {
+                            chk.checked = true;
+                            coincidencias++;
+                        }
+                    });
+                }
+
+                let msg = '<span class="text-success"><i class="bi bi-check-circle me-1"></i>Factura leída correctamente.</span>';
+                if (coincidencias > 0) {
+                    msg += '<br><span class="text-primary small">' + coincidencias + ' guía(s) marcada(s) automáticamente por coincidencia.</span>';
+                } else if (guiasRef.length > 0) {
+                    msg += '<br><span class="text-warning small">La factura referencia guías (' + guiasRef.join(', ') + ') pero no se encontraron en la lista de pendientes — verifica manualmente.</span>';
+                }
+                if (data.advertencia) {
+                    msg += '<br><span class="text-warning small">' + data.advertencia + '</span>';
+                }
+                estadoDiv.innerHTML = msg;
+
+            } catch (e) {
+                estadoDiv.innerHTML = '<span class="text-danger">Error de conexión: ' + e.message + '</span>';
+            }
+        });
+
+        document.getElementById('btnAsignarFactura').addEventListener('click', async () => {
+            const numeroFactura = document.getElementById('numeroFacturaInput').value.trim();
+            const errorDiv = document.getElementById('errorAsignar');
+            errorDiv.textContent = '';
+
+            if (!numeroFactura) {
+                errorDiv.textContent = 'Ingresa el número de factura.';
+                return;
+            }
+
+            const recepcionIds = Array.from(document.querySelectorAll('.chk-recepcion:checked'))
+                .map(chk => parseInt(chk.value));
+
+            if (recepcionIds.length === 0) {
+                errorDiv.textContent = 'Selecciona al menos una guía.';
+                return;
+            }
+
+            const fechaFactura = document.getElementById('fechaFacturaInput').value || null;
+
+            try {
+                const resp = await fetch('/recepciones/asignar-factura', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ numeroFactura, fechaFactura, recepcionIds })
+                });
+                const data = await resp.json();
+
+                if (!resp.ok) {
+                    errorDiv.textContent = data.error || 'Error al asignar la factura.';
+                    return;
+                }
+
+                const fileInput = document.getElementById('pdfFactura');
+                if (fileInput.files.length > 0) {
+                    const fd = new FormData();
+                    fd.append('file', fileInput.files[0]);
+                    recepcionIds.forEach(id => fd.append('recepcionIds', id));
+                    try {
+                        await fetch('/recepciones/guardar-documento-factura', { method: 'POST', body: fd });
+                    } catch (err) {
+                        console.error('No se pudo archivar copia de la factura:', err);
+                    }
+                }
+
+                window.location.href = '/recepciones';
+
+            } catch (e) {
+                errorDiv.textContent = 'Error de conexión: ' + e.message;
+            }
+        });
+    </script>
+</section>
+</body>
+</html>

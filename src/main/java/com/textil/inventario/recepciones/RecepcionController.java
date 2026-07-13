@@ -33,6 +33,19 @@ public class RecepcionController {
         return "recepciones/lista";
     }
 
+    @GetMapping("/verificar-guia")
+    @ResponseBody
+    public ResponseEntity<?> verificarGuia(@RequestParam String numero) {
+        return recepcionService.buscarPorNumeroGuia(numero)
+                .map(r -> ResponseEntity.ok(Map.of(
+                        "existe", true,
+                        "empresa", r.getEmpresa().getNombre(),
+                        "fecha", r.getFechaGuia().toString(),
+                        "estado", r.getEstado().toString()
+                )))
+                .orElseGet(() -> ResponseEntity.ok(Map.of("existe", false)));
+    }
+
     @GetMapping("/nueva")
     public String nueva(Model model) {
         model.addAttribute("empresas", empresaRepository.findByActivoTrue());
@@ -86,6 +99,57 @@ public class RecepcionController {
         recepcionService.confirmarRecepcion(id, detalleIds, rollosRecibidos, observacionesDetalle);
         ra.addFlashAttribute("mensaje", "Recepción confirmada. Stock actualizado.");
         return "redirect:/recepciones";
+    }
+
+    @GetMapping("/facturar")
+    public String facturarForm(Model model) {
+        model.addAttribute("recepciones", recepcionService.listarRecepcionesSinFactura());
+        return "recepciones/facturar";
+    }
+
+    @PostMapping("/extraer-factura")
+    @ResponseBody
+    public ResponseEntity<?> extraerFactura(@RequestParam("file") MultipartFile file) {
+        try {
+            ExtraccionFacturaResponse resultado = anthropicOcrService.extraerDatosFactura(file);
+            return ResponseEntity.ok(resultado);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/asignar-factura")
+    @ResponseBody
+    public ResponseEntity<?> asignarFactura(@RequestBody AsignarFacturaRequest request) {
+        try {
+            recepcionService.asignarFactura(request.numeroFactura(), request.fechaFactura(), request.recepcionIds());
+            return ResponseEntity.ok(Map.of("ok", true));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/{id}/guardar-documento-guia")
+    @ResponseBody
+    public ResponseEntity<?> guardarDocumentoGuia(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
+        try {
+            recepcionService.guardarDocumentoGuia(id, file);
+            return ResponseEntity.ok(Map.of("ok", true));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/guardar-documento-factura")
+    @ResponseBody
+    public ResponseEntity<?> guardarDocumentoFactura(@RequestParam("recepcionIds") List<Long> recepcionIds,
+                                                       @RequestParam("file") MultipartFile file) {
+        try {
+            recepcionService.guardarDocumentoFactura(recepcionIds, file);
+            return ResponseEntity.ok(Map.of("ok", true));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+        }
     }
 
     @PostMapping("/extraer-guia")

@@ -42,6 +42,8 @@ public class HomeController {
         List<Recepcion> recepcionesPendientes =
                 recepcionRepository.findByEstado(Recepcion.EstadoRecepcion.PENDIENTE);
 
+        List<Recepcion> sinFacturar = recepcionRepository.findByNumeroFacturaIsNullOrderByFechaGuiaDesc();
+
         Map<String, Integer> stockPorUbicacion = stockDisponible.stream()
                 .collect(Collectors.groupingBy(
                         s -> s.getUbicacion().getNombre(),
@@ -69,6 +71,7 @@ public class HomeController {
         model.addAttribute("totalRollosPraderas", totalRollosPraderas);
         model.addAttribute("transferenciasEnTransito", transferenciasEnTransito);
         model.addAttribute("recepcionesPendientes", recepcionesPendientes);
+        model.addAttribute("sinFacturar", sinFacturar);
         model.addAttribute("stockPorUbicacion", stockPorUbicacion);
         model.addAttribute("articulosStockBajo", articulosStockBajo);
         model.addAttribute("totalPorArticulo", totalPorArticulo);

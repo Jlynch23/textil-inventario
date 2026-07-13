@@ -23,9 +23,66 @@ public class RecepcionService {
     private final UbicacionRepository ubicacionRepository;
     private final ProgramaRepository programaRepository;
     private final ProgramaDetalleRepository programaDetalleRepository;
+    private final RecepcionDocumentoRepository recepcionDocumentoRepository;
+    private final DocumentoStorageService documentoStorageService;
+
+    public List<Recepcion> listarRecepcionesSinFactura() {
+        return recepcionRepository.findByNumeroFacturaIsNullOrderByFechaGuiaDesc();
+    }
+
+    @Transactional
+    public void asignarFactura(String numeroFactura, LocalDate fechaFactura, List<Long> recepcionIds) {
+        for (Long id : recepcionIds) {
+            Recepcion r = recepcionRepository.findById(id).orElseThrow();
+            r.setNumeroFactura(numeroFactura);
+            r.setFechaFactura(fechaFactura);
+            recepcionRepository.save(r);
+        }
+    }
+
+    @Transactional
+    public void guardarDocumentoGuia(Long recepcionId, org.springframework.web.multipart.MultipartFile archivo) throws java.io.IOException {
+        Recepcion r = recepcionRepository.findById(recepcionId).orElseThrow();
+        String ruta = documentoStorageService.guardar(archivo, "GUIA", r.getEmpresa(), r.getFechaGuia());
+
+        RecepcionDocumento doc = new RecepcionDocumento();
+        doc.setRecepcion(r);
+        doc.setTipoDocumento("GUIA");
+        doc.setNombreOriginal(archivo.getOriginalFilename());
+        doc.setRutaArchivo(ruta);
+        recepcionDocumentoRepository.save(doc);
+    }
+
+    @Transactional
+    public void guardarDocumentoFactura(List<Long> recepcionIds, org.springframework.web.multipart.MultipartFile archivo) throws java.io.IOException {
+        List<Recepcion> recepciones = recepcionRepository.findAllById(recepcionIds);
+        if (recepciones.isEmpty()) return;
+
+        Long empresaIdBase = recepciones.get(0).getEmpresa().getId();
+        boolean mismaEmpresa = recepciones.stream().allMatch(r -> r.getEmpresa().getId().equals(empresaIdBase));
+        if (!mismaEmpresa) {
+            throw new IllegalArgumentException("Todas las guías seleccionadas deben ser de la misma empresa para archivar la factura.");
+        }
+
+        Recepcion primera = recepciones.get(0);
+        String ruta = documentoStorageService.guardar(archivo, "FACTURA", primera.getEmpresa(), primera.getFechaFactura());
+
+        for (Recepcion r : recepciones) {
+            RecepcionDocumento doc = new RecepcionDocumento();
+            doc.setRecepcion(r);
+            doc.setTipoDocumento("FACTURA");
+            doc.setNombreOriginal(archivo.getOriginalFilename());
+            doc.setRutaArchivo(ruta);
+            recepcionDocumentoRepository.save(doc);
+        }
+    }
 
     public List<Recepcion> listarRecepciones() {
         return recepcionRepository.findAllByOrderByCreatedAtDesc();
+    }
+
+    public java.util.Optional<Recepcion> buscarPorNumeroGuia(String numeroGuia) {
+        return recepcionRepository.findFirstByNumeroGuia(numeroGuia);
     }
 
     public Recepcion buscarRecepcion(Long id) {
@@ -42,7 +99,7 @@ public class RecepcionService {
         Recepcion r = new Recepcion();
         r.setEmpresa(empresaRepository.findById(empresaId).orElseThrow());
         r.setNumeroGuia(numeroGuia);
-        r.setNumeroFactura(numeroFactura);
+        r.setNumeroFactura((numeroFactura == null || numeroFactura.isBlank()) ? null : numeroFactura.trim());
         r.setFechaGuia(fechaGuia);
         r.setFechaRecepcion(LocalDate.now());
         r.setObservaciones(observaciones);

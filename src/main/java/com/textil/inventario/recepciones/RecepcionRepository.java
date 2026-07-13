@@ -6,4 +6,6 @@ import java.util.List;
 public interface RecepcionRepository extends JpaRepository<Recepcion, Long> {
     List<Recepcion> findAllByOrderByCreatedAtDesc();
     List<Recepcion> findByEstado(Recepcion.EstadoRecepcion estado);
+    List<Recepcion> findByNumeroFacturaIsNullOrderByFechaGuiaDesc();
+    java.util.Optional<Recepcion> findFirstByNumeroGuia(String numeroGuia);
 }

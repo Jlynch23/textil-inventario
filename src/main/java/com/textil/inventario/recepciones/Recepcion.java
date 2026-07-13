@@ -27,6 +27,9 @@ public class Recepcion extends BaseEntity {
     @Column(name = "numero_factura", length = 50)
     private String numeroFactura;
 
+    @Column(name = "fecha_factura")
+    private java.time.LocalDate fechaFactura;
+
     @Column(name = "fecha_guia", nullable = false)
     private LocalDate fechaGuia;
 

@@ -60,6 +60,70 @@ public class AnthropicOcrService {
         Si no puedes identificar algun campo, usa null en ese campo especifico. Nunca inventes datos que no esten en el documento.
         """;
 
+    private static final String SYSTEM_PROMPT_FACTURA = """
+        Eres un asistente que extrae datos de facturas de la empresa FAST DYE (tintoreria textil).
+        Analiza el PDF y devuelve EXCLUSIVAMENTE un objeto JSON valido, sin texto adicional, sin markdown, sin backticks.
+
+        Formato exacto requerido:
+        {
+          "numeroFactura": "string, el numero de factura o comprobante del documento",
+          "fechaFactura": "string en formato YYYY-MM-DD",
+          "razonSocialDetectada": "string, el nombre/razon social del cliente que aparece en el documento",
+          "guiasReferenciadas": ["lista de strings con los numeros de guia de remision relacionados/referenciados en la factura, tal como aparecen en el documento (ej: TG01-00022836). Si no hay ninguna referencia a guias, devolver una lista vacia []"],
+          "advertencia": "string opcional; si algun dato no se pudo leer con confianza, explica cual; si todo se leyo bien, usa null"
+        }
+
+        Si no puedes identificar algun campo, usa null en ese campo especifico. Nunca inventes datos que no esten en el documento.
+        """;
+
+    public ExtraccionFacturaResponse extraerDatosFactura(MultipartFile pdf) throws IOException {
+        String base64Pdf = Base64.getEncoder().encodeToString(pdf.getBytes());
+
+        Map<String, Object> requestBody = Map.of(
+                "model", "claude-haiku-4-5-20251001",
+                "max_tokens", 1000,
+                "system", SYSTEM_PROMPT_FACTURA,
+                "messages", List.of(
+                        Map.of(
+                                "role", "user",
+                                "content", List.of(
+                                        Map.of(
+                                                "type", "document",
+                                                "source", Map.of(
+                                                        "type", "base64",
+                                                        "media_type", "application/pdf",
+                                                        "data", base64Pdf
+                                                )
+                                        ),
+                                        Map.of(
+                                                "type", "text",
+                                                "text", "Extrae los datos de esta factura segun el formato indicado."
+                                        )
+                                )
+                        )
+                )
+        );
+
+        String rawResponse = restClient.post()
+                .uri("https://api.anthropic.com/v1/messages")
+                .header("x-api-key", apiKey)
+                .header("anthropic-version", "2023-06-01")
+                .header("content-type", "application/json")
+                .body(requestBody)
+                .retrieve()
+                .body(String.class);
+
+        JsonNode root = mapper.readTree(rawResponse);
+        String textoExtraido = root.path("content").get(0).path("text").asText();
+
+        String jsonLimpio = textoExtraido.trim();
+        if (jsonLimpio.startsWith("```")) {
+            jsonLimpio = jsonLimpio.replaceAll("^```(json)?", "").replaceAll("```$", "").trim();
+        }
+
+        return mapper.readValue(jsonLimpio, ExtraccionFacturaResponse.class);
+    }
+
     public ExtraccionGuiaResponse extraerDatosGuia(MultipartFile pdf) throws IOException {
         String base64Pdf = Base64.getEncoder().encodeToString(pdf.getBytes());
 

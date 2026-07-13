@@ -367,6 +367,25 @@
 
         const empresaId = document.getElementById('empresaId').value;
         const numeroGuia = document.getElementById('numeroGuia').value;
+
+        if (numeroGuia) {
+            try {
+                const chkResp = await fetch('/recepciones/verificar-guia?numero=' + encodeURIComponent(numeroGuia));
+                const chkData = await chkResp.json();
+                if (chkData.existe) {
+                    const confirmar = confirm(
+                        '⚠️ Ya existe una guía con el número "' + numeroGuia + '"\n\n' +
+                        'Empresa: ' + chkData.empresa + '\n' +
+                        'Fecha: ' + chkData.fecha + '\n' +
+                        'Estado: ' + chkData.estado + '\n\n' +
+                        '¿Estás seguro de que quieres registrarla de nuevo? Esto puede duplicar el stock.'
+                    );
+                    if (!confirmar) return;
+                }
+            } catch (err) {
+                console.error('No se pudo verificar duplicado de guía:', err);
+            }
+        }
         const fechaGuia = document.getElementById('fechaGuia').value;
         const observaciones = document.getElementById('observaciones').value;
 
@@ -400,6 +419,16 @@
             });
             const data = await resp.json();
             if (resp.ok) {
+                const fileInput = document.getElementById('pdfInput');
+                if (fileInput.files.length > 0) {
+                    const fd = new FormData();
+                    fd.append('file', fileInput.files[0]);
+                    try {
+                        await fetch('/recepciones/' + data.id + '/guardar-documento-guia', { method: 'POST', body: fd });
+                    } catch (err) {
+                        console.error('No se pudo archivar copia del PDF:', err);
+                    }
+                }
                 window.location.href = data.redirectUrl;
             } else {
                 alert('Error: ' + data.error);
