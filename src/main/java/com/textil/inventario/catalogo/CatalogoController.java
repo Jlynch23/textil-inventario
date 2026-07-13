@@ -5,6 +5,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.http.ResponseEntity;
+import java.util.Map;
+import java.util.Optional;
 
 @Controller
 @RequestMapping("/catalogo")
@@ -44,7 +47,70 @@ public class CatalogoController {
         return "redirect:/catalogo/colores";
     }
 
+    @PostMapping("/colores/crear-rapido")
+    @ResponseBody
+    public ResponseEntity<?> crearColorRapido(@RequestBody ColorRapidoRequest request) {
+        try {
+            Color color = new Color();
+            color.setNombreOficial(request.nombreOficial());
+            color.setCodigoFastDye(request.codigoFastDye());
+            color.setFamilia(request.familia());
+            color.setActivo(true);
+            Color guardado = catalogoService.guardarColor(color);
+            return ResponseEntity.ok(Map.of("id", guardado.getId(), "nombreOficial", guardado.getNombreOficial()));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+        }
+    }
+
     // ─── ARTÍCULOS ─────────────────────────────────────────
+    @PostMapping("/articulos/crear-rapido")
+    @ResponseBody
+    public ResponseEntity<?> crearArticuloRapido(@RequestBody ArticuloRapidoRequest request) {
+        try {
+            Optional<TipoTela> tipoTela = catalogoService.buscarTipoTelaPorNombre(request.tipoTelaNombre());
+            if (tipoTela.isEmpty()) {
+                return ResponseEntity.status(400).body(Map.of("error",
+                        "Tipo de tela '" + request.tipoTelaNombre() + "' no existe en el catálogo base."));
+            }
+
+            Optional<Titulo> titulo = catalogoService.buscarTituloPorValor(request.tituloValor());
+            if (titulo.isEmpty()) {
+                return ResponseEntity.status(400).body(Map.of("error",
+                        "Título '" + request.tituloValor() + "' no existe en el catálogo base."));
+            }
+
+            Optional<Color> color = catalogoService.buscarColorPorCodigoFastDye(request.colorCodigo());
+            if (color.isEmpty()) {
+                return ResponseEntity.status(400).body(Map.of("error",
+                        "Primero debes crear el color (código '" + request.colorCodigo() + "')."));
+            }
+
+            Optional<Articulo> existente = catalogoService.buscarArticuloPorCombinacion(
+                    tipoTela.get().getId(), titulo.get().getId(), color.get().getId());
+            if (existente.isPresent()) {
+                return ResponseEntity.ok(Map.of("id", existente.get().getId(), "yaExistia", true));
+            }
+
+            Articulo articulo = new Articulo();
+            articulo.setTipoTela(tipoTela.get());
+            articulo.setTitulo(titulo.get());
+            articulo.setColor(color.get());
+            String codigo = tipoTela.get().getNombre().replace(" ", "").substring(0, 3).toUpperCase()
+                    + "-" + titulo.get().getValor().replace("/", "")
+                    + "-" + color.get().getNombreOficial().replace(" ", "").substring(0, Math.min(4, color.get().getNombreOficial().length())).toUpperCase();
+            articulo.setCodigoInterno(codigo);
+            articulo.setActivo(true);
+
+            Articulo guardado = catalogoService.guardarArticulo(articulo);
+            return ResponseEntity.ok(Map.of("id", guardado.getId(), "yaExistia", false));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+
     @GetMapping("/articulos")
     public String listarArticulos(Model model) {
         model.addAttribute("articulos", catalogoService.listarArticulos());

@@ -116,4 +116,17 @@ public class RecepcionService {
             : Recepcion.EstadoRecepcion.CONFIRMADA);
         recepcionRepository.save(r);
     }
+
+    @Transactional
+    public Recepcion crearRecepcionConLineas(Long empresaId, String numeroGuia, LocalDate fechaGuia,
+                                              String observaciones,
+                                              List<CrearRecepcionConLineasRequest.LineaRequest> lineas) {
+        Recepcion r = crearRecepcion(empresaId, numeroGuia, fechaGuia, observaciones);
+        for (CrearRecepcionConLineasRequest.LineaRequest linea : lineas) {
+            if (linea.articuloId() == null) continue;
+            agregarDetalle(r.getId(), linea.articuloId(), linea.programaTenido(),
+                    linea.rollosGuia(), linea.pesoBrutoKg());
+        }
+        return r;
+    }
 }

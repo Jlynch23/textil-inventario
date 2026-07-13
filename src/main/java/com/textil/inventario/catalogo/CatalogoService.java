@@ -3,6 +3,7 @@ package com.textil.inventario.catalogo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -42,4 +43,12 @@ public class CatalogoService {
     public List<Articulo> listarArticulos() { return articuloRepository.findByActivoTrue(); }
     public Articulo guardarArticulo(Articulo a) { return articuloRepository.save(a); }
     public Articulo buscarArticulo(Long id) { return articuloRepository.findById(id).orElseThrow(); }
+
+    // BÚSQUEDAS PARA MATCHING / CREACIÓN RÁPIDA
+    public Optional<TipoTela> buscarTipoTelaPorNombre(String nombre) { return tipoTelaRepository.findByNombreIgnoreCase(nombre.trim()); }
+    public Optional<Titulo> buscarTituloPorValor(String valor) { return tituloRepository.findByValorIgnoreCase(valor.trim()); }
+    public Optional<Color> buscarColorPorCodigoFastDye(String codigo) { return colorRepository.findByCodigoFastDye(codigo.trim()); }
+    public Optional<Articulo> buscarArticuloPorCombinacion(Long tipoTelaId, Long tituloId, Long colorId) {
+        return articuloRepository.findByTipoTelaIdAndTituloIdAndColorId(tipoTelaId, tituloId, colorId);
+    }
 }

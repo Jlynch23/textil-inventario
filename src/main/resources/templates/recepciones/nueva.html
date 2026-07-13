@@ -5,35 +5,73 @@
 <body>
 <section>
     <div class="row justify-content-center">
-        <div class="col-md-6">
+        <div class="col-md-8">
+
+            <!-- SUBIDA DE PDF -->
+            <div class="card mb-4 border-primary">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold mb-3"><i class="bi bi-file-earmark-arrow-up me-2"></i>Subir Guía PDF (opcional)</h6>
+                    <p class="text-muted small mb-3">Sube el PDF de la guía de FAST DYE y el sistema autocompletará los datos automáticamente. Podrás revisar y corregir antes de guardar.</p>
+                    <div class="input-group">
+                        <input type="file" id="pdfInput" class="form-control" accept="application/pdf">
+                        <button type="button" id="btnExtraer" class="btn btn-primary">
+                            <i class="bi bi-magic me-1"></i>Extraer Datos
+                        </button>
+                    </div>
+                    <div id="extraccionEstado" class="mt-2"></div>
+                </div>
+            </div>
+
             <div class="card">
                 <div class="card-body p-4">
                     <h6 class="fw-bold mb-4">Datos de la Guía de Remisión</h6>
-                    <form th:action="@{/recepciones/crear}" method="post">
+                    <form id="formRecepcion">
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Empresa</label>
-                            <select class="form-select" name="empresaId" required>
+                            <select class="form-select" id="empresaId" name="empresaId" required>
                                 <option value="">Seleccionar empresa...</option>
                                 <option th:each="e : ${empresas}"
                                         th:value="${e.id}"
                                         th:text="${e.nombre}"></option>
                             </select>
+                            <small id="empresaHint" class="text-muted"></small>
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Número de Guía</label>
-                            <input type="text" class="form-control" name="numeroGuia"
+                            <input type="text" class="form-control" id="numeroGuia" name="numeroGuia"
                                    placeholder="Ej: TG01-00022558" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Fecha de la Guía</label>
-                            <input type="date" class="form-control" name="fechaGuia" required>
+                            <input type="date" class="form-control" id="fechaGuia" name="fechaGuia" required>
                         </div>
                         <div class="mb-4">
                             <label class="form-label fw-semibold">Observaciones</label>
-                            <textarea class="form-control" name="observaciones" rows="2"></textarea>
+                            <textarea class="form-control" id="observaciones" name="observaciones" rows="2"></textarea>
                         </div>
+
+                        <!-- LINEAS DE PRODUCTOS (se llenan al extraer PDF) -->
+                        <div id="lineasContainer" style="display:none;">
+                            <h6 class="fw-bold mb-3">Productos Detectados</h6>
+                            <div class="table-responsive mb-3">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Artículo</th>
+                                            <th>Color</th>
+                                            <th>Código</th>
+                                            <th>Programa</th>
+                                            <th>Rollos</th>
+                                            <th>Peso Bruto</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="lineasBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+
                         <button type="submit" class="btn btn-primary w-100">
-                            <i class="bi bi-arrow-right me-2"></i>Continuar — Agregar Productos
+                            <i class="bi bi-arrow-right me-2"></i>Continuar
                         </button>
                         <a th:href="@{/recepciones}" class="btn btn-light w-100 mt-2">Cancelar</a>
                     </form>
@@ -41,6 +79,355 @@
             </div>
         </div>
     </div>
+
+<div class="modal fade" id="modalColorRapido" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title fw-bold">Crear Color Nuevo</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Nombre del Color</label>
+                    <input type="text" class="form-control" id="modalColorNombre">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Código FAST DYE</label>
+                    <input type="text" class="form-control" id="modalColorCodigo">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Familia (opcional)</label>
+                    <input type="text" class="form-control" id="modalColorFamilia" placeholder="Ej: Verdes, Rojos, Neutros">
+                </div>
+                <div id="modalColorError" class="text-danger small"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnGuardarColorRapido">Crear Color</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    const articulos = /*[[${articulos}]]*/ [];
+    let lineasExtraidas = [];
+
+    function articuloLabel(a) {
+        return a.tipoTela.nombre + ' ' + a.titulo.valor + ' / ' + a.color.nombreOficial;
+    }
+
+    document.getElementById('btnExtraer').addEventListener('click', async () => {
+        const fileInput = document.getElementById('pdfInput');
+        if (!fileInput.files.length) {
+            alert('Selecciona un archivo PDF primero.');
+            return;
+        }
+
+        const estadoDiv = document.getElementById('extraccionEstado');
+        estadoDiv.innerHTML = '<span class="text-primary"><i class="bi bi-hourglass-split me-1"></i>Leyendo guía con IA, espera un momento...</span>';
+
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+
+        try {
+            const resp = await fetch('/recepciones/extraer-guia', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!resp.ok) {
+                const err = await resp.json();
+                estadoDiv.innerHTML = '<span class="text-danger">Error: ' + (err.error || 'No se pudo procesar el PDF') + '</span>';
+                return;
+            }
+
+            const data = await resp.json();
+
+            document.getElementById('numeroGuia').value = data.numeroGuia || '';
+            document.getElementById('fechaGuia').value = data.fechaGuia || '';
+
+            const empresaHint = document.getElementById('empresaHint');
+            if (data.empresaIdSugerida) {
+                document.getElementById('empresaId').value = data.empresaIdSugerida;
+                empresaHint.innerHTML = 'Sugerido a partir de: "' + data.empresaNombreDetectado + '" — verifica que sea correcto.';
+                empresaHint.className = 'text-warning';
+            } else {
+                empresaHint.innerHTML = 'No se pudo sugerir la empresa automáticamente (detectado: "' + (data.empresaNombreDetectado || '-') + '"). Selecciónala manualmente.';
+                empresaHint.className = 'text-danger';
+            }
+
+            lineasExtraidas = data.lineas || [];
+            renderLineas();
+
+            let mensajeEstado = '<span class="text-success"><i class="bi bi-check-circle me-1"></i>Datos extraídos correctamente.</span>';
+            if (data.advertencia) {
+                mensajeEstado += '<br><span class="text-warning small">' + data.advertencia + '</span>';
+            }
+            estadoDiv.innerHTML = mensajeEstado;
+
+        } catch (e) {
+            estadoDiv.innerHTML = '<span class="text-danger">Error de conexión: ' + e.message + '</span>';
+        }
+    });
+
+    let idxColorPendiente = null;
+
+    function renderLineas() {
+        const tbody = document.getElementById('lineasBody');
+        tbody.innerHTML = '';
+
+        lineasExtraidas.forEach((linea, idx) => {
+            const tr = document.createElement('tr');
+            if (!linea.matched) tr.className = 'table-warning';
+
+            let selectHtml = '<select class="form-select form-select-sm linea-articulo" data-idx="' + idx + '">';
+            selectHtml += '<option value="">Seleccionar...</option>';
+            articulos.forEach(a => {
+                const selected = (linea.articuloId === a.id) ? 'selected' : '';
+                selectHtml += '<option value="' + a.id + '" ' + selected + '>' + articuloLabel(a) + '</option>';
+            });
+            selectHtml += '</select>';
+
+            if (!linea.matched) {
+                selectHtml += '<br><small class="text-danger">' + linea.motivoNoMatch + '</small>';
+                selectHtml += '<br><small class="text-muted">Tela detectada: ' + linea.tipoTela + ' ' + linea.titulo + '</small>';
+
+                const motivoEsColor = linea.motivoNoMatch && linea.motivoNoMatch.indexOf('Color') !== -1 && linea.motivoNoMatch.indexOf('no existe') !== -1;
+                if (!motivoEsColor) {
+                    selectHtml += '<br><button type="button" class="btn btn-sm btn-outline-success mt-1 btn-crear-articulo" data-idx="' + idx + '">' +
+                                  '<i class="bi bi-plus-circle me-1"></i>Crear artículo</button>';
+                }
+            }
+
+            let colorCell = '';
+            if (linea.colorNombre) {
+                colorCell = linea.colorNombre;
+                if (!linea.matched) {
+                    colorCell += '<br><button type="button" class="btn btn-sm btn-outline-primary mt-1 btn-crear-color" data-idx="' + idx + '">' +
+                                 '<i class="bi bi-plus-circle me-1"></i>Crear color</button>';
+                }
+            }
+
+            tr.innerHTML = `
+                <td>${selectHtml}</td>
+                <td class="linea-color-cell">${colorCell}</td>
+                <td><span class="badge bg-light text-dark">${linea.colorCodigo || ''}</span></td>
+                <td><input type="text" class="form-control form-control-sm linea-programa" data-idx="${idx}" value="${linea.programaTenido || ''}"></td>
+                <td><input type="number" class="form-control form-control-sm linea-rollos" data-idx="${idx}" value="${linea.rollosGuia || ''}"></td>
+                <td><input type="number" step="0.01" class="form-control form-control-sm linea-peso" data-idx="${idx}" value="${linea.pesoBrutoKg || ''}"></td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        document.getElementById('lineasContainer').style.display = lineasExtraidas.length ? 'block' : 'none';
+
+        document.querySelectorAll('.btn-crear-color').forEach(btn => {
+            btn.addEventListener('click', () => {
+                idxColorPendiente = parseInt(btn.dataset.idx);
+                const linea = lineasExtraidas[idxColorPendiente];
+                document.getElementById('modalColorNombre').value = linea.colorNombre || '';
+                document.getElementById('modalColorCodigo').value = linea.colorCodigo || '';
+                document.getElementById('modalColorFamilia').value = '';
+                document.getElementById('modalColorError').textContent = '';
+                new bootstrap.Modal(document.getElementById('modalColorRapido')).show();
+            });
+        });
+
+        engancharBotonesArticulo();
+    }
+
+    function engancharBotonesArticulo() {
+        document.querySelectorAll('.btn-crear-articulo').forEach(btn => {
+            btn.addEventListener('click', async () => {
+            const idx = parseInt(btn.dataset.idx);
+            const linea = lineasExtraidas[idx];
+            btn.disabled = true;
+            btn.textContent = 'Creando...';
+
+            try {
+                const resp = await fetch('/catalogo/articulos/crear-rapido', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        tipoTelaNombre: linea.tipoTela,
+                        tituloValor: linea.titulo,
+                        colorCodigo: linea.colorCodigo
+                    })
+                });
+                const data = await resp.json();
+
+                if (!resp.ok) {
+                    alert('Error: ' + data.error);
+                    btn.disabled = false;
+                    btn.textContent = 'Crear artículo';
+                    return;
+                }
+
+                const nuevoId = data.id;
+                if (!articulos.find(a => a.id === nuevoId)) {
+                    articulos.push({
+                        id: nuevoId,
+                        tipoTela: { nombre: linea.tipoTela },
+                        titulo: { valor: linea.titulo },
+                        color: { nombreOficial: linea.colorNombre }
+                    });
+                }
+
+                const resultado = await fetch('/recepciones/rematch-linea', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        tipoTela: linea.tipoTela,
+                        titulo: linea.titulo,
+                        colorCodigo: linea.colorCodigo,
+                        colorNombre: linea.colorNombre,
+                        programaTenido: linea.programaTenido,
+                        rollos: linea.rollosGuia,
+                        pesoBrutoKg: linea.pesoBrutoKg
+                    })
+                });
+                const nuevaLinea = await resultado.json();
+                lineasExtraidas[idx] = nuevaLinea;
+                renderLineas();
+
+            } catch (e) {
+                alert('Error de conexión: ' + e.message);
+                btn.disabled = false;
+                btn.textContent = 'Crear artículo';
+            }
+        });
+    });
+    }
+
+    document.getElementById('btnGuardarColorRapido').addEventListener('click', async () => {
+        const nombreOficial = document.getElementById('modalColorNombre').value.trim();
+        const codigoFastDye = document.getElementById('modalColorCodigo').value.trim();
+        const familia = document.getElementById('modalColorFamilia').value.trim();
+        const errorDiv = document.getElementById('modalColorError');
+
+        if (!nombreOficial || !codigoFastDye) {
+            errorDiv.textContent = 'Nombre y código son obligatorios.';
+            return;
+        }
+
+        try {
+            const resp = await fetch('/catalogo/colores/crear-rapido', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nombreOficial, codigoFastDye, familia: familia || null })
+            });
+            const data = await resp.json();
+
+            if (!resp.ok) {
+                errorDiv.textContent = data.error || 'Error al crear el color.';
+                return;
+            }
+
+            articulos.push({
+                id: -1,
+                tipoTela: { nombre: '(nuevo color, revisa el articulo)' },
+                titulo: { valor: '' },
+                color: { nombreOficial: data.nombreOficial }
+            });
+
+            const linea = lineasExtraidas[idxColorPendiente];
+            const resultado = await fetch('/recepciones/rematch-linea', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    tipoTela: linea.tipoTela,
+                    titulo: linea.titulo,
+                    colorCodigo: linea.colorCodigo,
+                    colorNombre: linea.colorNombre,
+                    programaTenido: linea.programaTenido,
+                    rollos: linea.rollosGuia,
+                    pesoBrutoKg: linea.pesoBrutoKg
+                })
+            });
+            const nuevaLinea = await resultado.json();
+            lineasExtraidas[idxColorPendiente] = nuevaLinea;
+
+            bootstrap.Modal.getInstance(document.getElementById('modalColorRapido')).hide();
+            renderLineas();
+
+        } catch (e) {
+            errorDiv.textContent = 'Error de conexión: ' + e.message;
+        }
+    });
+
+    document.getElementById('formRecepcion').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const empresaId = document.getElementById('empresaId').value;
+        const numeroGuia = document.getElementById('numeroGuia').value;
+        const fechaGuia = document.getElementById('fechaGuia').value;
+        const observaciones = document.getElementById('observaciones').value;
+
+        if (!empresaId || !numeroGuia || !fechaGuia) {
+            alert('Completa los campos obligatorios.');
+            return;
+        }
+
+        const lineas = [];
+        document.querySelectorAll('.linea-articulo').forEach(sel => {
+            const idx = sel.dataset.idx;
+            const articuloId = sel.value;
+            if (!articuloId) return;
+            const programa = document.querySelector('.linea-programa[data-idx="' + idx + '"]').value;
+            const rollos = document.querySelector('.linea-rollos[data-idx="' + idx + '"]').value;
+            const peso = document.querySelector('.linea-peso[data-idx="' + idx + '"]').value;
+            lineas.push({
+                articuloId: parseInt(articuloId),
+                programaTenido: programa,
+                rollosGuia: parseInt(rollos),
+                pesoBrutoKg: peso ? parseFloat(peso) : null
+            });
+        });
+
+        if (lineasExtraidas.length > 0 && lineas.length > 0) {
+            const resp = await fetch('/recepciones/crear-con-lineas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ empresaId: parseInt(empresaId), numeroGuia, fechaGuia, observaciones, lineas })
+            });
+            const data = await resp.json();
+            if (resp.ok) {
+                window.location.href = data.redirectUrl;
+            } else {
+                alert('Error: ' + data.error);
+            }
+        } else {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = /*[[@{/recepciones/crear}]]*/ '/recepciones/crear';
+            const camposForm = [
+                { nombre: 'empresaId', valor: empresaId },
+                { nombre: 'numeroGuia', valor: numeroGuia },
+                { nombre: 'fechaGuia', valor: fechaGuia },
+                { nombre: 'observaciones', valor: observaciones }
+            ];
+            camposForm.forEach(function(campo) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = campo.nombre;
+                input.value = campo.valor;
+                form.appendChild(input);
+            });
+            const csrfToken = document.querySelector('meta[name="_csrf"]');
+            if (csrfToken) {
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = '_csrf';
+                csrfInput.value = csrfToken.content;
+                form.appendChild(csrfInput);
+            }
+            document.body.appendChild(form);
+            form.submit();
+        }
+    });
+</script>
 </section>
 </body>
 </html>

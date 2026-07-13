@@ -5,4 +5,5 @@ import java.util.List;
 
 public interface TipoTelaRepository extends JpaRepository<TipoTela, Long> {
     List<TipoTela> findByActivoTrue();
+    java.util.Optional<TipoTela> findByNombreIgnoreCase(String nombre);
 }

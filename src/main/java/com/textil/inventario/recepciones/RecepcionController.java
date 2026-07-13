@@ -1,16 +1,20 @@
 package com.textil.inventario.recepciones;
 
 import com.textil.inventario.catalogo.ArticuloRepository;
+import com.textil.inventario.catalogo.Empresa;
 import com.textil.inventario.catalogo.EmpresaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @Controller
 @RequestMapping("/recepciones")
@@ -20,6 +24,8 @@ public class RecepcionController {
     private final RecepcionService recepcionService;
     private final EmpresaRepository empresaRepository;
     private final ArticuloRepository articuloRepository;
+    private final AnthropicOcrService anthropicOcrService;
+    private final ArticuloMatchingService articuloMatchingService;
 
     @GetMapping
     public String listar(Model model) {
@@ -30,6 +36,7 @@ public class RecepcionController {
     @GetMapping("/nueva")
     public String nueva(Model model) {
         model.addAttribute("empresas", empresaRepository.findByActivoTrue());
+        model.addAttribute("articulos", articuloRepository.findByActivoTrue());
         return "recepciones/nueva";
     }
 
@@ -78,5 +85,58 @@ public class RecepcionController {
         recepcionService.confirmarRecepcion(id, detalleIds, rollosRecibidos, observacionesDetalle);
         ra.addFlashAttribute("mensaje", "Recepción confirmada. Stock actualizado.");
         return "redirect:/recepciones";
+    }
+
+    @PostMapping("/extraer-guia")
+    @ResponseBody
+    public ResponseEntity<?> extraerGuia(@RequestParam("file") MultipartFile file) {
+        try {
+            ExtraccionGuiaResponse extraccion = anthropicOcrService.extraerDatosGuia(file);
+            List<Empresa> empresas = empresaRepository.findByActivoTrue();
+
+            Long empresaIdSugerida = articuloMatchingService.matchEmpresa(
+                    extraccion.razonSocialDetectada(), empresas);
+
+            List<LineaSugerida> lineas = extraccion.productos().stream()
+                    .map(articuloMatchingService::matchLinea)
+                    .toList();
+
+            ExtraccionRecepcionResponse response = new ExtraccionRecepcionResponse(
+                    extraccion.numeroGuia(),
+                    extraccion.fechaGuia(),
+                    empresaIdSugerida,
+                    extraccion.razonSocialDetectada(),
+                    lineas,
+                    extraccion.advertencia()
+            );
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/rematch-linea")
+    @ResponseBody
+    public ResponseEntity<?> rematchLinea(@RequestBody ProductoExtraido producto) {
+        try {
+            LineaSugerida resultado = articuloMatchingService.matchLinea(producto);
+            return ResponseEntity.ok(resultado);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/crear-con-lineas")
+    @ResponseBody
+    public ResponseEntity<?> crearConLineas(@RequestBody CrearRecepcionConLineasRequest request) {
+        try {
+            Recepcion r = recepcionService.crearRecepcionConLineas(
+                    request.empresaId(), request.numeroGuia(), request.fechaGuia(),
+                    request.observaciones(), request.lineas());
+            return ResponseEntity.ok(Map.of("id", r.getId(), "redirectUrl", "/recepciones/" + r.getId() + "/detalle"));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+        }
     }
 }

@@ -96,6 +96,8 @@
                             <thead>
                                 <tr>
                                     <th>Artículo</th>
+                                    <th>Color</th>
+                                    <th>Código</th>
                                     <th>Programa</th>
                                     <th>Rollos Guía</th>
                                     <th>Peso Bruto</th>
@@ -103,12 +105,14 @@
                             </thead>
                             <tbody>
                                 <tr th:if="${recepcion.detalles.empty}">
-                                    <td colspan="4" class="text-center text-muted py-4">
+                                    <td colspan="6" class="text-center text-muted py-4">
                                         Sin líneas. Agrega productos desde el formulario.
                                     </td>
                                 </tr>
                                 <tr th:each="d : ${recepcion.detalles}">
-                                    <td th:text="${d.articulo.tipoTela.nombre + ' ' + d.articulo.titulo.valor + ' / ' + d.articulo.color.nombreOficial}"></td>
+                                    <td th:text="${d.articulo.tipoTela.nombre + ' ' + d.articulo.titulo.valor}"></td>
+                                    <td th:text="${d.articulo.color.nombreOficial}"></td>
+                                    <td><span class="badge bg-light text-dark" th:text="${d.articulo.color.codigoFastDye}"></span></td>
                                     <td><code th:text="${d.programaTenido}"></code></td>
                                     <td th:text="${d.rollosGuia}"></td>
                                     <td th:text="${d.pesoBrutoKg} + ' kg'"></td>

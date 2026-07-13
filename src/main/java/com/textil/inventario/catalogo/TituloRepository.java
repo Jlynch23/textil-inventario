@@ -5,4 +5,5 @@ import java.util.List;
 
 public interface TituloRepository extends JpaRepository<Titulo, Long> {
     List<Titulo> findByActivoTrue();
+    java.util.Optional<Titulo> findByValorIgnoreCase(String valor);
 }
