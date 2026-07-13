@@ -38,6 +38,20 @@ public class DocumentoStorageService {
         return rutaCompleta.toString();
     }
 
+    public String guardarFotoRapida(org.springframework.web.multipart.MultipartFile archivo, String subcarpeta) throws IOException {
+        Path carpetaDestino = Paths.get(rutaBase, subcarpeta);
+        Files.createDirectories(carpetaDestino);
+
+        String extension = obtenerExtension(archivo.getOriginalFilename());
+        String timestamp = java.time.LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HHmmss"));
+        String nombreArchivo = timestamp + "_" + UUID.randomUUID().toString().substring(0, 8) + extension;
+
+        Path rutaCompleta = carpetaDestino.resolve(nombreArchivo);
+        Files.copy(archivo.getInputStream(), rutaCompleta, StandardCopyOption.REPLACE_EXISTING);
+
+        return rutaCompleta.toString();
+    }
+
     public Path resolverRuta(String rutaGuardada) {
         return Paths.get(rutaGuardada);
     }

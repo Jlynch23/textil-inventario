@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <title>Registrar Salida</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { background-color: #f0f4f8; padding: 20px; }
+        .btn-camara {
+            border: 3px dashed #ffc107;
+            border-radius: 16px;
+            padding: 40px 20px;
+            text-align: center;
+            background: white;
+            cursor: pointer;
+        }
+        .form-control-lg, .form-select-lg { font-size: 1.3rem; padding: 16px; }
+        #preview { max-width: 100%; border-radius: 12px; margin-top: 12px; display: none; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <a href="/almacen" class="btn btn-light mb-3"><i class="bi bi-arrow-left"></i> Volver</a>
+    <h4 class="fw-bold mb-4 text-warning"><i class="bi bi-box-arrow-up me-2"></i>Registrar Salida</h4>
+
+    <form th:action="@{/almacen/salida}" method="post" enctype="multipart/form-data">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <label class="btn-camara d-block mb-4" for="fotoInput">
+            <i class="bi bi-camera-fill" style="font-size: 3rem; color: #ffc107;"></i>
+            <p class="fw-bold mt-2 mb-0">Tomar Foto de los Rollos</p>
+            <small class="text-muted">Toca para abrir la cámara</small>
+            <img id="preview" alt="preview">
+        </label>
+        <input type="file" id="fotoInput" name="foto" accept="image/*" capture="environment" required style="display:none;">
+
+        <div class="mb-4">
+            <label class="form-label fw-bold fs-5">Cantidad de Rollos</label>
+            <input type="number" name="cantidad" class="form-control form-control-lg" placeholder="Ej: 15" required min="1">
+        </div>
+
+
+
+        <button type="submit" class="btn btn-warning btn-lg w-100 py-3 fw-bold">
+            <i class="bi bi-check-lg me-2"></i>Guardar Salida
+        </button>
+    </form>
+</div>
+
+<script>
+    document.getElementById('fotoInput').addEventListener('change', function() {
+        if (this.files && this.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById('preview');
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(this.files[0]);
+        }
+    });
+</script>
+</body>
+</html>

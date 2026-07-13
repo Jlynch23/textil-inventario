@@ -30,11 +30,12 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.ignoringRequestMatchers("/recepciones/extraer-guia", "/recepciones/crear-con-lineas", "/recepciones/rematch-linea", "/catalogo/colores/crear-rapido", "/catalogo/articulos/crear-rapido", "/recepciones/extraer-factura", "/recepciones/asignar-factura", "/recepciones/*/guardar-documento-guia", "/recepciones/guardar-documento-factura", "/documentos/descargar-zip"))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/login", "/css/**", "/js/**").permitAll()
-                .anyRequest().authenticated()
+                .requestMatchers("/almacen/**").hasAnyRole("ALMACENERO", "SUPERADMIN")
+                .anyRequest().hasRole("SUPERADMIN")
             )
             .formLogin(form -> form
                 .loginPage("/login")
-                .defaultSuccessUrl("/", true)
+                .successHandler(authenticationSuccessHandler())
                 .failureUrl("/login?error=true")
                 .permitAll()
             )
@@ -45,6 +46,22 @@ public class SecurityConfig {
             );
 
         return http.build();
+    }
+
+    @Bean
+    public org.springframework.security.web.authentication.AuthenticationSuccessHandler authenticationSuccessHandler() {
+        return (request, response, authentication) -> {
+            boolean esAlmacenero = authentication.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_ALMACENERO"));
+            boolean esSuperadmin = authentication.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_SUPERADMIN"));
+
+            if (esAlmacenero && !esSuperadmin) {
+                response.sendRedirect("/almacen");
+            } else {
+                response.sendRedirect("/");
+            }
+        };
     }
 
     @Bean
