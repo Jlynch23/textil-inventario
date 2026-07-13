@@ -21,6 +21,10 @@
                     <small class="text-muted">Guía</small>
                     <p class="fw-bold mb-0"><code th:text="${recepcion.numeroGuia}"></code></p>
                 </div>
+                <div class="col-md-3" th:if="${recepcion.numeroFactura}">
+                    <small class="text-muted">Factura</small>
+                    <p class="fw-bold mb-0"><code th:text="${recepcion.numeroFactura}"></code></p>
+                </div>
                 <div class="col-md-3">
                     <small class="text-muted">Fecha Guía</small>
                     <p class="fw-bold mb-0" th:text="${recepcion.fechaGuia}"></p>

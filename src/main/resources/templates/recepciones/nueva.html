@@ -42,6 +42,10 @@
                                    placeholder="Ej: TG01-00022558" required>
                         </div>
                         <div class="mb-3">
+                            <label class="form-label fw-semibold">Número de Factura</label>
+                            <input type="text" class="form-control" id="numeroFactura" name="numeroFactura" placeholder="Ej: F001-38205">
+                        </div>
+                        <div class="mb-3">
                             <label class="form-label fw-semibold">Fecha de la Guía</label>
                             <input type="date" class="form-control" id="fechaGuia" name="fechaGuia" required>
                         </div>
@@ -146,6 +150,7 @@
             const data = await resp.json();
 
             document.getElementById('numeroGuia').value = data.numeroGuia || '';
+            document.getElementById('numeroFactura').value = data.numeroFactura || '';
             document.getElementById('fechaGuia').value = data.fechaGuia || '';
 
             const empresaHint = document.getElementById('empresaHint');
@@ -387,10 +392,11 @@
         });
 
         if (lineasExtraidas.length > 0 && lineas.length > 0) {
+            const numeroFactura = document.getElementById('numeroFactura').value;
             const resp = await fetch('/recepciones/crear-con-lineas', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ empresaId: parseInt(empresaId), numeroGuia, fechaGuia, observaciones, lineas })
+                body: JSON.stringify({ empresaId: parseInt(empresaId), numeroGuia, numeroFactura, fechaGuia, observaciones, lineas })
             });
             const data = await resp.json();
             if (resp.ok) {
@@ -402,9 +408,11 @@
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = /*[[@{/recepciones/crear}]]*/ '/recepciones/crear';
+            const numeroFacturaFallback = document.getElementById('numeroFactura').value;
             const camposForm = [
                 { nombre: 'empresaId', valor: empresaId },
                 { nombre: 'numeroGuia', valor: numeroGuia },
+                { nombre: 'numeroFactura', valor: numeroFacturaFallback },
                 { nombre: 'fechaGuia', valor: fechaGuia },
                 { nombre: 'observaciones', valor: observaciones }
             ];

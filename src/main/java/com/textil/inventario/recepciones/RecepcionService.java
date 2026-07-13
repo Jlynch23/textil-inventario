@@ -21,6 +21,8 @@ public class RecepcionService {
     private final StockActualRepository stockActualRepository;
     private final KardexMovimientoRepository kardexRepository;
     private final UbicacionRepository ubicacionRepository;
+    private final ProgramaRepository programaRepository;
+    private final ProgramaDetalleRepository programaDetalleRepository;
 
     public List<Recepcion> listarRecepciones() {
         return recepcionRepository.findAllByOrderByCreatedAtDesc();
@@ -32,9 +34,15 @@ public class RecepcionService {
 
     @Transactional
     public Recepcion crearRecepcion(Long empresaId, String numeroGuia, LocalDate fechaGuia, String observaciones) {
+        return crearRecepcion(empresaId, numeroGuia, null, fechaGuia, observaciones);
+    }
+
+    @Transactional
+    public Recepcion crearRecepcion(Long empresaId, String numeroGuia, String numeroFactura, LocalDate fechaGuia, String observaciones) {
         Recepcion r = new Recepcion();
         r.setEmpresa(empresaRepository.findById(empresaId).orElseThrow());
         r.setNumeroGuia(numeroGuia);
+        r.setNumeroFactura(numeroFactura);
         r.setFechaGuia(fechaGuia);
         r.setFechaRecepcion(LocalDate.now());
         r.setObservaciones(observaciones);
@@ -50,10 +58,19 @@ public class RecepcionService {
                                            java.math.BigDecimal pesoBruto) {
         RecepcionDetalle d = new RecepcionDetalle();
         d.setRecepcion(recepcionRepository.findById(recepcionId).orElseThrow());
-        d.setArticulo(articuloRepository.findById(articuloId).orElseThrow());
+        Articulo articulo = articuloRepository.findById(articuloId).orElseThrow();
+        d.setArticulo(articulo);
         d.setProgramaTenido(programa);
         d.setRollosGuia(rollosGuia);
         d.setPesoBrutoKg(pesoBruto);
+
+        if (programa != null && !programa.isBlank()) {
+            programaRepository.findByNumero(programa.trim()).ifPresent(prog ->
+                programaDetalleRepository.findByProgramaIdAndColorId(prog.getId(), articulo.getColor().getId())
+                    .ifPresent(d::setProgramaDetalle)
+            );
+        }
+
         return detalleRepository.save(d);
     }
 
@@ -98,6 +115,12 @@ public class RecepcionService {
             stock.setPesoKg(stock.getPesoKg().add(peso));
             stockActualRepository.save(stock);
 
+            if (d.getProgramaDetalle() != null) {
+                ProgramaDetalle pd = d.getProgramaDetalle();
+                pd.setCantidadRecibida(pd.getCantidadRecibida() + rollos);
+                programaDetalleRepository.save(pd);
+            }
+
             // Kardex: la Recepción sí registra la empresa (dato informativo/trazabilidad)
             KardexMovimiento k = new KardexMovimiento();
             k.setArticulo(d.getArticulo());
@@ -118,10 +141,10 @@ public class RecepcionService {
     }
 
     @Transactional
-    public Recepcion crearRecepcionConLineas(Long empresaId, String numeroGuia, LocalDate fechaGuia,
+    public Recepcion crearRecepcionConLineas(Long empresaId, String numeroGuia, String numeroFactura, LocalDate fechaGuia,
                                               String observaciones,
                                               List<CrearRecepcionConLineasRequest.LineaRequest> lineas) {
-        Recepcion r = crearRecepcion(empresaId, numeroGuia, fechaGuia, observaciones);
+        Recepcion r = crearRecepcion(empresaId, numeroGuia, numeroFactura, fechaGuia, observaciones);
         for (CrearRecepcionConLineasRequest.LineaRequest linea : lineas) {
             if (linea.articuloId() == null) continue;
             agregarDetalle(r.getId(), linea.articuloId(), linea.programaTenido(),

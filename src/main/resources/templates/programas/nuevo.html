@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title/text()}, ~{::section})}">
+<head><title>Nuevo Programa</title></head>
+<body>
+<section>
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold mb-4">Nuevo Programa</h6>
+                    <form th:action="@{/programas/crear}" method="post" id="formPrograma">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Número de Programa</label>
+                                <input type="text" class="form-control" name="numero" placeholder="Ej: 659" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Empresa</label>
+                                <select class="form-select" name="empresaId" required>
+                                    <option value="">Seleccionar...</option>
+                                    <option th:each="e : ${empresas}" th:value="${e.id}" th:text="${e.nombre}"></option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Fecha</label>
+                            <input type="date" class="form-control" name="fecha" required>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Observaciones</label>
+                            <textarea class="form-control" name="observaciones" rows="2"></textarea>
+                        </div>
+
+                        <h6 class="fw-bold mb-3">Colores Solicitados</h6>
+                        <div id="lineasContainer">
+                            <div class="row g-2 mb-2 linea-color">
+                                <div class="col-md-7">
+                                    <select class="form-select" name="colorId">
+                                        <option value="">Seleccionar color...</option>
+                                        <option th:each="c : ${colores}" th:value="${c.id}"
+                                                th:text="${c.nombreOficial + ' (' + c.codigoFastDye + ')'}"></option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <input type="number" class="form-control" name="cantidad" placeholder="Cantidad" min="1">
+                                </div>
+                                <div class="col-md-1">
+                                    <button type="button" class="btn btn-outline-danger btn-quitar-linea">✕</button>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-outline-primary btn-sm mb-4" id="btnAgregarLinea">
+                            <i class="bi bi-plus-lg me-1"></i>Agregar otro color
+                        </button>
+
+                        <button type="submit" class="btn btn-primary w-100">Crear Programa</button>
+                        <a th:href="@{/programas}" class="btn btn-light w-100 mt-2">Cancelar</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        const coloresData = /*[[${colores}]]*/ [];
+
+        function buildLineaHtml() {
+            let options = '<option value="">Seleccionar color...</option>';
+            coloresData.forEach(c => {
+                options += '<option value="' + c.id + '">' + c.nombreOficial + ' (' + c.codigoFastDye + ')</option>';
+            });
+            return '<div class="row g-2 mb-2 linea-color">' +
+                   '<div class="col-md-7"><select class="form-select" name="colorId">' + options + '</select></div>' +
+                   '<div class="col-md-4"><input type="number" class="form-control" name="cantidad" placeholder="Cantidad" min="1"></div>' +
+                   '<div class="col-md-1"><button type="button" class="btn btn-outline-danger btn-quitar-linea">✕</button></div>' +
+                   '</div>';
+        }
+
+        document.getElementById('btnAgregarLinea').addEventListener('click', () => {
+            const container = document.getElementById('lineasContainer');
+            const div = document.createElement('div');
+            div.innerHTML = buildLineaHtml();
+            container.appendChild(div.firstChild);
+            engancharQuitar();
+        });
+
+        function engancharQuitar() {
+            document.querySelectorAll('.btn-quitar-linea').forEach(btn => {
+                btn.onclick = () => {
+                    if (document.querySelectorAll('.linea-color').length > 1) {
+                        btn.closest('.linea-color').remove();
+                    }
+                };
+            });
+        }
+        engancharQuitar();
+    </script>
+</section>
+</body>
+</html>

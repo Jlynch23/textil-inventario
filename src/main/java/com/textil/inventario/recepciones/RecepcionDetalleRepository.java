@@ -5,4 +5,5 @@ import java.util.List;
 
 public interface RecepcionDetalleRepository extends JpaRepository<RecepcionDetalle, Long> {
     List<RecepcionDetalle> findByRecepcionId(Long recepcionId);
+    List<RecepcionDetalle> findByProgramaDetalleId(Long programaDetalleId);
 }

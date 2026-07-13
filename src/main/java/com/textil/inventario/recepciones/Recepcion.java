@@ -24,6 +24,9 @@ public class Recepcion extends BaseEntity {
     @Column(name = "numero_guia", nullable = false, length = 50)
     private String numeroGuia;
 
+    @Column(name = "numero_factura", length = 50)
+    private String numeroFactura;
+
     @Column(name = "fecha_guia", nullable = false)
     private LocalDate fechaGuia;
 

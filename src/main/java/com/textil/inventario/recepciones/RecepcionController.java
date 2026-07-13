@@ -43,10 +43,11 @@ public class RecepcionController {
     @PostMapping("/crear")
     public String crear(@RequestParam Long empresaId,
                         @RequestParam String numeroGuia,
+                        @RequestParam(required = false) String numeroFactura,
                         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaGuia,
                         @RequestParam(required = false) String observaciones,
                         RedirectAttributes ra) {
-        Recepcion r = recepcionService.crearRecepcion(empresaId, numeroGuia, fechaGuia, observaciones);
+        Recepcion r = recepcionService.crearRecepcion(empresaId, numeroGuia, numeroFactura, fechaGuia, observaciones);
         ra.addFlashAttribute("mensaje", "Recepción creada. Ahora agrega los detalles.");
         return "redirect:/recepciones/" + r.getId() + "/detalle";
     }
@@ -103,6 +104,7 @@ public class RecepcionController {
 
             ExtraccionRecepcionResponse response = new ExtraccionRecepcionResponse(
                     extraccion.numeroGuia(),
+                    extraccion.numeroFactura(),
                     extraccion.fechaGuia(),
                     empresaIdSugerida,
                     extraccion.razonSocialDetectada(),
@@ -132,7 +134,7 @@ public class RecepcionController {
     public ResponseEntity<?> crearConLineas(@RequestBody CrearRecepcionConLineasRequest request) {
         try {
             Recepcion r = recepcionService.crearRecepcionConLineas(
-                    request.empresaId(), request.numeroGuia(), request.fechaGuia(),
+                    request.empresaId(), request.numeroGuia(), request.numeroFactura(), request.fechaGuia(),
                     request.observaciones(), request.lineas());
             return ResponseEntity.ok(Map.of("id", r.getId(), "redirectUrl", "/recepciones/" + r.getId() + "/detalle"));
         } catch (Exception e) {

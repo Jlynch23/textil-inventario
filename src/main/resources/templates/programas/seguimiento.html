@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title/text()}, ~{::section})}">
+<head><title>Programa</title></head>
+<body>
+<section>
+    <div class="card mb-4">
+        <div class="card-body p-4">
+            <div class="row">
+                <div class="col-md-3">
+                    <small class="text-muted">Programa</small>
+                    <p class="fw-bold mb-0"><code th:text="${programa.numero}"></code></p>
+                </div>
+                <div class="col-md-3">
+                    <small class="text-muted">Empresa</small>
+                    <p class="fw-bold mb-0" th:text="${programa.empresa.nombre}"></p>
+                </div>
+                <div class="col-md-3">
+                    <small class="text-muted">Fecha</small>
+                    <p class="fw-bold mb-0" th:text="${programa.fecha}"></p>
+                </div>
+                <div class="col-md-3">
+                    <small class="text-muted">Observaciones</small>
+                    <p class="fw-bold mb-0" th:text="${programa.observaciones ?: '-'}"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="p-3 border-bottom fw-bold">Seguimiento por Color</div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Color</th>
+                            <th>Código</th>
+                            <th>Solicitado</th>
+                            <th>Recibido</th>
+                            <th>Pendiente</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="d : ${programa.detalles}">
+                            <td th:text="${d.color.nombreOficial}"></td>
+                            <td><span class="badge bg-light text-dark" th:text="${d.color.codigoFastDye}"></span></td>
+                            <td th:text="${d.cantidadSolicitada}"></td>
+                            <td th:text="${d.cantidadRecibida}"></td>
+                            <td th:text="${d.cantidadPendiente}"></td>
+                            <td>
+                                <span th:if="${d.completo}" class="badge bg-success">Completo</span>
+                                <span th:unless="${d.completo}" class="badge bg-warning text-dark">Pendiente</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <a th:href="@{/programas}" class="btn btn-light mt-3">← Volver a Programas</a>
+</section>
+</body>
+</html>

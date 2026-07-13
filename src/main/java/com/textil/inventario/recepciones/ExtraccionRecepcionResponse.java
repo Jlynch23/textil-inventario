@@ -4,6 +4,7 @@ import java.util.List;
 
 public record ExtraccionRecepcionResponse(
         String numeroGuia,
+        String numeroFactura,
         String fechaGuia,
         Long empresaIdSugerida,
         String empresaNombreDetectado,

@@ -40,6 +40,7 @@ public class AnthropicOcrService {
         Formato exacto requerido:
         {
           "numeroGuia": "string, el numero de guia principal del documento (ej: TG01-00022558), NO el numero de programa",
+          "numeroFactura": "string, el numero de factura si aparece en el documento (puede llamarse Factura, Comprobante, o similar), o null si no aparece",
           "fechaGuia": "string en formato YYYY-MM-DD, tomado de Fecha Emision",
           "razonSocialDetectada": "string, el valor de Nombre/Razon Social del documento",
           "productos": [

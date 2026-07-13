@@ -7,6 +7,7 @@ import java.util.List;
 public record CrearRecepcionConLineasRequest(
         Long empresaId,
         String numeroGuia,
+        String numeroFactura,
         LocalDate fechaGuia,
         String observaciones,
         List<LineaRequest> lineas

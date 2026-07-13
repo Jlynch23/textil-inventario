@@ -23,6 +23,10 @@ public class RecepcionDetalle {
     @JoinColumn(name = "articulo_id", nullable = false)
     private Articulo articulo;
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "programa_detalle_id")
+    private ProgramaDetalle programaDetalle;
+
     @Column(name = "programa_tenido", length = 20)
     private String programaTenido;
 
