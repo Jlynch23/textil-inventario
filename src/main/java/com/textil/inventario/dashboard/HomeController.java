@@ -4,6 +4,8 @@ import com.textil.inventario.inventario.StockActual;
 import com.textil.inventario.inventario.StockActualRepository;
 import com.textil.inventario.recepciones.Recepcion;
 import com.textil.inventario.recepciones.RecepcionRepository;
+import com.textil.inventario.recepciones.EntradaRapidaRepository;
+import com.textil.inventario.recepciones.SalidaRapidaRepository;
 import com.textil.inventario.transferencias.Transferencia;
 import com.textil.inventario.transferencias.TransferenciaRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +23,8 @@ public class HomeController {
     private final StockActualRepository stockActualRepository;
     private final TransferenciaRepository transferenciaRepository;
     private final RecepcionRepository recepcionRepository;
+    private final EntradaRapidaRepository entradaRapidaRepository;
+    private final SalidaRapidaRepository salidaRapidaRepository;
 
     private static final int UMBRAL_STOCK_BAJO = 10;
 
@@ -43,6 +47,10 @@ public class HomeController {
                 recepcionRepository.findByEstado(Recepcion.EstadoRecepcion.PENDIENTE);
 
         List<Recepcion> sinFacturar = recepcionRepository.findByNumeroFacturaIsNullOrderByFechaGuiaDesc();
+
+        int entradasSalidasPendientes =
+                entradaRapidaRepository.findByEstadoOrderByCreatedAtDesc("PENDIENTE").size()
+                + salidaRapidaRepository.findByEstadoOrderByCreatedAtDesc("PENDIENTE").size();
 
         Map<String, Integer> stockPorUbicacion = stockDisponible.stream()
                 .collect(Collectors.groupingBy(
@@ -72,6 +80,7 @@ public class HomeController {
         model.addAttribute("transferenciasEnTransito", transferenciasEnTransito);
         model.addAttribute("recepcionesPendientes", recepcionesPendientes);
         model.addAttribute("sinFacturar", sinFacturar);
+        model.addAttribute("entradasSalidasPendientes", entradasSalidasPendientes);
         model.addAttribute("stockPorUbicacion", stockPorUbicacion);
         model.addAttribute("articulosStockBajo", articulosStockBajo);
         model.addAttribute("totalPorArticulo", totalPorArticulo);

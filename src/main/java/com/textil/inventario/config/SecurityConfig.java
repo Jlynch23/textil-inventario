@@ -11,6 +11,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Configuration
 @EnableWebSecurity
@@ -29,7 +30,8 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.ignoringRequestMatchers("/recepciones/extraer-guia", "/recepciones/crear-con-lineas", "/recepciones/rematch-linea", "/catalogo/colores/crear-rapido", "/catalogo/articulos/crear-rapido", "/recepciones/extraer-factura", "/recepciones/asignar-factura", "/recepciones/*/guardar-documento-guia", "/recepciones/guardar-documento-factura", "/documentos/descargar-zip"))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/login", "/css/**", "/js/**").permitAll()
+                .requestMatchers("/login", "/logout", "/css/**", "/js/**").permitAll()
+                .requestMatchers("/almacen/revision/**").hasRole("SUPERADMIN")
                 .requestMatchers("/almacen/**").hasAnyRole("ALMACENERO", "SUPERADMIN")
                 .anyRequest().hasRole("SUPERADMIN")
             )
@@ -40,7 +42,7 @@ public class SecurityConfig {
                 .permitAll()
             )
             .logout(logout -> logout
-                .logoutUrl("/logout")
+                .logoutRequestMatcher(new AntPathRequestMatcher("/logout", "GET"))
                 .logoutSuccessUrl("/login?logout=true")
                 .permitAll()
             );

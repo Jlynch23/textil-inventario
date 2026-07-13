@@ -56,6 +56,17 @@
                 </div>
             </a>
         </div>
+        <div class="col-md-3">
+            <a th:href="@{/almacen/revision}" class="text-decoration-none">
+                <div class="card text-white bg-dark">
+                    <div class="card-body">
+                        <h6 class="card-title">Almacén Sin Revisar</h6>
+                        <p class="display-6 mb-0" th:text="${entradasSalidasPendientes}">0</p>
+                        <small>entradas/salidas del celular</small>
+                    </div>
+                </div>
+            </a>
+        </div>
     </div>
 
     <h5 class="mb-3">Stock por Ubicación</h5>

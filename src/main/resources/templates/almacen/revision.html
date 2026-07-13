@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title/text()}, ~{::section})}">
+<head><title>Revision de Almacen</title></head>
+<body>
+<section>
+    <h5 class="fw-bold mb-4">Revision de Entradas / Salidas del Almacenero</h5>
+
+    <h6 class="fw-bold text-success mb-3"><i class="bi bi-box-arrow-in-down me-2"></i>Entradas Pendientes</h6>
+    <div class="row g-3 mb-5">
+        <div class="col-12" th:if="${entradas.empty}">
+            <p class="text-muted">No hay entradas pendientes de revision.</p>
+        </div>
+        <div class="col-md-4" th:each="e : ${entradas}">
+            <div class="card h-100">
+                <a th:href="@{/almacen/revision/entrada/{id}/foto(id=${e.id})}" target="_blank">
+                    <img th:src="@{/almacen/revision/entrada/{id}/foto(id=${e.id})}" class="card-img-top" style="height:220px; object-fit:cover;">
+                </a>
+                <div class="card-body">
+                    <p class="mb-1"><strong>Rollos:</strong> <span th:text="${e.totalRollos}"></span></p>
+                    <p class="mb-1 text-muted small">
+                        Por: <span th:text="${e.usuario.nombre}"></span>
+                        - <span th:text="${#temporals.format(e.createdAt, 'dd/MM HH:mm')}"></span>
+                    </p>
+
+                    <form th:action="@{/almacen/revision/entrada/{id}/marcar(id=${e.id})}" method="post">
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold">Vincular a Recepcion (opcional)</label>
+                            <select class="form-select form-select-sm" name="recepcionId">
+                                <option value="">Sin vincular</option>
+                                <option th:each="r : ${recepciones}" th:value="${r.id}"
+                                        th:text="${r.numeroGuia + ' - ' + r.empresa.nombre}"></option>
+                            </select>
+                        </div>
+                        <div class="mb-2">
+                            <input type="text" class="form-control form-control-sm" name="observaciones" placeholder="Observacion (opcional)">
+                        </div>
+                        <button type="submit" class="btn btn-success btn-sm w-100">
+                            <i class="bi bi-check-lg me-1"></i>Marcar Revisado
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h6 class="fw-bold text-warning mb-3"><i class="bi bi-box-arrow-up me-2"></i>Salidas Pendientes</h6>
+    <div class="row g-3">
+        <div class="col-12" th:if="${salidas.empty}">
+            <p class="text-muted">No hay salidas pendientes de revision.</p>
+        </div>
+        <div class="col-md-4" th:each="s : ${salidas}">
+            <div class="card h-100">
+                <a th:href="@{/almacen/revision/salida/{id}/foto(id=${s.id})}" target="_blank">
+                    <img th:src="@{/almacen/revision/salida/{id}/foto(id=${s.id})}" class="card-img-top" style="height:220px; object-fit:cover;">
+                </a>
+                <div class="card-body">
+                    <p class="mb-1"><strong>Cantidad:</strong> <span th:text="${s.cantidad}"></span></p>
+                    <p class="mb-1 text-muted small">
+                        Por: <span th:text="${s.usuario.nombre}"></span>
+                        - <span th:text="${#temporals.format(s.createdAt, 'dd/MM HH:mm')}"></span>
+                    </p>
+
+                    <form th:action="@{/almacen/revision/salida/{id}/marcar(id=${s.id})}" method="post">
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold">Vincular a Transferencia (opcional)</label>
+                            <select class="form-select form-select-sm" name="transferenciaId">
+                                <option value="">Sin vincular</option>
+                                <option th:each="t : ${transferencias}" th:value="${t.id}"
+                                        th:text="${t.numero + ' - ' + t.ubicacionOrigen.nombre}"></option>
+                            </select>
+                        </div>
+                        <div class="mb-2">
+                            <input type="text" class="form-control form-control-sm" name="observaciones" placeholder="Observacion (opcional)">
+                        </div>
+                        <button type="submit" class="btn btn-warning btn-sm w-100">
+                            <i class="bi bi-check-lg me-1"></i>Marcar Revisado
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+</body>
+</html>
