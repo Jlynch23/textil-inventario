@@ -25,6 +25,7 @@ public class TransferenciaService {
     private final StockActualRepository stockActualRepository;
     private final KardexMovimientoRepository kardexRepository;
     private final UbicacionRepository ubicacionRepository;
+    private final com.textil.inventario.auditoria.AuditLogService auditLogService;
 
     public List<Transferencia> listarTransferencias() {
         return transferenciaRepository.findAllByOrderByFechaSolicitudDesc();
@@ -45,7 +46,10 @@ public class TransferenciaService {
         t.setFechaSolicitud(LocalDateTime.now());
         t.setObservaciones(observaciones);
         t.setEstado(Transferencia.EstadoTransferencia.BORRADOR);
-        return transferenciaRepository.save(t);
+        Transferencia guardada = transferenciaRepository.save(t);
+        auditLogService.registrar("CREAR", "Transferencia", guardada.getId(),
+                "Creo transferencia " + guardada.getNumero());
+        return guardada;
     }
 
     private String generarNumero() {
@@ -108,6 +112,8 @@ public class TransferenciaService {
         t.setFechaConfirmacionSalida(LocalDateTime.now());
         t.setEstado(Transferencia.EstadoTransferencia.CONFIRMADA_SALIDA);
         transferenciaRepository.save(t);
+        auditLogService.registrar("CONFIRMAR", "Transferencia", t.getId(),
+                "Confirmo salida de transferencia " + t.getNumero());
     }
 
     /**
@@ -190,5 +196,7 @@ public class TransferenciaService {
             ? Transferencia.EstadoTransferencia.CON_DIFERENCIA
             : Transferencia.EstadoTransferencia.CONFIRMADA_LLEGADA);
         transferenciaRepository.save(t);
+        auditLogService.registrar("CONFIRMAR", "Transferencia", t.getId(),
+                "Confirmo llegada de transferencia " + t.getNumero() + (tieneDiferencias ? " (con diferencias)" : ""));
     }
 }

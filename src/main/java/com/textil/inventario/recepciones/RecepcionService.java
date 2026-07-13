@@ -25,6 +25,7 @@ public class RecepcionService {
     private final ProgramaDetalleRepository programaDetalleRepository;
     private final RecepcionDocumentoRepository recepcionDocumentoRepository;
     private final DocumentoStorageService documentoStorageService;
+    private final com.textil.inventario.auditoria.AuditLogService auditLogService;
 
     public List<Recepcion> listarRecepcionesSinFactura() {
         return recepcionRepository.findByNumeroFacturaIsNullOrderByFechaGuiaDesc();
@@ -106,7 +107,10 @@ public class RecepcionService {
         r.setEstado(Recepcion.EstadoRecepcion.PENDIENTE);
         r.setUsuario(usuarioRepository.findById(1L).orElseThrow());
         r.setUpdatedAt(java.time.LocalDateTime.now());
-        return recepcionRepository.save(r);
+        Recepcion guardada = recepcionRepository.save(r);
+        auditLogService.registrar("CREAR", "Recepcion", guardada.getId(),
+                "Creo recepcion con guia " + numeroGuia);
+        return guardada;
     }
 
     @Transactional
@@ -195,6 +199,8 @@ public class RecepcionService {
             ? Recepcion.EstadoRecepcion.CON_DIFERENCIAS
             : Recepcion.EstadoRecepcion.CONFIRMADA);
         recepcionRepository.save(r);
+        auditLogService.registrar("CONFIRMAR", "Recepcion", r.getId(),
+                "Confirmo recepcion " + r.getNumeroGuia() + (tieneDiferencias ? " (con diferencias)" : ""));
     }
 
     @Transactional

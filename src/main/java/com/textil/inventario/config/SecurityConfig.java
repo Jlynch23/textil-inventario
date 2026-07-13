@@ -1,6 +1,7 @@
 package com.textil.inventario.config;
 
 import com.textil.inventario.seguridad.UsuarioDetailsService;
+import com.textil.inventario.auditoria.AuditLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,6 +20,7 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 public class SecurityConfig {
 
     private final UsuarioDetailsService usuarioDetailsService;
+    private final AuditLogService auditLogService;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -57,6 +59,8 @@ public class SecurityConfig {
                     .anyMatch(a -> a.getAuthority().equals("ROLE_ALMACENERO"));
             boolean esSuperadmin = authentication.getAuthorities().stream()
                     .anyMatch(a -> a.getAuthority().equals("ROLE_SUPERADMIN"));
+
+            auditLogService.registrarLogin(authentication.getName());
 
             if (esAlmacenero && !esSuperadmin) {
                 response.sendRedirect("/almacen");

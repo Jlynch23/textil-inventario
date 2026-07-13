@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title/text()}, ~{::section})}">
+<head><title>Log de Eventos</title></head>
+<body>
+<section>
+    <h5 class="fw-bold mb-4"><i class="bi bi-clock-history me-2"></i>Log de Eventos del Sistema</h5>
+
+    <div class="card mb-4">
+        <div class="card-body p-3">
+            <form method="get" th:action="@{/log}" class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label small fw-semibold">Usuario</label>
+                    <select class="form-select form-select-sm" name="usuarioId">
+                        <option value="">Todos</option>
+                        <option th:each="u : ${usuarios}" th:value="${u.id}" th:text="${u.nombre}"
+                                th:selected="${u.id == filtroUsuarioId}"></option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-semibold">Accion</label>
+                    <select class="form-select form-select-sm" name="accion">
+                        <option value="">Todas</option>
+                        <option value="LOGIN" th:selected="${filtroAccion == 'LOGIN'}">Login</option>
+                        <option value="CREAR" th:selected="${filtroAccion == 'CREAR'}">Crear</option>
+                        <option value="CONFIRMAR" th:selected="${filtroAccion == 'CONFIRMAR'}">Confirmar</option>
+                        <option value="EDITAR" th:selected="${filtroAccion == 'EDITAR'}">Editar</option>
+                        <option value="ELIMINAR" th:selected="${filtroAccion == 'ELIMINAR'}">Eliminar</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold">Desde</label>
+                    <input type="date" class="form-control form-control-sm" name="desde" th:value="${filtroDesde}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold">Hasta</label>
+                    <input type="date" class="form-control form-control-sm" name="hasta" th:value="${filtroHasta}">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary btn-sm w-100">Filtrar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="p-3 border-bottom fw-bold" th:text="${eventos.size()} + ' evento(s)'"></div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Fecha/Hora</th>
+                            <th>Usuario</th>
+                            <th>Accion</th>
+                            <th>Entidad</th>
+                            <th>Descripcion</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:if="${eventos.empty}">
+                            <td colspan="5" class="text-center text-muted py-4">Sin eventos para estos filtros.</td>
+                        </tr>
+                        <tr th:each="ev : ${eventos}">
+                            <td th:text="${#temporals.format(ev.createdAt, 'dd/MM/yyyy HH:mm:ss')}"></td>
+                            <td th:text="${ev.usuario != null ? ev.usuario.nombre : 'Sistema'}"></td>
+                            <td>
+                                <span class="badge bg-secondary" th:text="${ev.accion}"></span>
+                            </td>
+                            <td th:text="${ev.entidad != null ? (ev.entidad + (ev.entidadId != null ? ' #' + ev.entidadId : '')) : '-'}"></td>
+                            <td th:text="${ev.descripcion}"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+</body>
+</html>

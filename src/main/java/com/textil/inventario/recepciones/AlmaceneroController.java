@@ -28,6 +28,7 @@ public class AlmaceneroController {
     private final DocumentoStorageService documentoStorageService;
     private final RecepcionRepository recepcionRepository;
     private final TransferenciaRepository transferenciaRepository;
+    private final com.textil.inventario.auditoria.AuditLogService auditLogService;
 
     @GetMapping
     public String home() {
@@ -53,6 +54,8 @@ public class AlmaceneroController {
         er.setTotalRollos(totalRollos);
         er.setFotoRuta(ruta);
         entradaRapidaRepository.save(er);
+        auditLogService.registrar("CREAR", "EntradaRapida", er.getId(),
+                usuario.getNombre() + " registro entrada rapida de " + totalRollos + " rollos");
 
         ra.addFlashAttribute("mensaje", "Entrada registrada correctamente.");
         return "redirect:/almacen";
@@ -77,6 +80,8 @@ public class AlmaceneroController {
         sr.setCantidad(cantidad);
         sr.setFotoRuta(ruta);
         salidaRapidaRepository.save(sr);
+        auditLogService.registrar("CREAR", "SalidaRapida", sr.getId(),
+                usuario.getNombre() + " registro salida rapida de " + cantidad + " rollos");
 
         ra.addFlashAttribute("mensaje", "Salida registrada correctamente.");
         return "redirect:/almacen";
@@ -126,6 +131,7 @@ public class AlmaceneroController {
             er.setRecepcion(recepcionRepository.findById(recepcionId).orElseThrow());
         }
         entradaRapidaRepository.save(er);
+        auditLogService.registrar("EDITAR", "EntradaRapida", er.getId(), "Marco entrada rapida como revisada");
         ra.addFlashAttribute("mensaje", "Entrada marcada como revisada.");
         return "redirect:/almacen/revision";
     }
@@ -142,6 +148,7 @@ public class AlmaceneroController {
             sr.setTransferencia(transferenciaRepository.findById(transferenciaId).orElseThrow());
         }
         salidaRapidaRepository.save(sr);
+        auditLogService.registrar("EDITAR", "SalidaRapida", sr.getId(), "Marco salida rapida como revisada");
         ra.addFlashAttribute("mensaje", "Salida marcada como revisada.");
         return "redirect:/almacen/revision";
     }
