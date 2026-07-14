@@ -75,9 +75,14 @@
             <a th:href="@{/recepciones/facturar}" class="nav-link"><i class="bi bi-receipt me-2"></i>Facturar Guías</a>
             <a th:href="@{/almacen/revision}" class="nav-link"><i class="bi bi-camera me-2"></i>Revisión Almacén</a>
             <a th:href="@{/log}" sec:authorize="hasRole('SUPERADMIN')" class="nav-link"><i class="bi bi-clock-history me-2"></i>Log de Eventos</a>
+            <a th:href="@{/usuarios}" sec:authorize="hasRole('SUPERADMIN')" class="nav-link"><i class="bi bi-people me-2"></i>Usuarios</a>
             <a th:href="@{/programas}" class="nav-link"><i class="bi bi-list-check me-2"></i>Programas</a>
             <a th:href="@{/transferencias}" class="nav-link"><i class="bi bi-arrow-left-right me-2"></i>Transferencias</a>
             <a th:href="@{/documentos}" class="nav-link"><i class="bi bi-file-earmark-pdf me-2"></i>Documentos</a>
+
+            <div class="nav-section">Análisis</div>
+            <a th:href="@{/reportes}" sec:authorize="hasRole('SUPERADMIN')" class="nav-link"><i class="bi bi-bar-chart-line me-2"></i>Reportes</a>
+            <a th:href="@{/archivo-historico}" sec:authorize="hasRole('SUPERADMIN')" class="nav-link"><i class="bi bi-archive me-2"></i>Archivo Histórico</a>
 
             <div class="nav-section">Catálogo</div>
             <a th:href="@{/catalogo/colores}" class="nav-link"><i class="bi bi-palette me-2"></i>Colores</a>
