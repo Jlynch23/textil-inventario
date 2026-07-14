@@ -77,60 +77,32 @@ public class AnthropicOcrService {
         """;
 
     public ExtraccionFacturaResponse extraerDatosFactura(MultipartFile pdf) throws IOException {
-        String base64Pdf = Base64.getEncoder().encodeToString(pdf.getBytes());
+        return extraerDatosFactura(pdf.getBytes());
+    }
 
-        Map<String, Object> requestBody = Map.of(
-                "model", "claude-haiku-4-5-20251001",
-                "max_tokens", 1000,
-                "system", SYSTEM_PROMPT_FACTURA,
-                "messages", List.of(
-                        Map.of(
-                                "role", "user",
-                                "content", List.of(
-                                        Map.of(
-                                                "type", "document",
-                                                "source", Map.of(
-                                                        "type", "base64",
-                                                        "media_type", "application/pdf",
-                                                        "data", base64Pdf
-                                                )
-                                        ),
-                                        Map.of(
-                                                "type", "text",
-                                                "text", "Extrae los datos de esta factura segun el formato indicado."
-                                        )
-                                )
-                        )
-                )
-        );
-
-        String rawResponse = restClient.post()
-                .uri("https://api.anthropic.com/v1/messages")
-                .header("x-api-key", apiKey)
-                .header("anthropic-version", "2023-06-01")
-                .header("content-type", "application/json")
-                .body(requestBody)
-                .retrieve()
-                .body(String.class);
-
-        JsonNode root = mapper.readTree(rawResponse);
-        String textoExtraido = root.path("content").get(0).path("text").asText();
-
-        String jsonLimpio = textoExtraido.trim();
-        if (jsonLimpio.startsWith("```")) {
-            jsonLimpio = jsonLimpio.replaceAll("^```(json)?", "").replaceAll("```$", "").trim();
-        }
-
+    public ExtraccionFacturaResponse extraerDatosFactura(byte[] pdfBytes) throws IOException {
+        String jsonLimpio = llamarClaude(pdfBytes, SYSTEM_PROMPT_FACTURA,
+                "Extrae los datos de esta factura segun el formato indicado.", 1000);
         return mapper.readValue(jsonLimpio, ExtraccionFacturaResponse.class);
     }
 
     public ExtraccionGuiaResponse extraerDatosGuia(MultipartFile pdf) throws IOException {
-        String base64Pdf = Base64.getEncoder().encodeToString(pdf.getBytes());
+        return extraerDatosGuia(pdf.getBytes());
+    }
+
+    public ExtraccionGuiaResponse extraerDatosGuia(byte[] pdfBytes) throws IOException {
+        String jsonLimpio = llamarClaude(pdfBytes, SYSTEM_PROMPT,
+                "Extrae los datos de esta guia segun el formato indicado.", 2000);
+        return mapper.readValue(jsonLimpio, ExtraccionGuiaResponse.class);
+    }
+
+    private String llamarClaude(byte[] pdfBytes, String systemPrompt, String textoUsuario, int maxTokens) throws IOException {
+        String base64Pdf = Base64.getEncoder().encodeToString(pdfBytes);
 
         Map<String, Object> requestBody = Map.of(
                 "model", "claude-haiku-4-5-20251001",
-                "max_tokens", 2000,
-                "system", SYSTEM_PROMPT,
+                "max_tokens", maxTokens,
+                "system", systemPrompt,
                 "messages", List.of(
                         Map.of(
                                 "role", "user",
@@ -145,7 +117,7 @@ public class AnthropicOcrService {
                                         ),
                                         Map.of(
                                                 "type", "text",
-                                                "text", "Extrae los datos de esta guia segun el formato indicado."
+                                                "text", textoUsuario
                                         )
                                 )
                         )
@@ -168,7 +140,6 @@ public class AnthropicOcrService {
         if (jsonLimpio.startsWith("```")) {
             jsonLimpio = jsonLimpio.replaceAll("^```(json)?", "").replaceAll("```$", "").trim();
         }
-
-        return mapper.readValue(jsonLimpio, ExtraccionGuiaResponse.class);
+        return jsonLimpio;
     }
 }
