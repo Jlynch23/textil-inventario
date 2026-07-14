@@ -4,7 +4,7 @@
 -- por el nuevo diseño con doble confirmación (salida / llegada) y empresa asociada
 -- =========================================
 
-DROP TABLE IF EXISTS transferencia_detalle;
+DROP TABLE IF EXISTS transferencia_detalles;
 DROP TABLE IF EXISTS transferencias;
 
 CREATE TABLE transferencias (
