@@ -26,6 +26,17 @@ public class TransferenciaController {
         return "transferencias/lista";
     }
 
+    @GetMapping("/{id}/eliminar")
+    public String eliminar(@PathVariable Long id, RedirectAttributes ra) {
+        try {
+            transferenciaService.eliminarTransferencia(id);
+            ra.addFlashAttribute("mensaje", "Transferencia eliminada correctamente.");
+        } catch (IllegalStateException e) {
+            ra.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/transferencias";
+    }
+
     @GetMapping("/nueva")
     public String nueva(Model model) {
         return "transferencias/nueva";

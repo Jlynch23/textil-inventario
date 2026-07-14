@@ -33,6 +33,17 @@ public class RecepcionController {
         return "recepciones/lista";
     }
 
+    @GetMapping("/{id}/eliminar")
+    public String eliminar(@PathVariable Long id, RedirectAttributes ra) {
+        try {
+            recepcionService.eliminarRecepcion(id);
+            ra.addFlashAttribute("mensaje", "Recepción eliminada correctamente.");
+        } catch (IllegalStateException e) {
+            ra.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/recepciones";
+    }
+
     @GetMapping("/verificar-guia")
     @ResponseBody
     public ResponseEntity<?> verificarGuia(@RequestParam String numero) {

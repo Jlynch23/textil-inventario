@@ -8,6 +8,10 @@
         <span th:text="${mensaje}"></span>
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show">
+        <span th:text="${error}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
 
     <div class="row g-4">
         <!-- FORMULARIO -->
@@ -67,6 +71,7 @@
                                     <th>Tipo de Tela</th>
                                     <th>Título</th>
                                     <th>Color</th>
+                                    <th>Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -75,6 +80,14 @@
                                     <td th:text="${a.tipoTela.nombre}"></td>
                                     <td th:text="${a.titulo.valor}"></td>
                                     <td th:text="${a.color.nombreOficial}"></td>
+                                    <td>
+                                        <a th:href="@{/catalogo/articulos/eliminar/{id}(id=${a.id})}"
+                                           class="btn btn-sm btn-outline-danger"
+                                           title="Eliminar definitivamente"
+                                           onclick="return confirm('¿ELIMINAR este artículo de forma permanente? Esta acción no se puede deshacer. Si tiene stock o movimientos, el sistema lo bloqueará.')">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>

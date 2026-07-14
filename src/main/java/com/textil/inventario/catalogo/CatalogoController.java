@@ -6,6 +6,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.http.ResponseEntity;
+import org.springframework.dao.DataIntegrityViolationException;
 import java.util.Map;
 import java.util.Optional;
 
@@ -44,6 +45,17 @@ public class CatalogoController {
         c.setActivo(false);
         catalogoService.guardarColor(c);
         ra.addFlashAttribute("mensaje", "Color inactivado.");
+        return "redirect:/catalogo/colores";
+    }
+
+    @GetMapping("/colores/eliminar/{id}")
+    public String eliminarColor(@PathVariable Long id, RedirectAttributes ra) {
+        try {
+            catalogoService.eliminarColor(id);
+            ra.addFlashAttribute("mensaje", "Color eliminado correctamente.");
+        } catch (DataIntegrityViolationException e) {
+            ra.addFlashAttribute("error", "No se puede eliminar: este color está en uso por uno o más artículos. Usa \"Inactivar\" en su lugar.");
+        }
         return "redirect:/catalogo/colores";
     }
 
@@ -146,6 +158,17 @@ public class CatalogoController {
         return "redirect:/catalogo/articulos";
     }
 
+    @GetMapping("/articulos/eliminar/{id}")
+    public String eliminarArticulo(@PathVariable Long id, RedirectAttributes ra) {
+        try {
+            catalogoService.eliminarArticulo(id);
+            ra.addFlashAttribute("mensaje", "Artículo eliminado correctamente.");
+        } catch (DataIntegrityViolationException e) {
+            ra.addFlashAttribute("error", "No se puede eliminar: este artículo tiene stock, movimientos de kardex u otros registros asociados.");
+        }
+        return "redirect:/catalogo/articulos";
+    }
+
     // ─── UBICACIONES ───────────────────────────────────────
     @GetMapping("/ubicaciones")
     public String listarUbicaciones(Model model) {
@@ -158,6 +181,17 @@ public class CatalogoController {
     public String guardarUbicacion(@ModelAttribute Ubicacion ubicacion, RedirectAttributes ra) {
         catalogoService.guardarUbicacion(ubicacion);
         ra.addFlashAttribute("mensaje", "Ubicación guardada correctamente.");
+        return "redirect:/catalogo/ubicaciones";
+    }
+
+    @GetMapping("/ubicaciones/eliminar/{id}")
+    public String eliminarUbicacion(@PathVariable Long id, RedirectAttributes ra) {
+        try {
+            catalogoService.eliminarUbicacion(id);
+            ra.addFlashAttribute("mensaje", "Ubicación eliminada correctamente.");
+        } catch (DataIntegrityViolationException e) {
+            ra.addFlashAttribute("error", "No se puede eliminar: esta ubicación tiene stock o transferencias asociadas.");
+        }
         return "redirect:/catalogo/ubicaciones";
     }
 }

@@ -51,4 +51,10 @@ public class CatalogoService {
     public Optional<Articulo> buscarArticuloPorCombinacion(Long tipoTelaId, Long tituloId, Long colorId) {
         return articuloRepository.findByTipoTelaIdAndTituloIdAndColorId(tipoTelaId, tituloId, colorId);
     }
+
+    // ELIMINAR (borrado real). Si el registro esta en uso por otras tablas (FK),
+    // la base de datos rechaza el borrado y el controlador debe capturar la excepcion.
+    public void eliminarColor(Long id) { colorRepository.deleteById(id); }
+    public void eliminarArticulo(Long id) { articuloRepository.deleteById(id); }
+    public void eliminarUbicacion(Long id) { ubicacionRepository.deleteById(id); }
 }

@@ -199,4 +199,17 @@ public class TransferenciaService {
         auditLogService.registrar("CONFIRMAR", "Transferencia", t.getId(),
                 "Confirmo llegada de transferencia " + t.getNumero() + (tieneDiferencias ? " (con diferencias)" : ""));
     }
+
+    @Transactional
+    public void eliminarTransferencia(Long id) {
+        Transferencia t = transferenciaRepository.findById(id).orElseThrow();
+        if (t.getEstado() != Transferencia.EstadoTransferencia.BORRADOR) {
+            throw new IllegalStateException(
+                "Solo se pueden eliminar transferencias en estado BORRADOR. " +
+                "Esta transferencia ya tiene salida y/o llegada confirmada (estado " + t.getEstado() + ") " +
+                "y borrarla dejaría el stock inconsistente.");
+        }
+        transferenciaRepository.delete(t);
+        auditLogService.registrar("ELIMINAR", "Transferencia", id, "Elimino transferencia " + t.getNumero() + " (estaba BORRADOR)");
+    }
 }

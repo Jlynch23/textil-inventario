@@ -8,6 +8,10 @@
         <span th:text="${mensaje}"></span>
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show">
+        <span th:text="${error}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
 
     <div class="d-flex justify-content-end mb-3">
         <a th:href="@{/recepciones/nueva}" class="btn btn-primary">
@@ -56,6 +60,13 @@
                                    th:href="@{/recepciones/{id}/confirmar(id=${r.id})}"
                                    class="btn btn-sm btn-outline-success">
                                     <i class="bi bi-check-lg"></i>
+                                </a>
+                                <a th:if="${r.estado.name() == 'PENDIENTE'}"
+                                   th:href="@{/recepciones/{id}/eliminar(id=${r.id})}"
+                                   class="btn btn-sm btn-outline-danger"
+                                   title="Eliminar (solo posible en PENDIENTE)"
+                                   onclick="return confirm('¿ELIMINAR esta recepción de forma permanente? Solo es posible porque aún no confirmada.')">
+                                    <i class="bi bi-trash"></i>
                                 </a>
                             </td>
                         </tr>

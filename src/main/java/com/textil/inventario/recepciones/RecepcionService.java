@@ -215,4 +215,27 @@ public class RecepcionService {
         }
         return r;
     }
+
+    @Transactional
+    public void eliminarRecepcion(Long id) {
+        Recepcion r = recepcionRepository.findById(id).orElseThrow();
+        if (r.getEstado() != Recepcion.EstadoRecepcion.PENDIENTE) {
+            throw new IllegalStateException(
+                "Solo se pueden eliminar recepciones en estado PENDIENTE. " +
+                "Esta recepción ya afectó el stock (estado " + r.getEstado() + ") y borrarla dejaría el inventario inconsistente.");
+        }
+
+        List<RecepcionDocumento> documentos = recepcionDocumentoRepository.findByRecepcionId(id);
+        for (RecepcionDocumento doc : documentos) {
+            try {
+                java.nio.file.Files.deleteIfExists(java.nio.file.Paths.get(doc.getRutaArchivo()));
+            } catch (java.io.IOException ignored) {
+                // si el archivo fisico ya no existe, seguimos igual
+            }
+        }
+        recepcionDocumentoRepository.deleteAll(documentos);
+
+        recepcionRepository.delete(r);
+        auditLogService.registrar("ELIMINAR", "Recepcion", id, "Elimino recepcion " + r.getNumeroGuia() + " (estaba PENDIENTE)");
+    }
 }

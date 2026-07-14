@@ -8,6 +8,10 @@
         <span th:text="${mensaje}"></span>
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show">
+        <span th:text="${error}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
 
     <div class="row g-4">
         <!-- FORMULARIO -->
@@ -63,6 +67,7 @@
                                     <th>Nombre</th>
                                     <th>Tipo</th>
                                     <th>Principal</th>
+                                    <th>Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -76,6 +81,14 @@
                                     </td>
                                     <td>
                                         <i th:if="${u.esPrincipal}" class="bi bi-star-fill text-warning"></i>
+                                    </td>
+                                    <td>
+                                        <a th:href="@{/catalogo/ubicaciones/eliminar/{id}(id=${u.id})}"
+                                           class="btn btn-sm btn-outline-danger"
+                                           title="Eliminar definitivamente"
+                                           onclick="return confirm('¿ELIMINAR esta ubicación de forma permanente? Esta acción no se puede deshacer. Si tiene stock o transferencias, el sistema lo bloqueará.')">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
                                     </td>
                                 </tr>
                             </tbody>
