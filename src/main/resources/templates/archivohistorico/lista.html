@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title/text()}, ~{::section})}">
+<head><title>Archivo Histórico</title></head>
+<body>
+<section>
+    <h2 class="mb-4"><i class="bi bi-archive"></i> Archivo Histórico</h2>
+
+    <div th:if="${mensaje}" class="alert alert-success" th:text="${mensaje}"></div>
+    <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card text-white bg-secondary">
+                <div class="card-body">
+                    <h6 class="card-title">Pendientes de leer</h6>
+                    <p class="display-6 mb-0" th:text="${totalPendientes}">0</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h6 class="card-title">Procesados</h6>
+                    <p class="display-6 mb-0" th:text="${totalProcesados}">0</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-danger">
+                <div class="card-body">
+                    <h6 class="card-title">Con error</h6>
+                    <p class="display-6 mb-0" th:text="${totalErrores}">0</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title"><i class="bi bi-file-earmark-zip"></i> Subir ZIP con guías/facturas históricas</h5>
+            <p class="text-muted small">Puede contener subcarpetas (ej. FACTURAS/T. CLEMENTE/2024/...). El tipo de documento y la empresa se detectan automáticamente por el nombre de las carpetas dentro del ZIP. Esto NO afecta el stock actual.</p>
+            <form method="post" th:action="@{/archivo-historico/subir-zip}" enctype="multipart/form-data" class="row g-2">
+                <div class="col-md-8">
+                    <input type="file" name="zip" accept=".zip" class="form-control" required>
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-primary w-100"><i class="bi bi-upload"></i> Subir e Importar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <form method="get" th:action="@{/archivo-historico}" class="row g-2 mb-3">
+        <div class="col-md-2">
+            <select name="empresaId" class="form-select">
+                <option value="">Todas las empresas</option>
+                <option th:each="e : ${empresas}"
+                        th:value="${e.id}"
+                        th:selected="${e.id == filtroEmpresaId}"
+                        th:text="${e.nombre}"></option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="tipo" class="form-select">
+                <option value="">Todos los tipos</option>
+                <option th:each="t : ${tipos}"
+                        th:value="${t}"
+                        th:selected="${t == filtroTipo}"
+                        th:text="${t}"></option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="estado" class="form-select">
+                <option value="">Todos los estados</option>
+                <option th:each="es : ${estados}"
+                        th:value="${es}"
+                        th:selected="${es == filtroEstado}"
+                        th:text="${es}"></option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <input type="number" name="anio" class="form-control" placeholder="Año" th:value="${filtroAnio}">
+        </div>
+        <div class="col-md-3">
+            <input type="text" name="busqueda" class="form-control" placeholder="Buscar por N° guía, factura, proveedor..." th:value="${filtroBusqueda}">
+        </div>
+        <div class="col-md-1">
+            <button type="submit" class="btn btn-outline-primary w-100"><i class="bi bi-search"></i></button>
+        </div>
+    </form>
+
+    <form method="post" th:action="@{/archivo-historico/eliminar-seleccionados}" id="formSeleccionados">
+        <div class="mb-2">
+            <button type="submit" class="btn btn-danger btn-sm" id="btnEliminarSeleccionados" disabled
+                    onclick="return confirm('¿ELIMINAR los documentos seleccionados de forma permanente? Esta acción no se puede deshacer.')">
+                <i class="bi bi-trash"></i> Eliminar seleccionados (<span id="contadorSeleccionados">0</span>)
+            </button>
+        </div>
+        <table class="table table-striped table-hover">
+            <thead>
+            <tr>
+                <th><input type="checkbox" id="checkTodos" class="form-check-input"></th>
+                <th>Estado</th>
+                <th>Tipo</th>
+                <th>Empresa</th>
+                <th>N° Guía</th>
+                <th>N° Factura</th>
+                <th>Fecha</th>
+                <th>Productos</th>
+                <th>Archivo</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="d : ${documentos}">
+                <td><input type="checkbox" name="ids" th:value="${d.id}" class="form-check-input checkDocumento"></td>
+                <td>
+                    <span th:if="${d.estadoProceso.name() == 'PENDIENTE'}" class="badge bg-secondary">Pendiente</span>
+                    <span th:if="${d.estadoProceso.name() == 'PROCESADO'}" class="badge bg-success">Procesado</span>
+                    <span th:if="${d.estadoProceso.name() == 'ERROR'}" class="badge bg-danger" th:title="${d.observacion}">Error</span>
+                </td>
+                <td th:text="${d.tipoDocumento}"></td>
+                <td th:text="${d.empresa != null ? d.empresa.nombre : '(sin identificar)'}"></td>
+                <td th:text="${d.numeroGuia != null ? d.numeroGuia : '-'}"></td>
+                <td th:text="${d.numeroFactura != null ? d.numeroFactura : '-'}"></td>
+                <td th:text="${d.fechaDocumento != null ? #temporals.format(d.fechaDocumento, 'dd/MM/yyyy') : '-'}"></td>
+                <td>
+                    <span th:if="${d.productosEncontrados != null and d.productosEncontrados > 0}"
+                          th:text="|${d.productosEncontrados} (${d.coloresCreados} colores nuevos, ${d.articulosCreados} artículos nuevos)|"></span>
+                    <span th:unless="${d.productosEncontrados != null and d.productosEncontrados > 0}">-</span>
+                </td>
+                <td>
+                    <a th:href="@{/archivo-historico/{id}/ver(id=${d.id})}" target="_blank" class="btn btn-sm btn-outline-primary">Ver</a>
+                    <a th:href="@{/archivo-historico/{id}/descargar(id=${d.id})}" class="btn btn-sm btn-outline-secondary">Descargar</a>
+                    <a th:href="@{/archivo-historico/{id}/eliminar(id=${d.id})}" class="btn btn-sm btn-outline-danger"
+                       onclick="return confirm('¿Eliminar este documento del archivo histórico? Esta acción no se puede deshacer.')">
+                        <i class="bi bi-trash"></i>
+                    </a>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(documentos)}">
+                <td colspan="9" class="text-center text-muted">No hay documentos con estos filtros.</td>
+            </tr>
+            </tbody>
+        </table>
+    </form>
+
+    <script>
+        const checkTodos = document.getElementById('checkTodos');
+        const checksDocumentos = document.querySelectorAll('.checkDocumento');
+        const btnEliminar = document.getElementById('btnEliminarSeleccionados');
+        const contador = document.getElementById('contadorSeleccionados');
+
+        function actualizarContador() {
+            const seleccionados = document.querySelectorAll('.checkDocumento:checked').length;
+            contador.textContent = seleccionados;
+            btnEliminar.disabled = seleccionados === 0;
+        }
+
+        if (checkTodos) {
+            checkTodos.addEventListener('change', function () {
+                checksDocumentos.forEach(c => c.checked = checkTodos.checked);
+                actualizarContador();
+            });
+        }
+        checksDocumentos.forEach(c => c.addEventListener('change', actualizarContador));
+    </script>
+</section>
+</body>
+</html>

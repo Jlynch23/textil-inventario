@@ -1,0 +1,23 @@
+CREATE TABLE documentos_historicos (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    empresa_id BIGINT NULL,
+    tipo_documento VARCHAR(20) NOT NULL,
+    numero_guia VARCHAR(50) NULL,
+    numero_factura VARCHAR(50) NULL,
+    fecha_documento DATE NULL,
+    razon_social_detectada VARCHAR(200) NULL,
+    ruta_relativa_zip VARCHAR(500) NULL,
+    nombre_original VARCHAR(255) NOT NULL,
+    ruta_archivo VARCHAR(500) NOT NULL,
+    estado_proceso VARCHAR(20) NOT NULL DEFAULT 'PENDIENTE',
+    observacion TEXT NULL,
+    productos_encontrados INT NOT NULL DEFAULT 0,
+    colores_creados INT NOT NULL DEFAULT 0,
+    articulos_creados INT NOT NULL DEFAULT 0,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    procesado_at DATETIME NULL,
+    CONSTRAINT fk_doc_historico_empresa FOREIGN KEY (empresa_id) REFERENCES empresas(id),
+    INDEX idx_doc_hist_numero_guia (numero_guia),
+    INDEX idx_doc_hist_numero_factura (numero_factura),
+    INDEX idx_doc_hist_estado (estado_proceso)
+);
