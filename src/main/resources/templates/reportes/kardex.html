@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title/text()}, ~{::section})}">
+<head><title>Reporte: Kardex por Fechas</title></head>
+<body>
+<section>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Reporte: Kardex por Fechas</h2>
+        <a th:href="@{/reportes}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Reportes</a>
+    </div>
+
+    <form method="get" th:action="@{/reportes/kardex}" class="row g-2 mb-3">
+        <div class="col-md-3">
+            <label class="form-label small">Desde</label>
+            <input type="date" name="desde" class="form-control" th:value="${filtroDesde}">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small">Hasta</label>
+            <input type="date" name="hasta" class="form-control" th:value="${filtroHasta}">
+        </div>
+        <div class="col-md-3 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary w-100"><i class="bi bi-funnel"></i> Filtrar</button>
+        </div>
+        <div class="col-md-3 d-flex align-items-end">
+            <a class="btn btn-success w-100"
+               th:href="@{/reportes/kardex/excel(desde=${filtroDesde}, hasta=${filtroHasta})}">
+                <i class="bi bi-file-earmark-excel"></i> Exportar a Excel
+            </a>
+        </div>
+    </form>
+
+    <table class="table table-striped table-hover">
+        <thead>
+        <tr>
+            <th>Fecha</th>
+            <th>Tipo</th>
+            <th>Artículo</th>
+            <th>Origen</th>
+            <th>Destino</th>
+            <th>Rollos</th>
+            <th>Peso (kg)</th>
+            <th>Usuario</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="m : ${movimientos}">
+            <td th:text="${#temporals.format(m.fecha, 'dd/MM/yyyy HH:mm')}"></td>
+            <td th:text="${m.tipoMovimiento}"></td>
+            <td th:text="|${m.articulo.tipoTela.nombre} - ${m.articulo.titulo.valor} - ${m.articulo.color.nombreOficial}|"></td>
+            <td th:text="${m.ubicacionOrigen != null ? m.ubicacionOrigen.nombre : '-'}"></td>
+            <td th:text="${m.ubicacionDestino != null ? m.ubicacionDestino.nombre : '-'}"></td>
+            <td th:text="${m.rollos}"></td>
+            <td th:text="${m.pesoKg != null ? m.pesoKg : '-'}"></td>
+            <td th:text="${m.usuario.nombre}"></td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(movimientos)}">
+            <td colspan="8" class="text-center text-muted">No hay movimientos con estos filtros.</td>
+        </tr>
+        </tbody>
+    </table>
+</section>
+</body>
+</html>

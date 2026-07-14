@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title/text()}, ~{::section})}">
+<head><title>Reporte: Transferencias</title></head>
+<body>
+<section>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Reporte: Transferencias</h2>
+        <a th:href="@{/reportes}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Reportes</a>
+    </div>
+
+    <form method="get" th:action="@{/reportes/transferencias}" class="row g-2 mb-3">
+        <div class="col-md-3">
+            <label class="form-label small">Origen</label>
+            <select name="ubicacionOrigenId" class="form-select">
+                <option value="">Todas</option>
+                <option th:each="u : ${ubicaciones}"
+                        th:value="${u.id}"
+                        th:selected="${u.id == filtroUbicacionOrigenId}"
+                        th:text="${u.nombre}"></option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small">Estado</label>
+            <select name="estado" class="form-select">
+                <option value="">Todos</option>
+                <option th:each="e : ${estados}"
+                        th:value="${e}"
+                        th:selected="${e == filtroEstado}"
+                        th:text="${e}"></option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small">Desde</label>
+            <input type="date" name="desde" class="form-control" th:value="${filtroDesde}">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small">Hasta</label>
+            <input type="date" name="hasta" class="form-control" th:value="${filtroHasta}">
+        </div>
+        <div class="col-md-1 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary w-100"><i class="bi bi-funnel"></i></button>
+        </div>
+        <div class="col-md-1 d-flex align-items-end">
+            <a class="btn btn-success w-100"
+               th:href="@{/reportes/transferencias/excel(ubicacionOrigenId=${filtroUbicacionOrigenId}, estado=${filtroEstado}, desde=${filtroDesde}, hasta=${filtroHasta})}"
+               title="Exportar a Excel">
+                <i class="bi bi-file-earmark-excel"></i>
+            </a>
+        </div>
+    </form>
+
+    <table class="table table-striped table-hover">
+        <thead>
+        <tr>
+            <th>N° Transferencia</th>
+            <th>Origen</th>
+            <th>Estado</th>
+            <th>Fecha Solicitud</th>
+            <th>Fecha Salida</th>
+            <th>Fecha Llegada</th>
+            <th>Detalle</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="t : ${transferencias}">
+            <td th:text="${t.numero}"></td>
+            <td th:text="${t.ubicacionOrigen.nombre}"></td>
+            <td th:text="${t.estado}"></td>
+            <td th:text="${#temporals.format(t.fechaSolicitud, 'dd/MM/yyyy HH:mm')}"></td>
+            <td th:text="${t.fechaConfirmacionSalida != null ? #temporals.format(t.fechaConfirmacionSalida, 'dd/MM/yyyy HH:mm') : '-'}"></td>
+            <td th:text="${t.fechaConfirmacionLlegada != null ? #temporals.format(t.fechaConfirmacionLlegada, 'dd/MM/yyyy HH:mm') : '-'}"></td>
+            <td>
+                <a th:href="@{/transferencias/{id}/detalle(id=${t.id})}" class="btn btn-sm btn-outline-primary">Ver</a>
+            </td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(transferencias)}">
+            <td colspan="7" class="text-center text-muted">No hay transferencias con estos filtros.</td>
+        </tr>
+        </tbody>
+    </table>
+</section>
+</body>
+</html>

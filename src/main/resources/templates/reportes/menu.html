@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title/text()}, ~{::section})}">
+<head><title>Reportes</title></head>
+<body>
+<section>
+    <h2 class="mb-4"><i class="bi bi-bar-chart-line"></i> Reportes</h2>
+
+    <div class="row g-3">
+        <div class="col-md-4">
+            <a th:href="@{/reportes/stock}" class="text-decoration-none">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="bi bi-boxes"></i> Stock por Ubicación</h5>
+                        <p class="card-text text-muted">Foto actual del inventario, filtrable por ubicación y tipo de tela.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-4">
+            <a th:href="@{/reportes/kardex}" class="text-decoration-none">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="bi bi-clock-history"></i> Kardex por Fechas</h5>
+                        <p class="card-text text-muted">Historial de movimientos filtrable por rango de fechas.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-4">
+            <a th:href="@{/reportes/recepciones}" class="text-decoration-none">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="bi bi-truck"></i> Recepciones</h5>
+                        <p class="card-text text-muted">Historial de recepciones por proveedor y fecha.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-4">
+            <a th:href="@{/reportes/transferencias}" class="text-decoration-none">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="bi bi-arrow-left-right"></i> Transferencias</h5>
+                        <p class="card-text text-muted">Historial de transferencias entre ubicaciones.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-4">
+            <a th:href="@{/reportes/stock-bajo}" class="text-decoration-none">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="bi bi-exclamation-triangle"></i> Stock Bajo / Crítico</h5>
+                        <p class="card-text text-muted">Artículos por debajo de un umbral de rollos, ajustable.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+</section>
+</body>
+</html>

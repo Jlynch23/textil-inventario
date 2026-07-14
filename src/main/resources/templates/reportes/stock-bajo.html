@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title/text()}, ~{::section})}">
+<head><title>Reporte: Stock Bajo / Crítico</title></head>
+<body>
+<section>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Reporte: Stock Bajo / Crítico</h2>
+        <a th:href="@{/reportes}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Reportes</a>
+    </div>
+
+    <form method="get" th:action="@{/reportes/stock-bajo}" class="row g-2 mb-3">
+        <div class="col-md-3">
+            <label class="form-label small">Umbral (menos de N rollos)</label>
+            <input type="number" name="umbral" class="form-control" min="1" th:value="${filtroUmbral}">
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary w-100"><i class="bi bi-funnel"></i> Filtrar</button>
+        </div>
+        <div class="col-md-3 d-flex align-items-end">
+            <a class="btn btn-success w-100" th:href="@{/reportes/stock-bajo/excel(umbral=${filtroUmbral})}">
+                <i class="bi bi-file-earmark-excel"></i> Exportar a Excel
+            </a>
+        </div>
+    </form>
+
+    <table class="table table-striped table-hover">
+        <thead>
+        <tr>
+            <th>Artículo</th>
+            <th>Total Rollos (todas las ubicaciones)</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="entry : ${articulos}">
+            <td th:text="${entry.key}"></td>
+            <td>
+                <span class="badge bg-danger" th:text="${entry.value}"></span>
+            </td>
+        </tr>
+        <tr th:if="${#maps.isEmpty(articulos)}">
+            <td colspan="2" class="text-center text-muted">No hay artículos por debajo de este umbral.</td>
+        </tr>
+        </tbody>
+    </table>
+</section>
+</body>
+</html>

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title/text()}, ~{::section})}">
+<head><title>Reporte: Stock por Ubicación</title></head>
+<body>
+<section>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Reporte: Stock por Ubicación</h2>
+        <a th:href="@{/reportes}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Reportes</a>
+    </div>
+
+    <form method="get" th:action="@{/reportes/stock}" class="row g-2 mb-3">
+        <div class="col-md-4">
+            <select name="ubicacionId" class="form-select" onchange="this.form.submit()">
+                <option value="">Todas las ubicaciones</option>
+                <option th:each="u : ${ubicaciones}"
+                        th:value="${u.id}"
+                        th:selected="${u.id == filtroUbicacionId}"
+                        th:text="${u.nombre}"></option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <select name="tipoTelaId" class="form-select" onchange="this.form.submit()">
+                <option value="">Todos los tipos de tela</option>
+                <option th:each="t : ${tiposTela}"
+                        th:value="${t.id}"
+                        th:selected="${t.id == filtroTipoTelaId}"
+                        th:text="${t.nombre}"></option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <a class="btn btn-success w-100"
+               th:href="@{/reportes/stock/excel(ubicacionId=${filtroUbicacionId}, tipoTelaId=${filtroTipoTelaId})}">
+                <i class="bi bi-file-earmark-excel"></i> Exportar a Excel
+            </a>
+        </div>
+    </form>
+
+    <table class="table table-striped table-hover">
+        <thead>
+        <tr>
+            <th>Ubicación</th>
+            <th>Tipo Tela</th>
+            <th>Título</th>
+            <th>Color</th>
+            <th>Rollos</th>
+            <th>Peso (kg)</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="s : ${stockList}">
+            <td th:text="${s.ubicacion.nombre}"></td>
+            <td th:text="${s.articulo.tipoTela.nombre}"></td>
+            <td th:text="${s.articulo.titulo.valor}"></td>
+            <td th:text="${s.articulo.color.nombreOficial}"></td>
+            <td th:text="${s.rollos}"></td>
+            <td th:text="${s.pesoKg}"></td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(stockList)}">
+            <td colspan="6" class="text-center text-muted">No hay stock disponible con estos filtros.</td>
+        </tr>
+        </tbody>
+    </table>
+</section>
+</body>
+</html>
