@@ -39,7 +39,7 @@ public class CatalogoController {
         return "catalogo/colores";
     }
 
-    @GetMapping("/colores/inactivar/{id}")
+    @PostMapping("/colores/inactivar/{id}")
     public String inactivarColor(@PathVariable Long id, RedirectAttributes ra) {
         Color c = catalogoService.buscarColor(id);
         c.setActivo(false);
@@ -48,7 +48,7 @@ public class CatalogoController {
         return "redirect:/catalogo/colores";
     }
 
-    @GetMapping("/colores/eliminar/{id}")
+    @PostMapping("/colores/eliminar/{id}")
     public String eliminarColor(@PathVariable Long id, RedirectAttributes ra) {
         try {
             catalogoService.eliminarColor(id);
@@ -158,7 +158,7 @@ public class CatalogoController {
         return "redirect:/catalogo/articulos";
     }
 
-    @GetMapping("/articulos/eliminar/{id}")
+    @PostMapping("/articulos/eliminar/{id}")
     public String eliminarArticulo(@PathVariable Long id, RedirectAttributes ra) {
         try {
             catalogoService.eliminarArticulo(id);
@@ -184,7 +184,7 @@ public class CatalogoController {
         return "redirect:/catalogo/ubicaciones";
     }
 
-    @GetMapping("/ubicaciones/eliminar/{id}")
+    @PostMapping("/ubicaciones/eliminar/{id}")
     public String eliminarUbicacion(@PathVariable Long id, RedirectAttributes ra) {
         try {
             catalogoService.eliminarUbicacion(id);

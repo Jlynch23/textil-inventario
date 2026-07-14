@@ -61,13 +61,12 @@
                                    class="btn btn-sm btn-outline-success">
                                     <i class="bi bi-check-lg"></i>
                                 </a>
-                                <a th:if="${r.estado.name() == 'PENDIENTE'}"
-                                   th:href="@{/recepciones/{id}/eliminar(id=${r.id})}"
-                                   class="btn btn-sm btn-outline-danger"
-                                   title="Eliminar (solo posible en PENDIENTE)"
-                                   onclick="return confirm('¿ELIMINAR esta recepción de forma permanente? Solo es posible porque aún no confirmada.')">
-                                    <i class="bi bi-trash"></i>
-                                </a>
+                                <form th:if="${r.estado.name() == 'PENDIENTE'}" th:action="@{/recepciones/{id}/eliminar(id=${r.id})}" method="post" style="display:inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar (solo posible en PENDIENTE)"
+                                            onclick="return confirm('¿ELIMINAR esta recepción de forma permanente? Solo es posible porque aún no confirmada.')">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                     </tbody>

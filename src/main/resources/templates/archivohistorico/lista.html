@@ -132,10 +132,12 @@
                 <td>
                     <a th:href="@{/archivo-historico/{id}/ver(id=${d.id})}" target="_blank" class="btn btn-sm btn-outline-primary">Ver</a>
                     <a th:href="@{/archivo-historico/{id}/descargar(id=${d.id})}" class="btn btn-sm btn-outline-secondary">Descargar</a>
-                    <a th:href="@{/archivo-historico/{id}/eliminar(id=${d.id})}" class="btn btn-sm btn-outline-danger"
-                       onclick="return confirm('¿Eliminar este documento del archivo histórico? Esta acción no se puede deshacer.')">
-                        <i class="bi bi-trash"></i>
-                    </a>
+                    <form th:action="@{/archivo-historico/{id}/eliminar(id=${d.id})}" method="post" style="display:inline">
+                        <button type="submit" class="btn btn-sm btn-outline-danger"
+                                onclick="return confirm('¿Eliminar este documento del archivo histórico? Esta acción no se puede deshacer.')">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </form>
                 </td>
             </tr>
             <tr th:if="${#lists.isEmpty(documentos)}">

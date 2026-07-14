@@ -52,7 +52,7 @@ public class UsuarioController {
         return "redirect:/usuarios";
     }
 
-    @GetMapping("/inactivar/{id}")
+    @PostMapping("/inactivar/{id}")
     public String inactivar(@PathVariable Long id, RedirectAttributes ra) {
         Usuario u = usuarioRepository.findById(id).orElseThrow();
         u.setActivo(false);
@@ -61,7 +61,7 @@ public class UsuarioController {
         return "redirect:/usuarios";
     }
 
-    @GetMapping("/reactivar/{id}")
+    @PostMapping("/reactivar/{id}")
     public String reactivar(@PathVariable Long id, RedirectAttributes ra) {
         Usuario u = usuarioRepository.findById(id).orElseThrow();
         u.setActivo(true);
@@ -70,7 +70,7 @@ public class UsuarioController {
         return "redirect:/usuarios";
     }
 
-    @GetMapping("/eliminar/{id}")
+    @PostMapping("/eliminar/{id}")
     public String eliminar(@PathVariable Long id, RedirectAttributes ra, Authentication authentication) {
         Usuario u = usuarioRepository.findById(id).orElseThrow();
 

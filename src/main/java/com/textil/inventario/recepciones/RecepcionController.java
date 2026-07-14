@@ -33,7 +33,7 @@ public class RecepcionController {
         return "recepciones/lista";
     }
 
-    @GetMapping("/{id}/eliminar")
+    @PostMapping("/{id}/eliminar")
     public String eliminar(@PathVariable Long id, RedirectAttributes ra) {
         try {
             recepcionService.eliminarRecepcion(id);

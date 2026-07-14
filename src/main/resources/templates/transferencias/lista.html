@@ -61,13 +61,12 @@
                                 <a th:if="${t.estado.name() == 'CONFIRMADA_SALIDA'}"
                                    th:href="@{/transferencias/{id}/confirmar-llegada(id=${t.id})}"
                                    class="btn btn-sm btn-outline-success">Confirmar llegada</a>
-                                <a th:if="${t.estado.name() == 'BORRADOR'}"
-                                   th:href="@{/transferencias/{id}/eliminar(id=${t.id})}"
-                                   class="btn btn-sm btn-outline-danger"
-                                   title="Eliminar (solo posible en BORRADOR)"
-                                   onclick="return confirm('¿ELIMINAR esta transferencia de forma permanente? Solo es posible porque aún está en borrador.')">
-                                    <i class="bi bi-trash"></i>
-                                </a>
+                                <form th:if="${t.estado.name() == 'BORRADOR'}" th:action="@{/transferencias/{id}/eliminar(id=${t.id})}" method="post" style="display:inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar (solo posible en BORRADOR)"
+                                            onclick="return confirm('¿ELIMINAR esta transferencia de forma permanente? Solo es posible porque aún está en borrador.')">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                     </tbody>

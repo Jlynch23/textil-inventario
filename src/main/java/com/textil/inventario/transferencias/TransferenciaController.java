@@ -26,7 +26,7 @@ public class TransferenciaController {
         return "transferencias/lista";
     }
 
-    @GetMapping("/{id}/eliminar")
+    @PostMapping("/{id}/eliminar")
     public String eliminar(@PathVariable Long id, RedirectAttributes ra) {
         try {
             transferenciaService.eliminarTransferencia(id);

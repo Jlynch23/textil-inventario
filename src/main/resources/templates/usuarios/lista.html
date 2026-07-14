@@ -79,25 +79,23 @@
                                         <span th:unless="${u.activo}" class="badge bg-secondary">Inactivo</span>
                                     </td>
                                     <td>
-                                        <a th:if="${u.activo}"
-                                           th:href="@{/usuarios/inactivar/{id}(id=${u.id})}"
-                                           class="btn btn-sm btn-outline-warning"
-                                           title="Inactivar (reversible)"
-                                           onclick="return confirm('¿Inactivar este usuario? No podrá iniciar sesión, pero se conserva su historial.')">
-                                            <i class="bi bi-eye-slash"></i>
-                                        </a>
-                                        <a th:unless="${u.activo}"
-                                           th:href="@{/usuarios/reactivar/{id}(id=${u.id})}"
-                                           class="btn btn-sm btn-outline-success"
-                                           title="Reactivar">
-                                            <i class="bi bi-eye"></i>
-                                        </a>
-                                        <a th:href="@{/usuarios/eliminar/{id}(id=${u.id})}"
-                                           class="btn btn-sm btn-outline-danger"
-                                           title="Eliminar definitivamente"
-                                           onclick="return confirm('¿ELIMINAR este usuario de forma permanente? Esta acción no se puede deshacer. Si tiene historial asociado, el sistema lo bloqueará.')">
-                                            <i class="bi bi-trash"></i>
-                                        </a>
+                                        <form th:if="${u.activo}" th:action="@{/usuarios/inactivar/{id}(id=${u.id})}" method="post" style="display:inline">
+                                            <button type="submit" class="btn btn-sm btn-outline-warning" title="Inactivar (reversible)"
+                                                    onclick="return confirm('¿Inactivar este usuario? No podrá iniciar sesión, pero se conserva su historial.')">
+                                                <i class="bi bi-eye-slash"></i>
+                                            </button>
+                                        </form>
+                                        <form th:unless="${u.activo}" th:action="@{/usuarios/reactivar/{id}(id=${u.id})}" method="post" style="display:inline">
+                                            <button type="submit" class="btn btn-sm btn-outline-success" title="Reactivar">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                        </form>
+                                        <form th:action="@{/usuarios/eliminar/{id}(id=${u.id})}" method="post" style="display:inline">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar definitivamente"
+                                                    onclick="return confirm('¿ELIMINAR este usuario de forma permanente? Esta acción no se puede deshacer. Si tiene historial asociado, el sistema lo bloqueará.')">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
                                     </td>
                                 </tr>
                             </tbody>

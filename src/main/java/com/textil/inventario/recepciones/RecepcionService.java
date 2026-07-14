@@ -2,7 +2,7 @@ package com.textil.inventario.recepciones;
 
 import com.textil.inventario.catalogo.*;
 import com.textil.inventario.inventario.*;
-import com.textil.inventario.seguridad.UsuarioRepository;
+import com.textil.inventario.seguridad.UsuarioActualService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,7 +17,7 @@ public class RecepcionService {
     private final RecepcionDetalleRepository detalleRepository;
     private final EmpresaRepository empresaRepository;
     private final ArticuloRepository articuloRepository;
-    private final UsuarioRepository usuarioRepository;
+    private final UsuarioActualService usuarioActualService;
     private final StockActualRepository stockActualRepository;
     private final KardexMovimientoRepository kardexRepository;
     private final UbicacionRepository ubicacionRepository;
@@ -105,7 +105,7 @@ public class RecepcionService {
         r.setFechaRecepcion(LocalDate.now());
         r.setObservaciones(observaciones);
         r.setEstado(Recepcion.EstadoRecepcion.PENDIENTE);
-        r.setUsuario(usuarioRepository.findById(1L).orElseThrow());
+        r.setUsuario(usuarioActualService.obtenerUsuarioActual());
         r.setUpdatedAt(java.time.LocalDateTime.now());
         Recepcion guardada = recepcionRepository.save(r);
         auditLogService.registrar("CREAR", "Recepcion", guardada.getId(),

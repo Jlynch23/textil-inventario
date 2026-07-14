@@ -81,12 +81,12 @@
                                     <td th:text="${a.titulo.valor}"></td>
                                     <td th:text="${a.color.nombreOficial}"></td>
                                     <td>
-                                        <a th:href="@{/catalogo/articulos/eliminar/{id}(id=${a.id})}"
-                                           class="btn btn-sm btn-outline-danger"
-                                           title="Eliminar definitivamente"
-                                           onclick="return confirm('¿ELIMINAR este artículo de forma permanente? Esta acción no se puede deshacer. Si tiene stock o movimientos, el sistema lo bloqueará.')">
-                                            <i class="bi bi-trash"></i>
-                                        </a>
+                                        <form th:action="@{/catalogo/articulos/eliminar/{id}(id=${a.id})}" method="post" style="display:inline">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar definitivamente"
+                                                    onclick="return confirm('¿ELIMINAR este artículo de forma permanente? Esta acción no se puede deshacer. Si tiene stock o movimientos, el sistema lo bloqueará.')">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
                                     </td>
                                 </tr>
                             </tbody>

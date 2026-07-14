@@ -84,18 +84,18 @@
                                            class="btn btn-sm btn-outline-primary">
                                             <i class="bi bi-pencil"></i>
                                         </a>
-                                        <a th:href="@{/catalogo/colores/inactivar/{id}(id=${c.id})}"
-                                           class="btn btn-sm btn-outline-warning"
-                                           title="Inactivar (soft delete, reversible)"
-                                           onclick="return confirm('¿Inactivar este color?')">
-                                            <i class="bi bi-eye-slash"></i>
-                                        </a>
-                                        <a th:href="@{/catalogo/colores/eliminar/{id}(id=${c.id})}"
-                                           class="btn btn-sm btn-outline-danger"
-                                           title="Eliminar definitivamente"
-                                           onclick="return confirm('¿ELIMINAR este color de forma permanente? Esta acción no se puede deshacer. Si está en uso, el sistema lo bloqueará.')">
-                                            <i class="bi bi-trash"></i>
-                                        </a>
+                                        <form th:action="@{/catalogo/colores/inactivar/{id}(id=${c.id})}" method="post" style="display:inline">
+                                            <button type="submit" class="btn btn-sm btn-outline-warning" title="Inactivar (soft delete, reversible)"
+                                                    onclick="return confirm('¿Inactivar este color?')">
+                                                <i class="bi bi-eye-slash"></i>
+                                            </button>
+                                        </form>
+                                        <form th:action="@{/catalogo/colores/eliminar/{id}(id=${c.id})}" method="post" style="display:inline">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar definitivamente"
+                                                    onclick="return confirm('¿ELIMINAR este color de forma permanente? Esta acción no se puede deshacer. Si está en uso, el sistema lo bloqueará.')">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
                                     </td>
                                 </tr>
                             </tbody>

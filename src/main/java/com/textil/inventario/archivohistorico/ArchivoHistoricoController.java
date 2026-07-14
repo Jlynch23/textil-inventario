@@ -93,7 +93,7 @@ public class ArchivoHistoricoController {
                 .body(resource);
     }
 
-    @GetMapping("/{id}/eliminar")
+    @PostMapping("/{id}/eliminar")
     public String eliminar(@PathVariable Long id, RedirectAttributes ra) {
         documentoHistoricoRepository.findById(id).ifPresent(doc -> {
             try {

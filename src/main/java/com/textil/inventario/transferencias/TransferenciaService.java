@@ -2,7 +2,7 @@ package com.textil.inventario.transferencias;
 
 import com.textil.inventario.catalogo.*;
 import com.textil.inventario.inventario.*;
-import com.textil.inventario.seguridad.UsuarioRepository;
+import com.textil.inventario.seguridad.UsuarioActualService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,7 +21,7 @@ public class TransferenciaService {
     private final TransferenciaDetalleRepository detalleRepository;
     private final TransferenciaDistribucionRepository distribucionRepository;
     private final ArticuloRepository articuloRepository;
-    private final UsuarioRepository usuarioRepository;
+    private final UsuarioActualService usuarioActualService;
     private final StockActualRepository stockActualRepository;
     private final KardexMovimientoRepository kardexRepository;
     private final UbicacionRepository ubicacionRepository;
@@ -42,7 +42,7 @@ public class TransferenciaService {
         Transferencia t = new Transferencia();
         t.setNumero(generarNumero());
         t.setUbicacionOrigen(praderas);
-        t.setUsuarioSolicita(usuarioRepository.findById(1L).orElseThrow());
+        t.setUsuarioSolicita(usuarioActualService.obtenerUsuarioActual());
         t.setFechaSolicitud(LocalDateTime.now());
         t.setObservaciones(observaciones);
         t.setEstado(Transferencia.EstadoTransferencia.BORRADOR);
@@ -108,7 +108,7 @@ public class TransferenciaService {
             kardexRepository.save(k);
         }
 
-        t.setUsuarioConfirmaSalida(usuarioRepository.findById(1L).orElseThrow());
+        t.setUsuarioConfirmaSalida(usuarioActualService.obtenerUsuarioActual());
         t.setFechaConfirmacionSalida(LocalDateTime.now());
         t.setEstado(Transferencia.EstadoTransferencia.CONFIRMADA_SALIDA);
         transferenciaRepository.save(t);
@@ -190,7 +190,7 @@ public class TransferenciaService {
             }
         }
 
-        t.setUsuarioConfirmaLlegada(usuarioRepository.findById(1L).orElseThrow());
+        t.setUsuarioConfirmaLlegada(usuarioActualService.obtenerUsuarioActual());
         t.setFechaConfirmacionLlegada(LocalDateTime.now());
         t.setEstado(tieneDiferencias
             ? Transferencia.EstadoTransferencia.CON_DIFERENCIA
