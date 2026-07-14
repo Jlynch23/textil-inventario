@@ -2,6 +2,7 @@ package com.textil.inventario.dashboard;
 
 import com.textil.inventario.inventario.StockActual;
 import com.textil.inventario.inventario.StockActualRepository;
+import com.textil.inventario.catalogo.UbicacionRepository;
 import com.textil.inventario.recepciones.Recepcion;
 import com.textil.inventario.recepciones.RecepcionRepository;
 import com.textil.inventario.recepciones.EntradaRapidaRepository;
@@ -25,6 +26,7 @@ public class HomeController {
     private final RecepcionRepository recepcionRepository;
     private final EntradaRapidaRepository entradaRapidaRepository;
     private final SalidaRapidaRepository salidaRapidaRepository;
+    private final UbicacionRepository ubicacionRepository;
 
     private static final int UMBRAL_STOCK_BAJO = 10;
 
@@ -77,6 +79,7 @@ public class HomeController {
 
         model.addAttribute("totalRollos", totalRollos);
         model.addAttribute("totalRollosPraderas", totalRollosPraderas);
+        model.addAttribute("praderasId", ubicacionRepository.findByEsPrincipalTrue().map(u -> u.getId()).orElse(null));
         model.addAttribute("transferenciasEnTransito", transferenciasEnTransito);
         model.addAttribute("recepcionesPendientes", recepcionesPendientes);
         model.addAttribute("sinFacturar", sinFacturar);

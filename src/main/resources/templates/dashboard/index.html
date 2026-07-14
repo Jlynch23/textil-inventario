@@ -10,40 +10,48 @@
 
     <div class="row g-3 mb-4">
         <div class="col-md-3">
-            <div class="card text-white bg-primary">
-                <div class="card-body">
-                    <h6 class="card-title">Stock Total</h6>
-                    <p class="display-6 mb-0" th:text="${totalRollos}">0</p>
-                    <small>rollos en todas las ubicaciones</small>
+            <a th:href="@{/inventario/stock}" class="text-decoration-none">
+                <div class="card text-white bg-primary">
+                    <div class="card-body">
+                        <h6 class="card-title">Stock Total</h6>
+                        <p class="display-6 mb-0" th:text="${totalRollos}">0</p>
+                        <small>rollos en todas las ubicaciones</small>
+                    </div>
                 </div>
-            </div>
+            </a>
         </div>
         <div class="col-md-3">
-            <div class="card text-white bg-success">
-                <div class="card-body">
-                    <h6 class="card-title">Stock en Praderas</h6>
-                    <p class="display-6 mb-0" th:text="${totalRollosPraderas}">0</p>
-                    <small>almacén principal</small>
+            <a th:href="@{/inventario/stock(ubicacionId=${praderasId})}" class="text-decoration-none">
+                <div class="card text-white bg-success">
+                    <div class="card-body">
+                        <h6 class="card-title">Stock en Praderas</h6>
+                        <p class="display-6 mb-0" th:text="${totalRollosPraderas}">0</p>
+                        <small>almacén principal</small>
+                    </div>
                 </div>
-            </div>
+            </a>
         </div>
         <div class="col-md-3">
-            <div class="card text-white bg-warning">
-                <div class="card-body">
-                    <h6 class="card-title">Transferencias en Tránsito</h6>
-                    <p class="display-6 mb-0" th:text="${transferenciasEnTransito.size()}">0</p>
-                    <small>salida confirmada, sin llegada</small>
+            <a th:href="@{/transferencias}" class="text-decoration-none">
+                <div class="card text-white bg-warning">
+                    <div class="card-body">
+                        <h6 class="card-title">Transferencias en Tránsito</h6>
+                        <p class="display-6 mb-0" th:text="${transferenciasEnTransito.size()}">0</p>
+                        <small>salida confirmada, sin llegada</small>
+                    </div>
                 </div>
-            </div>
+            </a>
         </div>
         <div class="col-md-3">
-            <div class="card text-white bg-info">
-                <div class="card-body">
-                    <h6 class="card-title">Recepciones Pendientes</h6>
-                    <p class="display-6 mb-0" th:text="${recepcionesPendientes.size()}">0</p>
-                    <small>por validar</small>
+            <a th:href="@{/recepciones}" class="text-decoration-none">
+                <div class="card text-white bg-info">
+                    <div class="card-body">
+                        <h6 class="card-title">Recepciones Pendientes</h6>
+                        <p class="display-6 mb-0" th:text="${recepcionesPendientes.size()}">0</p>
+                        <small>por validar</small>
+                    </div>
                 </div>
-            </div>
+            </a>
         </div>
         <div class="col-md-3">
             <a th:href="@{/recepciones/facturar}" class="text-decoration-none">
