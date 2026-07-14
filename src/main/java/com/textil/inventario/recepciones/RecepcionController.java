@@ -4,6 +4,7 @@ import com.textil.inventario.catalogo.ArticuloRepository;
 import com.textil.inventario.catalogo.Empresa;
 import com.textil.inventario.catalogo.EmpresaRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -19,6 +20,7 @@ import java.util.Map;
 @Controller
 @RequestMapping("/recepciones")
 @RequiredArgsConstructor
+@Slf4j
 public class RecepcionController {
 
     private final RecepcionService recepcionService;
@@ -125,7 +127,8 @@ public class RecepcionController {
             ExtraccionFacturaResponse resultado = anthropicOcrService.extraerDatosFactura(file);
             return ResponseEntity.ok(resultado);
         } catch (Exception e) {
-            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+            log.error("Error en extraerFactura: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body(Map.of("error", "Ocurrió un error interno. Intenta de nuevo o contacta al administrador."));
         }
     }
 
@@ -136,7 +139,8 @@ public class RecepcionController {
             recepcionService.asignarFactura(request.numeroFactura(), request.fechaFactura(), request.recepcionIds());
             return ResponseEntity.ok(Map.of("ok", true));
         } catch (Exception e) {
-            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+            log.error("Error en asignarFactura: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body(Map.of("error", "Ocurrió un error interno. Intenta de nuevo o contacta al administrador."));
         }
     }
 
@@ -147,7 +151,8 @@ public class RecepcionController {
             recepcionService.guardarDocumentoGuia(id, file);
             return ResponseEntity.ok(Map.of("ok", true));
         } catch (Exception e) {
-            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+            log.error("Error en guardarDocumentoGuia: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body(Map.of("error", "Ocurrió un error interno. Intenta de nuevo o contacta al administrador."));
         }
     }
 
@@ -159,7 +164,8 @@ public class RecepcionController {
             recepcionService.guardarDocumentoFactura(recepcionIds, file);
             return ResponseEntity.ok(Map.of("ok", true));
         } catch (Exception e) {
-            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+            log.error("Error en guardarDocumentoFactura: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body(Map.of("error", "Ocurrió un error interno. Intenta de nuevo o contacta al administrador."));
         }
     }
 
@@ -189,7 +195,8 @@ public class RecepcionController {
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+            log.error("Error en extraerGuia: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body(Map.of("error", "Ocurrió un error interno. Intenta de nuevo o contacta al administrador."));
         }
     }
 
@@ -200,7 +207,8 @@ public class RecepcionController {
             LineaSugerida resultado = articuloMatchingService.matchLinea(producto);
             return ResponseEntity.ok(resultado);
         } catch (Exception e) {
-            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+            log.error("Error en rematchLinea: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body(Map.of("error", "Ocurrió un error interno. Intenta de nuevo o contacta al administrador."));
         }
     }
 
@@ -213,7 +221,8 @@ public class RecepcionController {
                     request.observaciones(), request.lineas());
             return ResponseEntity.ok(Map.of("id", r.getId(), "redirectUrl", "/recepciones/" + r.getId() + "/detalle"));
         } catch (Exception e) {
-            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+            log.error("Error en crearConLineas: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body(Map.of("error", "Ocurrió un error interno. Intenta de nuevo o contacta al administrador."));
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.textil.inventario.catalogo;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -13,6 +14,7 @@ import java.util.Optional;
 @Controller
 @RequestMapping("/catalogo")
 @RequiredArgsConstructor
+@Slf4j
 public class CatalogoController {
 
     private final CatalogoService catalogoService;
@@ -71,7 +73,8 @@ public class CatalogoController {
             Color guardado = catalogoService.guardarColor(color);
             return ResponseEntity.ok(Map.of("id", guardado.getId(), "nombreOficial", guardado.getNombreOficial()));
         } catch (Exception e) {
-            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+            log.error("Error en crearColorRapido: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body(Map.of("error", "Ocurrió un error interno. Intenta de nuevo o contacta al administrador."));
         }
     }
 
@@ -118,7 +121,8 @@ public class CatalogoController {
             return ResponseEntity.ok(Map.of("id", guardado.getId(), "yaExistia", false));
 
         } catch (Exception e) {
-            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+            log.error("Error en crearArticuloRapido: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body(Map.of("error", "Ocurrió un error interno. Intenta de nuevo o contacta al administrador."));
         }
     }
 
