@@ -56,8 +56,21 @@ public class DocumentoStorageService {
         return Paths.get(rutaGuardada);
     }
 
+    private static final java.util.Set<String> EXTENSIONES_PERMITIDAS =
+            java.util.Set.of(".pdf", ".jpg", ".jpeg", ".png", ".webp");
+
+    /**
+     * Resuelve la extensión del archivo subido contra una lista blanca
+     * (ver AUDIT.md, hallazgo SEC-03). Antes se tomaba el substring desde el
+     * último "." del nombre original sin validarlo, lo que permitía un path
+     * traversal: un nombre como "foto.png/../../../../etc/algo" generaba una
+     * "extensión" que contenía "..", usada luego para construir la ruta final
+     * en disco. Cualquier valor fuera de la lista blanca (incluyendo cualquiera
+     * con separadores de ruta o "..") se reemplaza por ".pdf" por defecto.
+     */
     private String obtenerExtension(String nombreOriginal) {
         if (nombreOriginal == null || !nombreOriginal.contains(".")) return ".pdf";
-        return nombreOriginal.substring(nombreOriginal.lastIndexOf("."));
+        String extension = nombreOriginal.substring(nombreOriginal.lastIndexOf(".")).toLowerCase();
+        return EXTENSIONES_PERMITIDAS.contains(extension) ? extension : ".pdf";
     }
 }
