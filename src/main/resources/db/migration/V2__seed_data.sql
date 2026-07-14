@@ -8,7 +8,8 @@ INSERT INTO roles (nombre, descripcion) VALUES
 ('ALMACENERO', 'Encargado de recepciones y transferencias en Praderas'),
 ('VENDEDOR', 'Vendedor en tienda, consulta stock y registra ventas');
 
--- USUARIO ADMIN (password: admin2026)
+-- USUARIO ADMIN: credencial de arranque. Debe rotarse en el primer login.
+-- La contraseña original NO se documenta aquí por seguridad (ver AUDIT.md, SEC-01).
 INSERT INTO usuarios (nombre, email, password_hash, rol_id) VALUES
 ('Administrador', 'admin@textil.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE.B4yMnSqOuKQVAa', 1);
 
