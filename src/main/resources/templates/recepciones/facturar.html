@@ -91,7 +91,7 @@
             formData.append('file', fileInput.files[0]);
 
             try {
-                const resp = await fetch('/recepciones/extraer-factura', { method: 'POST', body: formData });
+                const resp = await fetchConCsrf('/recepciones/extraer-factura', { method: 'POST', body: formData });
                 const data = await resp.json();
 
                 if (!resp.ok) {
@@ -161,7 +161,7 @@
             const fechaFactura = document.getElementById('fechaFacturaInput').value || null;
 
             try {
-                const resp = await fetch('/recepciones/asignar-factura', {
+                const resp = await fetchConCsrf('/recepciones/asignar-factura', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ numeroFactura, fechaFactura, recepcionIds })
@@ -179,7 +179,7 @@
                     fd.append('file', fileInput.files[0]);
                     recepcionIds.forEach(id => fd.append('recepcionIds', id));
                     try {
-                        await fetch('/recepciones/guardar-documento-factura', { method: 'POST', body: fd });
+                        await fetchConCsrf('/recepciones/guardar-documento-factura', { method: 'POST', body: fd });
                     } catch (err) {
                         console.error('No se pudo archivar copia de la factura:', err);
                     }

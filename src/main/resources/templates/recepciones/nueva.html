@@ -136,7 +136,7 @@
         formData.append('file', fileInput.files[0]);
 
         try {
-            const resp = await fetch('/recepciones/extraer-guia', {
+            const resp = await fetchConCsrf('/recepciones/extraer-guia', {
                 method: 'POST',
                 body: formData
             });
@@ -252,7 +252,7 @@
             btn.textContent = 'Creando...';
 
             try {
-                const resp = await fetch('/catalogo/articulos/crear-rapido', {
+                const resp = await fetchConCsrf('/catalogo/articulos/crear-rapido', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -280,7 +280,7 @@
                     });
                 }
 
-                const resultado = await fetch('/recepciones/rematch-linea', {
+                const resultado = await fetchConCsrf('/recepciones/rematch-linea', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -318,7 +318,7 @@
         }
 
         try {
-            const resp = await fetch('/catalogo/colores/crear-rapido', {
+            const resp = await fetchConCsrf('/catalogo/colores/crear-rapido', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ nombreOficial, codigoFastDye, familia: familia || null })
@@ -338,7 +338,7 @@
             });
 
             const linea = lineasExtraidas[idxColorPendiente];
-            const resultado = await fetch('/recepciones/rematch-linea', {
+            const resultado = await fetchConCsrf('/recepciones/rematch-linea', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -412,7 +412,7 @@
 
         if (lineasExtraidas.length > 0 && lineas.length > 0) {
             const numeroFactura = document.getElementById('numeroFactura').value;
-            const resp = await fetch('/recepciones/crear-con-lineas', {
+            const resp = await fetchConCsrf('/recepciones/crear-con-lineas', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ empresaId: parseInt(empresaId), numeroGuia, numeroFactura, fechaGuia, observaciones, lineas })
@@ -424,7 +424,7 @@
                     const fd = new FormData();
                     fd.append('file', fileInput.files[0]);
                     try {
-                        await fetch('/recepciones/' + data.id + '/guardar-documento-guia', { method: 'POST', body: fd });
+                        await fetchConCsrf('/recepciones/' + data.id + '/guardar-documento-guia', { method: 'POST', body: fd });
                     } catch (err) {
                         console.error('No se pudo archivar copia del PDF:', err);
                     }
