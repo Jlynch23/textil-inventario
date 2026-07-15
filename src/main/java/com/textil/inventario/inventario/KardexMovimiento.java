@@ -47,6 +47,12 @@ public class KardexMovimiento {
     @Column(name = "peso_kg", precision = 10, scale = 2)
     private BigDecimal pesoKg;
 
+    @Column(name = "recepcion_detalle_id")
+    private Long recepcionDetalleId;
+
+    @Column(name = "transferencia_id")
+    private Long transferenciaId;
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "usuario_id", nullable = false)
     private Usuario usuario;

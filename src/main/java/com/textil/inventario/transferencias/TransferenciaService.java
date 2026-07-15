@@ -103,6 +103,7 @@ public class TransferenciaService {
             k.setTipoMovimiento(KardexMovimiento.TipoMovimiento.TRANSFERENCIA_OUT);
             k.setRollos(cantidad);
             k.setPesoKg(pesoMovido);
+            k.setTransferenciaId(t.getId());
             k.setUsuario(t.getUsuarioSolicita());
             k.setObservaciones("Salida transferencia " + t.getNumero());
             kardexRepository.save(k);
@@ -138,16 +139,14 @@ public class TransferenciaService {
             }
 
             // Peso unitario de referencia según lo despachado en la salida de esta transferencia
-            List<KardexMovimiento> salidas = kardexRepository.findAll();
-            BigDecimal pesoUnitario = BigDecimal.ZERO;
-            for (KardexMovimiento km : salidas) {
-                if (km.getArticulo().getId().equals(d.getArticulo().getId())
-                    && km.getTipoMovimiento() == KardexMovimiento.TipoMovimiento.TRANSFERENCIA_OUT
-                    && km.getObservaciones() != null && km.getObservaciones().contains(t.getNumero())) {
-                    pesoUnitario = km.getRollos() > 0 ? km.getPesoKg().divide(new BigDecimal(km.getRollos()), 4, RoundingMode.HALF_UP) : BigDecimal.ZERO;
-                    break;
-                }
-            }
+            // (antes: kardexRepository.findAll() completo + filtro en memoria con String.contains())
+            BigDecimal pesoUnitario = kardexRepository
+                .findFirstByTransferenciaIdAndArticuloIdAndTipoMovimiento(
+                        t.getId(), d.getArticulo().getId(), KardexMovimiento.TipoMovimiento.TRANSFERENCIA_OUT)
+                .map(km -> km.getRollos() > 0
+                        ? km.getPesoKg().divide(new BigDecimal(km.getRollos()), 4, RoundingMode.HALF_UP)
+                        : BigDecimal.ZERO)
+                .orElse(BigDecimal.ZERO);
 
             for (Map.Entry<Long, Integer> entry : reparto.entrySet()) {
                 Long ubicacionId = entry.getKey();
@@ -184,6 +183,7 @@ public class TransferenciaService {
                 k.setTipoMovimiento(KardexMovimiento.TipoMovimiento.TRANSFERENCIA_IN);
                 k.setRollos(cantidad);
                 k.setPesoKg(pesoMovido);
+                k.setTransferenciaId(t.getId());
                 k.setUsuario(t.getUsuarioSolicita());
                 k.setObservaciones("Llegada transferencia " + t.getNumero());
                 kardexRepository.save(k);
