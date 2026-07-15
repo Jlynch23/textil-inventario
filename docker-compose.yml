@@ -9,7 +9,7 @@ services:
       MYSQL_USER: textil_user
       MYSQL_PASSWORD: ${DB_PASSWORD}
     ports:
-      - "3307:3306"
+      - "127.0.0.1:3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
@@ -18,12 +18,17 @@ services:
       timeout: 5s
       retries: 5
 
+  # Adminer es una consola de administración de base de datos completa.
+  # No levantar este servicio en producción sin protección adicional.
+  # Si se necesita en el servidor real (AWS Lightsail), acceder solo vía
+  # túnel SSH (ssh -L 8081:localhost:8081 ...), nunca abrir el puerto
+  # 8081 en el firewall de la instancia.
   adminer:
     image: adminer:latest
     container_name: textil_adminer
     restart: unless-stopped
     ports:
-      - "8081:8080"
+      - "127.0.0.1:8081:8080"
     depends_on:
       mysql:
         condition: service_healthy

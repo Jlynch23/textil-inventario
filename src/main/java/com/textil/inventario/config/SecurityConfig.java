@@ -33,6 +33,7 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.ignoringRequestMatchers("/recepciones/extraer-guia", "/recepciones/crear-con-lineas", "/recepciones/rematch-linea", "/catalogo/colores/crear-rapido", "/catalogo/articulos/crear-rapido", "/recepciones/extraer-factura", "/recepciones/asignar-factura", "/recepciones/*/guardar-documento-guia", "/recepciones/guardar-documento-factura", "/documentos/descargar-zip"))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/login", "/logout", "/css/**", "/js/**").permitAll()
+                .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                 .requestMatchers("/almacen/revision/**").hasRole("SUPERADMIN")
                 .requestMatchers("/almacen/**").hasAnyRole("ALMACENERO", "SUPERADMIN")
                 .anyRequest().hasRole("SUPERADMIN")
