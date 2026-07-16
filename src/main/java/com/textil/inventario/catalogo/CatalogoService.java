@@ -52,6 +52,37 @@ public class CatalogoService {
         return articuloRepository.findByTipoTelaIdAndTituloIdAndColorId(tipoTelaId, tituloId, colorId);
     }
 
+    // GENERACIÓN DE CÓDIGO INTERNO (ARQ-02: evita colisiones entre variantes de un mismo tipo de tela,
+    // ej. "RIB 2x1" vs "RIB 1x1" vs "RIB Acanalado" vs "RIB Listado", que antes truncaban todas a "RIB").
+    // Usa iniciales por palabra del tipo de tela en vez de las primeras 3 letras del nombre concatenado,
+    // y valida contra la base de datos para garantizar unicidad real (nunca depende solo de la suerte).
+    public String generarCodigoInterno(TipoTela tipoTela, Titulo titulo, Color color) {
+        String base = abreviarTipoTela(tipoTela.getNombre())
+                + "-" + titulo.getValor().replace("/", "")
+                + "-" + color.getNombreOficial().replace(" ", "")
+                        .substring(0, Math.min(4, color.getNombreOficial().replace(" ", "").length())).toUpperCase();
+
+        String codigo = base;
+        int sufijo = 2;
+        while (articuloRepository.findByCodigoInterno(codigo).isPresent()) {
+            codigo = base + "-" + sufijo;
+            sufijo++;
+        }
+        return codigo;
+    }
+
+    private String abreviarTipoTela(String nombre) {
+        String[] palabras = nombre.trim().split("\\s+");
+        if (palabras.length == 1) {
+            return palabras[0].replace(" ", "").substring(0, Math.min(3, palabras[0].length())).toUpperCase();
+        }
+        // Primera palabra completa (ej. "RIB") + hasta 3 caracteres de la segunda palabra (ej. "2x1" -> "2X1")
+        String primera = palabras[0].toUpperCase();
+        String segunda = palabras[1].replaceAll("[^a-zA-Z0-9]", "");
+        segunda = segunda.substring(0, Math.min(3, segunda.length())).toUpperCase();
+        return primera + segunda;
+    }
+
     // ELIMINAR (borrado real). Si el registro esta en uso por otras tablas (FK),
     // la base de datos rechaza el borrado y el controlador debe capturar la excepcion.
     public void eliminarColor(Long id) { colorRepository.deleteById(id); }

@@ -111,10 +111,7 @@ public class CatalogoController {
             articulo.setTipoTela(tipoTela.get());
             articulo.setTitulo(titulo.get());
             articulo.setColor(color.get());
-            String codigo = tipoTela.get().getNombre().replace(" ", "").substring(0, 3).toUpperCase()
-                    + "-" + titulo.get().getValor().replace("/", "")
-                    + "-" + color.get().getNombreOficial().replace(" ", "").substring(0, Math.min(4, color.get().getNombreOficial().length())).toUpperCase();
-            articulo.setCodigoInterno(codigo);
+            articulo.setCodigoInterno(catalogoService.generarCodigoInterno(tipoTela.get(), titulo.get(), color.get()));
             articulo.setActivo(true);
 
             Articulo guardado = catalogoService.guardarArticulo(articulo);
@@ -151,14 +148,16 @@ public class CatalogoController {
 
         // Generar código interno automático
         if (articulo.getCodigoInterno() == null || articulo.getCodigoInterno().isBlank()) {
-            String codigo = articulo.getTipoTela().getNombre().replace(" ", "").substring(0, 3).toUpperCase()
-                + "-" + articulo.getTitulo().getValor().replace("/", "")
-                + "-" + articulo.getColor().getNombreOficial().replace(" ", "").substring(0, Math.min(4, articulo.getColor().getNombreOficial().length())).toUpperCase();
-            articulo.setCodigoInterno(codigo);
+            articulo.setCodigoInterno(catalogoService.generarCodigoInterno(
+                    articulo.getTipoTela(), articulo.getTitulo(), articulo.getColor()));
         }
 
-        catalogoService.guardarArticulo(articulo);
-        ra.addFlashAttribute("mensaje", "Artículo guardado correctamente.");
+        try {
+            catalogoService.guardarArticulo(articulo);
+            ra.addFlashAttribute("mensaje", "Artículo guardado correctamente.");
+        } catch (DataIntegrityViolationException e) {
+            ra.addFlashAttribute("error", "Ya existe un artículo con esa combinación de tipo de tela, título y color.");
+        }
         return "redirect:/catalogo/articulos";
     }
 
