@@ -20,4 +20,8 @@ public interface LogEventoRepository extends JpaRepository<LogEvento, Long> {
                                        @Param("accion") String accion,
                                        @Param("desde") LocalDateTime desde,
                                        @Param("hasta") LocalDateTime hasta);
+
+    // Usado por Reportes > Errores del Sistema (solo SUPERADMIN) para listar
+    // las excepciones no controladas capturadas por GlobalExceptionHandler.
+    List<LogEvento> findByAccionOrderByCreatedAtDesc(String accion);
 }

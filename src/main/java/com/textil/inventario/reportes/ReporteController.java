@@ -1,5 +1,7 @@
 package com.textil.inventario.reportes;
 
+import com.textil.inventario.auditoria.LogEvento;
+import com.textil.inventario.auditoria.LogEventoRepository;
 import com.textil.inventario.catalogo.*;
 import com.textil.inventario.inventario.KardexMovimiento;
 import com.textil.inventario.inventario.KardexMovimientoRepository;
@@ -36,6 +38,7 @@ public class ReporteController {
     private static final int UMBRAL_STOCK_BAJO_DEFECTO = 10;
     private static final DateTimeFormatter FMT_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final DateTimeFormatter FMT_FECHA_HORA = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    private static final String ACCION_ERROR_SISTEMA = "ERROR_SISTEMA";
 
     private final StockActualRepository stockActualRepository;
     private final KardexMovimientoRepository kardexMovimientoRepository;
@@ -45,6 +48,7 @@ public class ReporteController {
     private final TipoTelaRepository tipoTelaRepository;
     private final EmpresaRepository empresaRepository;
     private final ExcelExportService excelExportService;
+    private final LogEventoRepository logEventoRepository;
 
     @GetMapping
     public String menu() {
@@ -296,6 +300,15 @@ public class ReporteController {
 
     private String descripcionArticulo(Articulo a) {
         return a.getTipoTela().getNombre() + " - " + a.getTitulo().getValor() + " - " + a.getColor().getNombreOficial();
+    }
+
+    // ---------- ERRORES DEL SISTEMA (solo SUPERADMIN, capturados por GlobalExceptionHandler) ----------
+
+    @GetMapping("/errores")
+    public String errores(Model model) {
+        List<LogEvento> errores = logEventoRepository.findByAccionOrderByCreatedAtDesc(ACCION_ERROR_SISTEMA);
+        model.addAttribute("errores", errores);
+        return "reportes/errores";
     }
 
     // ---------- HELPER EXCEL ----------

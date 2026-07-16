@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title/text()}, ~{::section})}">
+<head><title>Reporte: Errores del Sistema</title></head>
+<body>
+<section>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0"><i class="bi bi-bug"></i> Errores del Sistema</h2>
+        <a th:href="@{/reportes}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Reportes</a>
+    </div>
+
+    <p class="text-muted">
+        Excepciones no controladas capturadas automáticamente por el sistema. Solo visible para SUPERADMIN.
+        Haz clic en "Ver detalle" para expandir el mensaje completo y la traza técnica.
+    </p>
+
+    <table class="table table-striped table-hover align-middle">
+        <thead>
+        <tr>
+            <th>Fecha</th>
+            <th>Usuario</th>
+            <th>Endpoint</th>
+            <th>Error</th>
+            <th></th>
+        </tr>
+        </thead>
+        <tbody>
+        <th:block th:each="e, iter : ${errores}">
+            <tr>
+                <td class="text-nowrap" th:text="${#temporals.format(e.createdAt, 'dd/MM/yyyy HH:mm')}"></td>
+                <td th:text="${e.usuario != null ? e.usuario.nombre : 'Sesión no identificada'}"></td>
+                <td><code th:text="${e.entidad}"></code></td>
+                <td th:text="${#strings.substringBefore(e.descripcion, ':')}"></td>
+                <td>
+                    <button class="btn btn-sm btn-outline-secondary" type="button"
+                            data-bs-toggle="collapse" th:data-bs-target="'#detalle-' + ${e.id}">
+                        Ver detalle
+                    </button>
+                </td>
+            </tr>
+            <tr class="collapse" th:id="'detalle-' + ${e.id}">
+                <td colspan="5">
+                    <pre class="bg-light p-3 small mb-0" style="white-space: pre-wrap;" th:text="${e.descripcion}"></pre>
+                </td>
+            </tr>
+        </th:block>
+        <tr th:if="${#lists.isEmpty(errores)}">
+            <td colspan="5" class="text-center text-muted">No hay errores registrados. Buena señal.</td>
+        </tr>
+        </tbody>
+    </table>
+</section>
+</body>
+</html>
