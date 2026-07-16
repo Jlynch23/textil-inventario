@@ -52,6 +52,7 @@ public class ArchivoHistoricoService {
     private final AnthropicOcrService ocrService;
     private final RecepcionService recepcionService;
     private final UsuarioRepository usuarioRepository;
+    private final com.textil.inventario.catalogo.CatalogoService catalogoService;
 
     /**
      * Descomprime el ZIP subido, guarda cada PDF en disco y crea un registro
@@ -270,6 +271,7 @@ public class ArchivoHistoricoService {
             doc.setEstadoProceso(DocumentoHistorico.EstadoProceso.PROCESADO);
             doc.setProcesadoAt(LocalDateTime.now());
         } catch (Exception e) {
+            log.error("Error al procesar documento historico id={}: {}", doc.getId(), e.getMessage(), e);
             doc.setEstadoProceso(DocumentoHistorico.EstadoProceso.ERROR);
             doc.setObservacion("Error al procesar: " + e.getMessage());
         }
@@ -513,7 +515,7 @@ public class ArchivoHistoricoService {
         if (titulo.isEmpty()) return new EnriquecimientoResultado(null, 0, 0);
 
         int colorCreado = 0;
-        Optional<Color> colorOpt = colorRepository.findByCodigoFastDye(p.colorCodigo().trim());
+        Optional<Color> colorOpt = catalogoService.resolverColorPorCodigo(p.colorCodigo().trim(), p.colorNombre());
         Color color;
         if (colorOpt.isPresent()) {
             color = colorOpt.get();

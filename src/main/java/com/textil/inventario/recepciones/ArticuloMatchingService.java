@@ -15,6 +15,7 @@ public class ArticuloMatchingService {
     private final TituloRepository tituloRepository;
     private final ColorRepository colorRepository;
     private final ArticuloRepository articuloRepository;
+    private final com.textil.inventario.catalogo.CatalogoService catalogoService;
 
     public LineaSugerida matchLinea(ProductoExtraido p) {
         if (p.tipoTela() == null || p.titulo() == null || p.colorCodigo() == null) {
@@ -37,7 +38,7 @@ public class ArticuloMatchingService {
                     "Título '" + p.titulo() + "' no existe en el catálogo");
         }
 
-        Optional<Color> color = colorRepository.findByCodigoFastDye(p.colorCodigo().trim());
+        Optional<Color> color = catalogoService.resolverColorPorCodigo(p.colorCodigo().trim(), p.colorNombre());
         if (color.isEmpty()) {
             return new LineaSugerida(null, p.tipoTela(), p.titulo(), p.colorCodigo(), p.colorNombre(),
                     p.programaTenido(), p.rollos(), p.pesoBrutoKg(), false,

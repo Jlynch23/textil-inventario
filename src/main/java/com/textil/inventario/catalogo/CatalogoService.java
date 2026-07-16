@@ -47,7 +47,29 @@ public class CatalogoService {
     // BÚSQUEDAS PARA MATCHING / CREACIÓN RÁPIDA
     public Optional<TipoTela> buscarTipoTelaPorNombre(String nombre) { return tipoTelaRepository.findByNombreIgnoreCase(nombre.trim()); }
     public Optional<Titulo> buscarTituloPorValor(String valor) { return tituloRepository.findByValorIgnoreCase(valor.trim()); }
-    public Optional<Color> buscarColorPorCodigoFastDye(String codigo) { return colorRepository.findByCodigoFastDye(codigo.trim()); }
+    public Optional<Color> buscarColorPorCodigoFastDye(String codigo) { return resolverColorPorCodigo(codigo, null); }
+
+    /**
+     * FAST DYE reasigna codigos con el tiempo, asi que puede haber mas de un
+     * color activo con el mismo codigo_fast_dye (uno viejo, uno nuevo).
+     * Si se da un nombre (ej. leido por la IA de la guia/factura), se
+     * prioriza el color cuyo nombre coincide exactamente. Si no hay
+     * coincidencia clara, se usa el color creado mas recientemente,
+     * asumiendo que la reasignacion mas nueva es la vigente.
+     */
+    public Optional<Color> resolverColorPorCodigo(String codigo, String nombrePreferido) {
+        List<Color> candidatos = colorRepository.findByCodigoFastDye(codigo.trim());
+        if (candidatos.isEmpty()) return Optional.empty();
+        if (candidatos.size() == 1) return Optional.of(candidatos.get(0));
+
+        if (nombrePreferido != null && !nombrePreferido.isBlank()) {
+            Optional<Color> porNombre = candidatos.stream()
+                    .filter(c -> c.getNombreOficial().equalsIgnoreCase(nombrePreferido.trim()))
+                    .findFirst();
+            if (porNombre.isPresent()) return porNombre;
+        }
+        return candidatos.stream().max(java.util.Comparator.comparing(Color::getId));
+    }
     public Optional<Articulo> buscarArticuloPorCombinacion(Long tipoTelaId, Long tituloId, Long colorId) {
         return articuloRepository.findByTipoTelaIdAndTituloIdAndColorId(tipoTelaId, tituloId, colorId);
     }
