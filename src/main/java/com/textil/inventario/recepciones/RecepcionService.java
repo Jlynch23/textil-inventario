@@ -162,13 +162,47 @@ public class RecepcionService {
         d.setPesoBrutoKg(pesoBruto);
 
         if (programa != null && !programa.isBlank()) {
-            programaRepository.findByNumero(programa.trim()).ifPresent(prog ->
-                programaDetalleRepository.findByProgramaIdAndColorId(prog.getId(), articulo.getColor().getId())
-                    .ifPresent(d::setProgramaDetalle)
+            buscarProgramaNormalizado(programa).ifPresent(prog ->
+                elegirLineaDePrograma(prog.getId(), articulo.getId()).ifPresent(d::setProgramaDetalle)
             );
         }
 
         return detalleRepository.save(d);
+    }
+
+    /**
+     * La guia suele traer el numero de programa con ceros a la izquierda
+     * (ej. "Guia: 0534"), mientras que el programa se registra sin ellos
+     * (ej. "534"). Se intenta primero un match exacto y, si no hay, se
+     * reintenta quitando los ceros a la izquierda.
+     */
+    private java.util.Optional<Programa> buscarProgramaNormalizado(String numero) {
+        String limpio = numero.trim();
+        java.util.Optional<Programa> exacto = programaRepository.findByNumero(limpio);
+        if (exacto.isPresent()) return exacto;
+
+        String sinCeros = limpio.replaceFirst("^0+(?=\\d)", "");
+        if (!sinCeros.equals(limpio)) {
+            return programaRepository.findByNumero(sinCeros);
+        }
+        return java.util.Optional.empty();
+    }
+
+    /**
+     * Un programa puede tener mas de una linea con el mismo articulo (es
+     * normal: dos lotes separados de la misma tela+gramaje+color dentro del
+     * mismo programa). Se elige la mas antigua que todavia tenga pendiente
+     * (FIFO), para ir llenando las lineas en orden; si todas ya estan
+     * completas, se usa la primera igual, para no perder la trazabilidad.
+     */
+    private java.util.Optional<ProgramaDetalle> elegirLineaDePrograma(Long programaId, Long articuloId) {
+        List<ProgramaDetalle> lineas = programaDetalleRepository.findByProgramaIdAndArticuloIdOrderByIdAsc(programaId, articuloId);
+        if (lineas.isEmpty()) return java.util.Optional.empty();
+
+        return lineas.stream()
+                .filter(l -> l.getCantidadRecibida() < l.getCantidadSolicitada())
+                .findFirst()
+                .or(() -> java.util.Optional.of(lineas.get(0)));
     }
 
     @Transactional
