@@ -4,6 +4,10 @@
 <head><title>Programa</title></head>
 <body>
 <section>
+    <div th:if="${mensaje}" class="alert alert-success alert-dismissible fade show">
+        <span th:text="${mensaje}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
     <div class="card mb-4">
         <div class="card-body p-4">
             <div class="row">
@@ -20,6 +24,10 @@
                     <p class="fw-bold mb-0" th:text="${programa.fecha}"></p>
                 </div>
                 <div class="col-md-3">
+                    <small class="text-muted">Total de Rollos</small>
+                    <p class="fw-bold mb-0" th:text="${programa.totalRollos}"></p>
+                </div>
+                <div class="col-md-3">
                     <small class="text-muted">Observaciones</small>
                     <p class="fw-bold mb-0" th:text="${programa.observaciones ?: '-'}"></p>
                 </div>
@@ -34,6 +42,8 @@
                 <table class="table table-hover mb-0">
                     <thead>
                         <tr>
+                            <th>Tipo de Tela</th>
+                            <th>Título</th>
                             <th>Color</th>
                             <th>Código</th>
                             <th>Solicitado</th>
@@ -44,8 +54,10 @@
                     </thead>
                     <tbody>
                         <tr th:each="d : ${programa.detalles}">
-                            <td th:text="${d.color.nombreOficial}"></td>
-                            <td><span class="badge bg-light text-dark" th:text="${d.color.codigoFastDye}"></span></td>
+                            <td th:text="${d.articulo.tipoTela.nombre}"></td>
+                            <td th:text="${d.articulo.titulo.valor}"></td>
+                            <td th:text="${d.articulo.color.nombreOficial}"></td>
+                            <td><span class="badge bg-light text-dark" th:text="${d.articulo.color.codigoFastDye}"></span></td>
                             <td th:text="${d.cantidadSolicitada}"></td>
                             <td th:text="${d.cantidadRecibida}"></td>
                             <td th:text="${d.cantidadPendiente}"></td>
@@ -61,6 +73,7 @@
     </div>
 
     <a th:href="@{/programas}" class="btn btn-light mt-3">← Volver a Programas</a>
+    <a th:href="@{/programas/{id}/editar(id=${programa.id})}" class="btn btn-primary mt-3"><i class="bi bi-pencil"></i> Editar Programa</a>
 </section>
 </body>
 </html>

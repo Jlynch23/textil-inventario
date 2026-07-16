@@ -78,6 +78,51 @@ public class CatalogoController {
         }
     }
 
+    // ─── TIPOS DE TELA / TITULOS (creacion rapida) ──────────
+    @PostMapping("/tipos-tela/crear-rapido")
+    @ResponseBody
+    public ResponseEntity<?> crearTipoTelaRapido(@RequestBody TipoTelaRapidoRequest request) {
+        try {
+            if (request.nombre() == null || request.nombre().isBlank()) {
+                return ResponseEntity.status(400).body(Map.of("error", "El nombre es obligatorio."));
+            }
+            Optional<TipoTela> existente = catalogoService.buscarTipoTelaPorNombre(request.nombre());
+            if (existente.isPresent()) {
+                return ResponseEntity.ok(Map.of("id", existente.get().getId(), "nombre", existente.get().getNombre(), "yaExistia", true));
+            }
+            TipoTela tipoTela = new TipoTela();
+            tipoTela.setNombre(request.nombre().trim());
+            tipoTela.setActivo(true);
+            TipoTela guardado = catalogoService.guardarTipoTela(tipoTela);
+            return ResponseEntity.ok(Map.of("id", guardado.getId(), "nombre", guardado.getNombre(), "yaExistia", false));
+        } catch (Exception e) {
+            log.error("Error en crearTipoTelaRapido: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body(Map.of("error", "Ocurrió un error interno. Intenta de nuevo o contacta al administrador."));
+        }
+    }
+
+    @PostMapping("/titulos/crear-rapido")
+    @ResponseBody
+    public ResponseEntity<?> crearTituloRapido(@RequestBody TituloRapidoRequest request) {
+        try {
+            if (request.valor() == null || request.valor().isBlank()) {
+                return ResponseEntity.status(400).body(Map.of("error", "El valor es obligatorio."));
+            }
+            Optional<Titulo> existente = catalogoService.buscarTituloPorValor(request.valor());
+            if (existente.isPresent()) {
+                return ResponseEntity.ok(Map.of("id", existente.get().getId(), "valor", existente.get().getValor(), "yaExistia", true));
+            }
+            Titulo titulo = new Titulo();
+            titulo.setValor(request.valor().trim());
+            titulo.setActivo(true);
+            Titulo guardado = catalogoService.guardarTitulo(titulo);
+            return ResponseEntity.ok(Map.of("id", guardado.getId(), "valor", guardado.getValor(), "yaExistia", false));
+        } catch (Exception e) {
+            log.error("Error en crearTituloRapido: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body(Map.of("error", "Ocurrió un error interno. Intenta de nuevo o contacta al administrador."));
+        }
+    }
+
     // ─── ARTÍCULOS ─────────────────────────────────────────
     @PostMapping("/articulos/crear-rapido")
     @ResponseBody

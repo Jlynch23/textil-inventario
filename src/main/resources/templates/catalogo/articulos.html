@@ -22,30 +22,39 @@
                     <form th:action="@{/catalogo/articulos/guardar}" method="post">
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Tipo de Tela</label>
-                            <select class="form-select" name="tipoTelaId" required>
-                                <option value="">Seleccionar...</option>
-                                <option th:each="t : ${tiposTela}"
-                                        th:value="${t.id}"
-                                        th:text="${t.nombre}"></option>
-                            </select>
+                            <div class="input-group">
+                                <select class="form-select" id="selectTipoTela" name="tipoTelaId" required>
+                                    <option value="">Seleccionar...</option>
+                                    <option th:each="t : ${tiposTela}"
+                                            th:value="${t.id}"
+                                            th:text="${t.nombre}"></option>
+                                </select>
+                                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalTipoTelaNuevo" title="Crear tipo de tela nuevo"><i class="bi bi-plus-lg"></i></button>
+                            </div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Título (Gramaje)</label>
-                            <select class="form-select" name="tituloId" required>
-                                <option value="">Seleccionar...</option>
-                                <option th:each="t : ${titulos}"
-                                        th:value="${t.id}"
-                                        th:text="${t.valor}"></option>
-                            </select>
+                            <div class="input-group">
+                                <select class="form-select" id="selectTitulo" name="tituloId" required>
+                                    <option value="">Seleccionar...</option>
+                                    <option th:each="t : ${titulos}"
+                                            th:value="${t.id}"
+                                            th:text="${t.valor}"></option>
+                                </select>
+                                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalTituloNuevo" title="Crear título nuevo"><i class="bi bi-plus-lg"></i></button>
+                            </div>
                         </div>
                         <div class="mb-4">
                             <label class="form-label fw-semibold">Color</label>
-                            <select class="form-select" name="colorId" required>
-                                <option value="">Seleccionar...</option>
-                                <option th:each="c : ${colores}"
-                                        th:value="${c.id}"
-                                        th:text="${c.nombreOficial}"></option>
-                            </select>
+                            <div class="input-group">
+                                <select class="form-select" id="selectColor" name="colorId" required>
+                                    <option value="">Seleccionar...</option>
+                                    <option th:each="c : ${colores}"
+                                            th:value="${c.id}"
+                                            th:text="${c.nombreOficial}"></option>
+                                </select>
+                                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalColorNuevo" title="Crear color nuevo"><i class="bi bi-plus-lg"></i></button>
+                            </div>
                         </div>
                         <button type="submit" class="btn btn-primary w-100">
                             <i class="bi bi-save me-2"></i>Guardar Artículo
@@ -96,6 +105,153 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal: Tipo de Tela nuevo -->
+    <div class="modal fade" id="modalTipoTelaNuevo" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h6 class="modal-title fw-bold">Crear Tipo de Tela Nuevo</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label fw-semibold">Nombre</label>
+                    <input type="text" class="form-control" id="modalTipoTelaNombre" placeholder="Ej: RIB 3x1">
+                    <div id="modalTipoTelaError" class="text-danger small mt-2"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="btnGuardarTipoTela">Crear</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Título nuevo -->
+    <div class="modal fade" id="modalTituloNuevo" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h6 class="modal-title fw-bold">Crear Título Nuevo</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label fw-semibold">Valor</label>
+                    <input type="text" class="form-control" id="modalTituloValor" placeholder="Ej: 28/1">
+                    <div id="modalTituloError" class="text-danger small mt-2"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="btnGuardarTitulo">Crear</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Color nuevo -->
+    <div class="modal fade" id="modalColorNuevo" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h6 class="modal-title fw-bold">Crear Color Nuevo</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Nombre del Color</label>
+                        <input type="text" class="form-control" id="modalColorNombre">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Código FAST DYE</label>
+                        <input type="text" class="form-control" id="modalColorCodigo">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Familia (opcional)</label>
+                        <input type="text" class="form-control" id="modalColorFamilia" placeholder="Ej: Verdes, Rojos, Neutros">
+                    </div>
+                    <div id="modalColorError" class="text-danger small"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="btnGuardarColorNuevo">Crear Color</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function agregarOpcion(select, id, texto) {
+            const option = document.createElement('option');
+            option.value = id;
+            option.textContent = texto;
+            option.selected = true;
+            select.appendChild(option);
+        }
+
+        document.getElementById('btnGuardarTipoTela').addEventListener('click', async () => {
+            const nombre = document.getElementById('modalTipoTelaNombre').value.trim();
+            const errorDiv = document.getElementById('modalTipoTelaError');
+            if (!nombre) { errorDiv.textContent = 'El nombre es obligatorio.'; return; }
+
+            try {
+                const resp = await fetchConCsrf('/catalogo/tipos-tela/crear-rapido', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nombre })
+                });
+                const data = await resp.json();
+                if (!resp.ok) { errorDiv.textContent = data.error || 'Error al crear.'; return; }
+
+                agregarOpcion(document.getElementById('selectTipoTela'), data.id, data.nombre);
+                bootstrap.Modal.getInstance(document.getElementById('modalTipoTelaNuevo')).hide();
+                document.getElementById('modalTipoTelaNombre').value = '';
+                errorDiv.textContent = '';
+            } catch (e) { errorDiv.textContent = 'Error de conexión: ' + e.message; }
+        });
+
+        document.getElementById('btnGuardarTitulo').addEventListener('click', async () => {
+            const valor = document.getElementById('modalTituloValor').value.trim();
+            const errorDiv = document.getElementById('modalTituloError');
+            if (!valor) { errorDiv.textContent = 'El valor es obligatorio.'; return; }
+
+            try {
+                const resp = await fetchConCsrf('/catalogo/titulos/crear-rapido', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ valor })
+                });
+                const data = await resp.json();
+                if (!resp.ok) { errorDiv.textContent = data.error || 'Error al crear.'; return; }
+
+                agregarOpcion(document.getElementById('selectTitulo'), data.id, data.valor);
+                bootstrap.Modal.getInstance(document.getElementById('modalTituloNuevo')).hide();
+                document.getElementById('modalTituloValor').value = '';
+                errorDiv.textContent = '';
+            } catch (e) { errorDiv.textContent = 'Error de conexión: ' + e.message; }
+        });
+
+        document.getElementById('btnGuardarColorNuevo').addEventListener('click', async () => {
+            const nombreOficial = document.getElementById('modalColorNombre').value.trim();
+            const codigoFastDye = document.getElementById('modalColorCodigo').value.trim();
+            const familia = document.getElementById('modalColorFamilia').value.trim();
+            const errorDiv = document.getElementById('modalColorError');
+            if (!nombreOficial || !codigoFastDye) { errorDiv.textContent = 'Nombre y código son obligatorios.'; return; }
+
+            try {
+                const resp = await fetchConCsrf('/catalogo/colores/crear-rapido', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nombreOficial, codigoFastDye, familia: familia || null })
+                });
+                const data = await resp.json();
+                if (!resp.ok) { errorDiv.textContent = data.error || 'Error al crear el color.'; return; }
+
+                agregarOpcion(document.getElementById('selectColor'), data.id, data.nombreOficial);
+                bootstrap.Modal.getInstance(document.getElementById('modalColorNuevo')).hide();
+                document.getElementById('modalColorNombre').value = '';
+                document.getElementById('modalColorCodigo').value = '';
+                document.getElementById('modalColorFamilia').value = '';
+                errorDiv.textContent = '';
+            } catch (e) { errorDiv.textContent = 'Error de conexión: ' + e.message; }
+        });
+    </script>
 </section>
 </body>
 </html>

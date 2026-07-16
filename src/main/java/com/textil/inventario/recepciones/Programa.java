@@ -25,6 +25,9 @@ public class Programa extends BaseEntity {
     @Column(nullable = false)
     private LocalDate fecha;
 
+    @Column(name = "total_rollos", nullable = false)
+    private Integer totalRollos = 0;
+
     @Column(columnDefinition = "TEXT")
     private String observaciones;
 

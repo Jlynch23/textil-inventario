@@ -2,7 +2,10 @@ package com.textil.inventario.recepciones;
 
 import com.textil.inventario.catalogo.ColorRepository;
 import com.textil.inventario.catalogo.EmpresaRepository;
+import com.textil.inventario.catalogo.TipoTelaRepository;
+import com.textil.inventario.catalogo.TituloRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -20,6 +23,8 @@ public class ProgramaController {
     private final ProgramaService programaService;
     private final EmpresaRepository empresaRepository;
     private final ColorRepository colorRepository;
+    private final TipoTelaRepository tipoTelaRepository;
+    private final TituloRepository tituloRepository;
 
     @GetMapping
     public String listar(Model model) {
@@ -31,6 +36,8 @@ public class ProgramaController {
     public String nuevo(Model model) {
         model.addAttribute("empresas", empresaRepository.findByActivoTrue());
         model.addAttribute("colores", colorRepository.findByActivoTrue());
+        model.addAttribute("tiposTela", tipoTelaRepository.findByActivoTrue());
+        model.addAttribute("titulos", tituloRepository.findByActivoTrue());
         return "programas/nuevo";
     }
 
@@ -39,12 +46,21 @@ public class ProgramaController {
                          @RequestParam Long empresaId,
                          @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha,
                          @RequestParam(required = false) String observaciones,
+                         @RequestParam Integer totalRollos,
+                         @RequestParam("tipoTelaId") List<Long> tipoTelaIds,
+                         @RequestParam("tituloId") List<Long> tituloIds,
                          @RequestParam("colorId") List<Long> colorIds,
                          @RequestParam("cantidad") List<Integer> cantidades,
                          RedirectAttributes ra) {
-        Programa p = programaService.crearPrograma(numero, empresaId, fecha, observaciones, colorIds, cantidades);
-        ra.addFlashAttribute("mensaje", "Programa creado correctamente.");
-        return "redirect:/programas/" + p.getId();
+        try {
+            Programa p = programaService.crearPrograma(numero, empresaId, fecha, observaciones, totalRollos,
+                    tipoTelaIds, tituloIds, colorIds, cantidades);
+            ra.addFlashAttribute("mensaje", "Programa creado correctamente.");
+            return "redirect:/programas/" + p.getId();
+        } catch (IllegalArgumentException e) {
+            ra.addFlashAttribute("error", e.getMessage());
+            return "redirect:/programas/nuevo";
+        }
     }
 
     @GetMapping("/{id}")
@@ -52,5 +68,52 @@ public class ProgramaController {
         Programa programa = programaService.buscarPrograma(id);
         model.addAttribute("programa", programa);
         return "programas/seguimiento";
+    }
+
+    @GetMapping("/{id}/editar")
+    public String editar(@PathVariable Long id, Model model) {
+        model.addAttribute("programa", programaService.buscarPrograma(id));
+        model.addAttribute("empresas", empresaRepository.findByActivoTrue());
+        model.addAttribute("colores", colorRepository.findByActivoTrue());
+        model.addAttribute("tiposTela", tipoTelaRepository.findByActivoTrue());
+        model.addAttribute("titulos", tituloRepository.findByActivoTrue());
+        return "programas/editar";
+    }
+
+    @PostMapping("/{id}/actualizar")
+    public String actualizar(@PathVariable Long id,
+                              @RequestParam String numero,
+                              @RequestParam Long empresaId,
+                              @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha,
+                              @RequestParam(required = false) String observaciones,
+                              @RequestParam Integer totalRollos,
+                              @RequestParam(value = "detalleId", required = false) List<Long> detalleIdsExistentes,
+                              @RequestParam(value = "cantidadExistente", required = false) List<Integer> cantidadesExistentes,
+                              @RequestParam(value = "eliminarDetalleId", required = false) List<Long> detalleIdsAEliminar,
+                              @RequestParam(value = "nuevoTipoTelaId", required = false) List<Long> nuevosTipoTelaIds,
+                              @RequestParam(value = "nuevoTituloId", required = false) List<Long> nuevosTituloIds,
+                              @RequestParam(value = "nuevoColorId", required = false) List<Long> nuevosColorIds,
+                              @RequestParam(value = "nuevaCantidad", required = false) List<Integer> nuevasCantidades,
+                              RedirectAttributes ra) {
+        try {
+            programaService.actualizarPrograma(id, numero, empresaId, fecha, observaciones, totalRollos,
+                    listaOVacia(detalleIdsExistentes), listaOVacia(cantidadesExistentes),
+                    listaOVacia(detalleIdsAEliminar),
+                    listaOVacia(nuevosTipoTelaIds), listaOVacia(nuevosTituloIds),
+                    listaOVacia(nuevosColorIds), listaOVacia(nuevasCantidades));
+            ra.addFlashAttribute("mensaje", "Programa actualizado correctamente.");
+            return "redirect:/programas/" + id;
+        } catch (DataIntegrityViolationException e) {
+            ra.addFlashAttribute("error",
+                    "No se pudo actualizar: una de las líneas que intentaste quitar ya tiene recepciones vinculadas y no se puede eliminar.");
+            return "redirect:/programas/" + id + "/editar";
+        } catch (IllegalArgumentException e) {
+            ra.addFlashAttribute("error", e.getMessage());
+            return "redirect:/programas/" + id + "/editar";
+        }
+    }
+
+    private <T> List<T> listaOVacia(List<T> lista) {
+        return lista != null ? lista : List.of();
     }
 }

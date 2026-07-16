@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
       th:replace="~{layout/base :: layout(~{::title/text()}, ~{::section})}">
-<head><title>Nuevo Programa</title></head>
+<head><title>Editar Programa</title></head>
 <body>
 <section>
     <div class="row justify-content-center">
@@ -12,88 +12,79 @@
             </div>
             <div class="card">
                 <div class="card-body p-4">
-                    <h6 class="fw-bold mb-4">Nuevo Programa</h6>
-                    <form th:action="@{/programas/crear}" method="post" id="formPrograma">
+                    <h6 class="fw-bold mb-4">Editar Programa <code th:text="${programa.numero}"></code></h6>
+                    <form th:action="@{/programas/{id}/actualizar(id=${programa.id})}" method="post" id="formPrograma">
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-semibold">Número de Programa</label>
-                                <input type="text" class="form-control" name="numero" placeholder="Ej: 659" required>
+                                <input type="text" class="form-control" name="numero" th:value="${programa.numero}" required>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-semibold">Empresa</label>
                                 <select class="form-select" name="empresaId" required>
                                     <option value="">Seleccionar...</option>
-                                    <option th:each="e : ${empresas}" th:value="${e.id}" th:text="${e.nombre}"></option>
+                                    <option th:each="e : ${empresas}" th:value="${e.id}" th:text="${e.nombre}"
+                                            th:selected="${e.id == programa.empresa.id}"></option>
                                 </select>
                             </div>
                         </div>
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-semibold">Fecha</label>
-                                <input type="date" class="form-control" name="fecha" required>
+                                <input type="date" class="form-control" name="fecha" th:value="${programa.fecha}" required>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-semibold">Total de Rollos</label>
-                                <input type="number" class="form-control" name="totalRollos" id="inputTotalRollos" min="1" required>
+                                <input type="number" class="form-control" name="totalRollos" id="inputTotalRollos" th:value="${programa.totalRollos}" min="1" required>
                                 <small id="sumaIndicador" class="fw-semibold"></small>
                             </div>
                         </div>
                         <div class="mb-4">
                             <label class="form-label fw-semibold">Observaciones</label>
-                            <textarea class="form-control" name="observaciones" rows="2"></textarea>
+                            <textarea class="form-control" name="observaciones" rows="2" th:text="${programa.observaciones}"></textarea>
                         </div>
 
-                        <h6 class="fw-bold mb-3">Artículos Solicitados</h6>
+                        <h6 class="fw-bold mb-3">Artículos del Programa</h6>
+                        <p class="text-muted small">El artículo (tipo de tela, título, color) de una línea ya existente no se puede cambiar aquí, solo su cantidad — si necesitas otro artículo, quítala y agrega una línea nueva.</p>
+
+                        <div id="lineasExistentesContainer">
+                            <div class="row g-2 mb-2 align-items-center linea-existente" th:each="d : ${programa.detalles}">
+                                <input type="hidden" name="detalleId" th:value="${d.id}">
+                                <div class="col-md-3">
+                                    <span class="fw-semibold" th:text="${d.articulo.tipoTela.nombre}"></span>
+                                </div>
+                                <div class="col-md-2" th:text="${d.articulo.titulo.valor}"></div>
+                                <div class="col-md-3">
+                                    <span th:text="${d.articulo.color.nombreOficial}"></span>
+                                    <span class="badge bg-light text-dark" th:text="${d.articulo.color.codigoFastDye}"></span>
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="number" class="form-control input-cantidad-existente" name="cantidadExistente" th:value="${d.cantidadSolicitada}" min="1" required>
+                                </div>
+                                <div class="col-md-1">
+                                    <small class="text-muted" th:text="'Recib: ' + ${d.cantidadRecibida}"></small>
+                                </div>
+                                <div class="col-md-1">
+                                    <button type="button" class="btn btn-outline-danger btn-sm btn-quitar-existente">✕</button>
+                                </div>
+                            </div>
+                            <p th:if="${#lists.isEmpty(programa.detalles)}" class="text-muted">Este programa no tiene artículos todavía.</p>
+                        </div>
+
+                        <h6 class="fw-bold mb-2 mt-4">Agregar Artículos Nuevos</h6>
                         <div class="row g-2 mb-1 d-none d-md-flex">
                             <div class="col-md-3"><small class="text-muted fw-semibold">Tipo de Tela</small></div>
                             <div class="col-md-2"><small class="text-muted fw-semibold">Título</small></div>
                             <div class="col-md-3"><small class="text-muted fw-semibold">Color</small></div>
                             <div class="col-md-2"><small class="text-muted fw-semibold">Cantidad</small></div>
                         </div>
-                        <div id="lineasContainer">
-                            <div class="row g-2 mb-2 linea-color">
-                                <div class="col-md-3">
-                                    <div class="input-group">
-                                        <select class="form-select select-tipo-tela" name="tipoTelaId">
-                                            <option value="">Tipo de tela...</option>
-                                            <option th:each="t : ${tiposTela}" th:value="${t.id}" th:text="${t.nombre}"></option>
-                                        </select>
-                                        <button type="button" class="btn btn-outline-primary btn-tipotela-nuevo" title="Crear tipo de tela nuevo"><i class="bi bi-plus-lg"></i></button>
-                                    </div>
-                                </div>
-                                <div class="col-md-2">
-                                    <div class="input-group">
-                                        <select class="form-select select-titulo" name="tituloId">
-                                            <option value="">Título...</option>
-                                            <option th:each="ti : ${titulos}" th:value="${ti.id}" th:text="${ti.valor}"></option>
-                                        </select>
-                                        <button type="button" class="btn btn-outline-primary btn-titulo-nuevo" title="Crear título nuevo"><i class="bi bi-plus-lg"></i></button>
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="input-group">
-                                        <select class="form-select select-color" name="colorId">
-                                            <option value="">Color...</option>
-                                            <option th:each="c : ${colores}" th:value="${c.id}"
-                                                    th:text="${c.nombreOficial + ' (' + c.codigoFastDye + ')'}"></option>
-                                        </select>
-                                        <button type="button" class="btn btn-outline-primary btn-color-nuevo" title="Crear color nuevo"><i class="bi bi-plus-lg"></i></button>
-                                    </div>
-                                </div>
-                                <div class="col-md-2">
-                                    <input type="number" class="form-control input-cantidad" name="cantidad" placeholder="Cantidad" min="1">
-                                </div>
-                                <div class="col-md-2">
-                                    <button type="button" class="btn btn-outline-danger w-100 btn-quitar-linea">✕ Quitar</button>
-                                </div>
-                            </div>
-                        </div>
+                        <div id="lineasNuevasContainer"></div>
                         <button type="button" class="btn btn-outline-primary btn-sm mb-4" id="btnAgregarLinea">
-                            <i class="bi bi-plus-lg me-1"></i>Agregar otra línea
+                            <i class="bi bi-plus-lg me-1"></i>Agregar línea nueva
                         </button>
 
-                        <button type="submit" class="btn btn-primary w-100">Crear Programa</button>
-                        <a th:href="@{/programas}" class="btn btn-light w-100 mt-2">Cancelar</a>
+                        <button type="submit" class="btn btn-primary w-100">Guardar Cambios</button>
+                        <a th:href="@{/programas/{id}(id=${programa.id})}" class="btn btn-light w-100 mt-2">Cancelar</a>
                     </form>
                 </div>
             </div>
@@ -206,28 +197,25 @@
             return options;
         }
 
-        function buildLineaHtml() {
-            return '<div class="row g-2 mb-2 linea-color">' +
-                   '<div class="col-md-3"><div class="input-group"><select class="form-select select-tipo-tela" name="tipoTelaId">' + opcionesTipoTela() + '</select>' +
+        function buildLineaNuevaHtml() {
+            return '<div class="row g-2 mb-2 linea-nueva">' +
+                   '<div class="col-md-3"><div class="input-group"><select class="form-select select-tipo-tela" name="nuevoTipoTelaId">' + opcionesTipoTela() + '</select>' +
                    '<button type="button" class="btn btn-outline-primary btn-tipotela-nuevo" title="Crear tipo de tela nuevo"><i class="bi bi-plus-lg"></i></button></div></div>' +
-                   '<div class="col-md-2"><div class="input-group"><select class="form-select select-titulo" name="tituloId">' + opcionesTitulos() + '</select>' +
+                   '<div class="col-md-2"><div class="input-group"><select class="form-select select-titulo" name="nuevoTituloId">' + opcionesTitulos() + '</select>' +
                    '<button type="button" class="btn btn-outline-primary btn-titulo-nuevo" title="Crear título nuevo"><i class="bi bi-plus-lg"></i></button></div></div>' +
-                   '<div class="col-md-3"><div class="input-group"><select class="form-select select-color" name="colorId">' + opcionesColores() + '</select>' +
+                   '<div class="col-md-3"><div class="input-group"><select class="form-select select-color" name="nuevoColorId">' + opcionesColores() + '</select>' +
                    '<button type="button" class="btn btn-outline-primary btn-color-nuevo" title="Crear color nuevo"><i class="bi bi-plus-lg"></i></button></div></div>' +
-                   '<div class="col-md-2"><input type="number" class="form-control input-cantidad" name="cantidad" placeholder="Cantidad" min="1"></div>' +
-                   '<div class="col-md-2"><button type="button" class="btn btn-outline-danger w-100 btn-quitar-linea">✕ Quitar</button></div>' +
+                   '<div class="col-md-2"><input type="number" class="form-control input-cantidad-nueva" name="nuevaCantidad" placeholder="Cantidad" min="1"></div>' +
+                   '<div class="col-md-2"><button type="button" class="btn btn-outline-danger w-100 btn-quitar-nueva">✕ Quitar</button></div>' +
                    '</div>';
         }
 
         function actualizarSuma() {
             let suma = 0;
-            document.querySelectorAll('.input-cantidad').forEach(inp => { suma += parseInt(inp.value) || 0; });
+            document.querySelectorAll('.input-cantidad-existente').forEach(inp => { suma += parseInt(inp.value) || 0; });
+            document.querySelectorAll('.input-cantidad-nueva').forEach(inp => { suma += parseInt(inp.value) || 0; });
             const totalEsperado = parseInt(document.getElementById('inputTotalRollos').value) || 0;
             const indicador = document.getElementById('sumaIndicador');
-            if (totalEsperado === 0 && suma === 0) {
-                indicador.textContent = '';
-                return;
-            }
             if (suma === totalEsperado) {
                 indicador.className = 'fw-semibold text-success';
                 indicador.textContent = '✓ Suma de líneas: ' + suma + ' (coincide)';
@@ -238,13 +226,16 @@
         }
 
         document.getElementById('inputTotalRollos').addEventListener('input', actualizarSuma);
-        document.getElementById('lineasContainer').addEventListener('input', (e) => {
-            if (e.target.classList.contains('input-cantidad')) actualizarSuma();
+        document.getElementById('lineasExistentesContainer').addEventListener('input', actualizarSuma);
+        document.getElementById('lineasNuevasContainer').addEventListener('input', (e) => {
+            if (e.target.classList.contains('input-cantidad-nueva')) actualizarSuma();
         });
+        actualizarSuma();
 
         document.getElementById('formPrograma').addEventListener('submit', (e) => {
             let suma = 0;
-            document.querySelectorAll('.input-cantidad').forEach(inp => { suma += parseInt(inp.value) || 0; });
+            document.querySelectorAll('.input-cantidad-existente').forEach(inp => { suma += parseInt(inp.value) || 0; });
+            document.querySelectorAll('.input-cantidad-nueva').forEach(inp => { suma += parseInt(inp.value) || 0; });
             const totalEsperado = parseInt(document.getElementById('inputTotalRollos').value) || 0;
             if (suma !== totalEsperado) {
                 e.preventDefault();
@@ -253,25 +244,34 @@
         });
 
         document.getElementById('btnAgregarLinea').addEventListener('click', () => {
-            const container = document.getElementById('lineasContainer');
+            const container = document.getElementById('lineasNuevasContainer');
             const div = document.createElement('div');
-            div.innerHTML = buildLineaHtml();
+            div.innerHTML = buildLineaNuevaHtml();
             container.appendChild(div.firstChild);
             engancharBotones();
         });
 
         function engancharBotones() {
-            document.querySelectorAll('.btn-quitar-linea').forEach(btn => {
+            document.querySelectorAll('.btn-quitar-nueva').forEach(btn => {
+                btn.onclick = () => { btn.closest('.linea-nueva').remove(); actualizarSuma(); };
+            });
+            document.querySelectorAll('.btn-quitar-existente').forEach(btn => {
                 btn.onclick = () => {
-                    if (document.querySelectorAll('.linea-color').length > 1) {
-                        btn.closest('.linea-color').remove();
-                        actualizarSuma();
-                    }
+                    const fila = btn.closest('.linea-existente');
+                    const detalleId = fila.querySelector('input[name="detalleId"]').value;
+                    if (!confirm('¿Quitar este artículo del programa? Si ya tiene recepciones vinculadas, el sistema no dejará quitarlo. Recuerda ajustar el Total de Rollos después de quitarlo.')) return;
+                    const hidden = document.createElement('input');
+                    hidden.type = 'hidden';
+                    hidden.name = 'eliminarDetalleId';
+                    hidden.value = detalleId;
+                    document.getElementById('formPrograma').appendChild(hidden);
+                    fila.remove();
+                    actualizarSuma();
                 };
             });
             document.querySelectorAll('.btn-color-nuevo').forEach(btn => {
                 btn.onclick = () => {
-                    selectColorActual = btn.closest('.linea-color').querySelector('.select-color');
+                    selectColorActual = btn.closest('.linea-nueva').querySelector('.select-color');
                     document.getElementById('modalColorNombre').value = '';
                     document.getElementById('modalColorCodigo').value = '';
                     document.getElementById('modalColorFamilia').value = '';
@@ -281,7 +281,7 @@
             });
             document.querySelectorAll('.btn-tipotela-nuevo').forEach(btn => {
                 btn.onclick = () => {
-                    selectTipoTelaActual = btn.closest('.linea-color').querySelector('.select-tipo-tela');
+                    selectTipoTelaActual = btn.closest('.linea-nueva').querySelector('.select-tipo-tela');
                     document.getElementById('modalTipoTelaNombre').value = '';
                     document.getElementById('modalTipoTelaError').textContent = '';
                     new bootstrap.Modal(document.getElementById('modalTipoTelaPrograma')).show();
@@ -289,7 +289,7 @@
             });
             document.querySelectorAll('.btn-titulo-nuevo').forEach(btn => {
                 btn.onclick = () => {
-                    selectTituloActual = btn.closest('.linea-color').querySelector('.select-titulo');
+                    selectTituloActual = btn.closest('.linea-nueva').querySelector('.select-titulo');
                     document.getElementById('modalTituloValor').value = '';
                     document.getElementById('modalTituloError').textContent = '';
                     new bootstrap.Modal(document.getElementById('modalTituloPrograma')).show();
