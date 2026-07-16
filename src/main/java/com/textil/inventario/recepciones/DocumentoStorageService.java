@@ -38,6 +38,28 @@ public class DocumentoStorageService {
         return rutaCompleta.toString();
     }
 
+    // Variante sin MultipartFile: para cuando el PDF ya esta en disco (ej. un
+    // documento que Archivo Historico ya proceso) y solo hace falta copiarlo
+    // a la ubicacion definitiva de una Recepcion real, sin pasar por upload HTTP.
+    public String guardar(Path archivoOrigen, String nombreOriginal, String tipoDocumento, Empresa empresa, java.time.LocalDate fecha) throws IOException {
+        String carpetaEmpresa = (empresa.getCarpeta() != null && !empresa.getCarpeta().isBlank())
+                ? empresa.getCarpeta() : "Otros";
+
+        String subcarpetaTipo = "FACTURA".equalsIgnoreCase(tipoDocumento) ? "Facturas" : "Guias";
+
+        Path carpetaDestino = Paths.get(rutaBase, subcarpetaTipo, carpetaEmpresa);
+        Files.createDirectories(carpetaDestino);
+
+        String extension = obtenerExtension(nombreOriginal);
+        String prefijoFecha = fecha != null ? fecha.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) : "sinfecha";
+        String nombreArchivo = prefijoFecha + "_" + UUID.randomUUID().toString().substring(0, 8) + extension;
+
+        Path rutaCompleta = carpetaDestino.resolve(nombreArchivo);
+        Files.copy(archivoOrigen, rutaCompleta, StandardCopyOption.REPLACE_EXISTING);
+
+        return rutaCompleta.toString();
+    }
+
     public String guardarFotoRapida(org.springframework.web.multipart.MultipartFile archivo, String subcarpeta) throws IOException {
         Path carpetaDestino = Paths.get(rutaBase, subcarpeta);
         Files.createDirectories(carpetaDestino);

@@ -31,20 +31,11 @@ public interface DocumentoHistoricoRepository extends JpaRepository<DocumentoHis
                                                @Param("anio") Integer anio,
                                                @Param("busqueda") String busqueda);
 
-    // Vinculacion FACTURA -> GUIAS: cuando se procesa una factura, busca las
-    // guias ya subidas que coincidan con cada numero que la IA leyo en
-    // "guiasReferenciadas", para copiarles el numero de factura.
-    List<DocumentoHistorico> findByTipoDocumentoAndNumeroGuia(
-            DocumentoHistorico.TipoDocumentoHistorico tipoDocumento, String numeroGuia);
-
-    // Vinculacion GUIA -> FACTURA (orden inverso): cuando se procesa una guia
-    // y todavia no tiene numero de factura, busca si alguna factura YA
-    // procesada la menciona en su guias_referenciadas.
-    @Query("""
-        SELECT d FROM DocumentoHistorico d
-        WHERE d.tipoDocumento = com.textil.inventario.archivohistorico.DocumentoHistorico$TipoDocumentoHistorico.FACTURA
-          AND d.guiasReferenciadas IS NOT NULL
-          AND LOWER(d.guiasReferenciadas) LIKE LOWER(CONCAT('%', :numeroGuia, '%'))
-        """)
-    List<DocumentoHistorico> buscarFacturasQueReferencianGuia(@Param("numeroGuia") String numeroGuia);
+    // Vinculacion FACTURA <-> GUIAS: la comparacion exacta por numeroGuia no
+    // sirve porque la factura suele mencionar el numero SIN ceros a la
+    // izquierda (ej. "TG01-21376") mientras la guia lo guarda CON ceros
+    // (ej. "TG01-00021376", tal como lo lee la IA de la guia misma). Por eso
+    // se trae todo el tipo y la comparacion normalizada se hace en Java
+    // (ver ArchivoHistoricoService.normalizarNumeroGuia).
+    List<DocumentoHistorico> findByTipoDocumento(DocumentoHistorico.TipoDocumentoHistorico tipoDocumento);
 }

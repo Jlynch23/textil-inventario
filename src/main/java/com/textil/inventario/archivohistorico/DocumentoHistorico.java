@@ -54,6 +54,15 @@ public class DocumentoHistorico {
     @Column(name = "estado_proceso", nullable = false, length = 20)
     private EstadoProceso estadoProceso = EstadoProceso.PENDIENTE;
 
+    @Column(name = "crear_recepcion_automatica", nullable = false)
+    private Boolean crearRecepcionAutomatica = false;
+
+    @Column(name = "recepcion_creada_id")
+    private Long recepcionCreadaId;
+
+    @Column(name = "subido_por_usuario_id")
+    private Long subidoPorUsuarioId;
+
     @Column(columnDefinition = "TEXT")
     private String observacion;
 

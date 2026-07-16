@@ -1,6 +1,7 @@
 package com.textil.inventario.archivohistorico;
 
 import com.textil.inventario.catalogo.EmpresaRepository;
+import com.textil.inventario.seguridad.UsuarioActualService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -28,6 +29,7 @@ public class ArchivoHistoricoController {
     private final DocumentoHistoricoRepository documentoHistoricoRepository;
     private final EmpresaRepository empresaRepository;
     private final ArchivoHistoricoService archivoHistoricoService;
+    private final UsuarioActualService usuarioActualService;
 
     @GetMapping
     public String listar(@RequestParam(required = false) Long empresaId,
@@ -56,9 +58,15 @@ public class ArchivoHistoricoController {
     }
 
     @PostMapping("/subir-zip")
-    public String subirZip(@RequestParam("zip") MultipartFile zip, RedirectAttributes ra) {
+    public String subirZip(@RequestParam("zip") MultipartFile zip,
+                            @RequestParam(required = false, defaultValue = "false") boolean crearRecepcionAutomatica,
+                            RedirectAttributes ra) {
         try {
-            int cantidad = archivoHistoricoService.subirZip(zip);
+            // Se captura AHORA (hilo de la peticion HTTP, con sesion valida) porque
+            // el procesamiento real corre despues en un hilo @Async donde Spring
+            // Security ya no tiene el contexto de quien esta logueado.
+            Long usuarioId = usuarioActualService.obtenerUsuarioActual().getId();
+            int cantidad = archivoHistoricoService.subirZip(zip, crearRecepcionAutomatica, usuarioId);
             if (cantidad > 0) {
                 archivoHistoricoService.procesarPendientesAsync();
             }

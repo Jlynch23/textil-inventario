@@ -54,6 +54,42 @@ public class RecepcionService {
         recepcionDocumentoRepository.save(doc);
     }
 
+    // Usado por Archivo Historico al crear una Recepcion automatica: el PDF ya
+    // esta en disco (Archivo Historico ya lo proceso), asi que se copia
+    // directo en vez de pasar por un upload HTTP con MultipartFile.
+    @Transactional
+    public void guardarDocumentoGuiaDesdeArchivo(Long recepcionId, java.nio.file.Path archivoOrigen, String nombreOriginal) throws java.io.IOException {
+        Recepcion r = recepcionRepository.findById(recepcionId).orElseThrow();
+        String ruta = documentoStorageService.guardar(archivoOrigen, nombreOriginal, "GUIA", r.getEmpresa(), r.getFechaGuia());
+
+        RecepcionDocumento doc = new RecepcionDocumento();
+        doc.setRecepcion(r);
+        doc.setTipoDocumento("GUIA");
+        doc.setNombreOriginal(nombreOriginal);
+        doc.setRutaArchivo(ruta);
+        recepcionDocumentoRepository.save(doc);
+    }
+
+    // Version de guardarDocumentoFactura para cuando el PDF ya esta en disco
+    // (Archivo Historico ya lo proceso), sin pasar por un upload HTTP.
+    @Transactional
+    public void guardarDocumentoFacturaDesdeArchivo(List<Long> recepcionIds, java.nio.file.Path archivoOrigen, String nombreOriginal) throws java.io.IOException {
+        List<Recepcion> recepciones = recepcionRepository.findAllById(recepcionIds);
+        if (recepciones.isEmpty()) return;
+
+        Recepcion primera = recepciones.get(0);
+        String ruta = documentoStorageService.guardar(archivoOrigen, nombreOriginal, "FACTURA", primera.getEmpresa(), primera.getFechaFactura());
+
+        for (Recepcion r : recepciones) {
+            RecepcionDocumento doc = new RecepcionDocumento();
+            doc.setRecepcion(r);
+            doc.setTipoDocumento("FACTURA");
+            doc.setNombreOriginal(nombreOriginal);
+            doc.setRutaArchivo(ruta);
+            recepcionDocumentoRepository.save(doc);
+        }
+    }
+
     @Transactional
     public void guardarDocumentoFactura(List<Long> recepcionIds, org.springframework.web.multipart.MultipartFile archivo) throws java.io.IOException {
         List<Recepcion> recepciones = recepcionRepository.findAllById(recepcionIds);
