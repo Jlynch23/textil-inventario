@@ -8,9 +8,13 @@ import java.util.List;
 
 public interface LogEventoRepository extends JpaRepository<LogEvento, Long> {
 
+    // Excluye ERROR_SISTEMA: esas entradas tienen su propia vista dedicada
+    // en Reportes > Errores del Sistema (solo SUPERADMIN), para que no se
+    // vean duplicadas entre las dos pantallas.
     @Query("""
         SELECT l FROM LogEvento l
-        WHERE (:usuarioId IS NULL OR l.usuario.id = :usuarioId)
+        WHERE l.accion != 'ERROR_SISTEMA'
+          AND (:usuarioId IS NULL OR l.usuario.id = :usuarioId)
           AND (:accion IS NULL OR l.accion = :accion)
           AND (:desde IS NULL OR l.createdAt >= :desde)
           AND (:hasta IS NULL OR l.createdAt <= :hasta)
