@@ -38,6 +38,9 @@ public class DocumentoHistorico {
     @Column(name = "razon_social_detectada", length = 200)
     private String razonSocialDetectada;
 
+    @Column(name = "guias_referenciadas", columnDefinition = "TEXT")
+    private String guiasReferenciadas;
+
     @Column(name = "ruta_relativa_zip", length = 500)
     private String rutaRelativaZip;
 

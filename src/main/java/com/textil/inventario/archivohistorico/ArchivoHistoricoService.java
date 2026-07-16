@@ -103,10 +103,21 @@ public class ArchivoHistoricoService {
         return nombre;
     }
 
+    // FAST DYE no incluye la palabra "FACTURA" o "GUIA" en el nombre del
+    // archivo: usa el numero de serie real. Guias: TG01-00022558. Facturas:
+    // F003-00037985 (formato estandar de series de facturacion en Peru,
+    // letra F + 3 digitos + guion + correlativo).
+    private static final java.util.regex.Pattern PATRON_GUIA =
+            java.util.regex.Pattern.compile("TG\\d+-\\d+", java.util.regex.Pattern.CASE_INSENSITIVE);
+    private static final java.util.regex.Pattern PATRON_FACTURA =
+            java.util.regex.Pattern.compile("F\\d{3}-\\d+", java.util.regex.Pattern.CASE_INSENSITIVE);
+
     private DocumentoHistorico.TipoDocumentoHistorico detectarTipo(String rutaEntrada) {
         String ruta = rutaEntrada.toUpperCase();
         if (ruta.contains("FACTURA")) return DocumentoHistorico.TipoDocumentoHistorico.FACTURA;
         if (ruta.contains("GUIA")) return DocumentoHistorico.TipoDocumentoHistorico.GUIA;
+        if (PATRON_FACTURA.matcher(ruta).find()) return DocumentoHistorico.TipoDocumentoHistorico.FACTURA;
+        if (PATRON_GUIA.matcher(ruta).find()) return DocumentoHistorico.TipoDocumentoHistorico.GUIA;
         return DocumentoHistorico.TipoDocumentoHistorico.OTRO;
     }
 
@@ -174,6 +185,14 @@ public class ArchivoHistoricoService {
                 doc.setRazonSocialDetectada(r.razonSocialDetectada());
                 razonSocialDetectada = r.razonSocialDetectada();
                 if (r.advertencia() != null) doc.setObservacion(r.advertencia());
+
+                // Vinculacion FACTURA -> GUIAS: la IA ya leyo que numeros de guia
+                // menciona esta factura. Se guarda tal cual para referencia, y se
+                // copia el numero de factura a cada guia ya subida que coincida.
+                if (r.guiasReferenciadas() != null && !r.guiasReferenciadas().isEmpty()) {
+                    doc.setGuiasReferenciadas(String.join(", ", r.guiasReferenciadas()));
+                    vincularFacturaConGuiasExistentes(doc, r.guiasReferenciadas());
+                }
             } else {
                 // GUIA u OTRO: se intenta leer como guia (tiene los datos de productos)
                 ExtraccionGuiaResponse r = ocrService.extraerDatosGuia(bytes);
@@ -183,6 +202,15 @@ public class ArchivoHistoricoService {
                 doc.setRazonSocialDetectada(r.razonSocialDetectada());
                 razonSocialDetectada = r.razonSocialDetectada();
                 if (r.advertencia() != null) doc.setObservacion(r.advertencia());
+
+                // Vinculacion GUIA -> FACTURA (orden inverso): si esta guia todavia
+                // no tiene numero de factura, revisa si alguna factura YA subida
+                // la menciona en su guias_referenciadas.
+                if ((doc.getNumeroFactura() == null || doc.getNumeroFactura().isBlank())
+                        && r.numeroGuia() != null && !r.numeroGuia().isBlank()) {
+                    buscarFacturaQueYaReferenciaEstaGuia(r.numeroGuia().trim())
+                            .ifPresent(doc::setNumeroFactura);
+                }
 
                 int productos = 0, coloresCreados = 0, articulosCreados = 0;
                 if (r.productos() != null) {
@@ -218,6 +246,38 @@ public class ArchivoHistoricoService {
     }
 
     /**
+     * Copia el numero de factura a cada guia ya subida que la factura
+     * mencione, siempre que esa guia todavia no tenga numero de factura
+     * asignado (para no pisar un dato que ya estaba bien).
+     */
+    private void vincularFacturaConGuiasExistentes(DocumentoHistorico factura, List<String> guiasReferenciadas) {
+        for (String numeroGuia : guiasReferenciadas) {
+            if (numeroGuia == null || numeroGuia.isBlank()) continue;
+            List<DocumentoHistorico> guias = documentoHistoricoRepository
+                    .findByTipoDocumentoAndNumeroGuia(DocumentoHistorico.TipoDocumentoHistorico.GUIA, numeroGuia.trim());
+            for (DocumentoHistorico guia : guias) {
+                if (guia.getNumeroFactura() == null || guia.getNumeroFactura().isBlank()) {
+                    guia.setNumeroFactura(factura.getNumeroFactura());
+                    documentoHistoricoRepository.save(guia);
+                }
+            }
+        }
+    }
+
+    /**
+     * Busca si alguna factura ya procesada menciona esta guia en su
+     * guias_referenciadas. Devuelve el numero de factura de la primera
+     * coincidencia, si existe.
+     */
+    private Optional<String> buscarFacturaQueYaReferenciaEstaGuia(String numeroGuia) {
+        return documentoHistoricoRepository.buscarFacturasQueReferencianGuia(numeroGuia)
+                .stream()
+                .map(DocumentoHistorico::getNumeroFactura)
+                .filter(n -> n != null && !n.isBlank())
+                .findFirst();
+    }
+
+    /**
      * Si la empresa detectada por la IA es distinta a la que tiene el
      * documento (o no tenia ninguna), mueve el PDF en disco a la carpeta
      * de la empresa correcta y actualiza empresa + rutaArchivo. Si el
@@ -229,13 +289,23 @@ public class ArchivoHistoricoService {
         boolean yaCorrecta = doc.getEmpresa() != null && doc.getEmpresa().getId().equals(nuevaEmpresa.getId());
         if (yaCorrecta) return;
 
-        try {
-            Path origen = Paths.get(doc.getRutaArchivo());
-            Path carpetaDestino = Paths.get(rutaBase, "HistoricoImportado",
-                    doc.getTipoDocumento().name(), nuevaEmpresa.getCarpeta());
-            Files.createDirectories(carpetaDestino);
+        Path origen = Paths.get(doc.getRutaArchivo());
+        Path carpetaDestino = Paths.get(rutaBase, "HistoricoImportado",
+                doc.getTipoDocumento().name(), nuevaEmpresa.getCarpeta());
+        Path destino = carpetaDestino.resolve(origen.getFileName());
 
-            Path destino = carpetaDestino.resolve(origen.getFileName());
+        try {
+            if (!Files.exists(origen) && Files.exists(destino)) {
+                // El archivo ya no esta en el origen pero SI existe en el destino:
+                // ya fue movido antes (ej. procesamiento concurrente del mismo ZIP
+                // subido dos veces). No es un error, solo falta reflejarlo en el
+                // registro para que quede consistente con lo que ya hay en disco.
+                doc.setRutaArchivo(destino.toString());
+                doc.setEmpresa(nuevaEmpresa);
+                return;
+            }
+
+            Files.createDirectories(carpetaDestino);
             Files.move(origen, destino);
 
             doc.setRutaArchivo(destino.toString());
