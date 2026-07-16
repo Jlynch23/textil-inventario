@@ -1,19 +1,15 @@
 package com.textil.inventario.recepciones;
 
-import com.textil.inventario.catalogo.ColorRepository;
-import com.textil.inventario.catalogo.TipoTelaRepository;
 import com.textil.inventario.seguridad.Usuario;
-import com.textil.inventario.seguridad.UsuarioRepository;
+import com.textil.inventario.seguridad.UsuarioActualService;
+import com.textil.inventario.transferencias.TransferenciaService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.Authentication;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import org.springframework.ui.Model;
-import com.textil.inventario.transferencias.TransferenciaRepository;
 
 @Controller
 @RequestMapping("/almacen")
@@ -22,12 +18,10 @@ public class AlmaceneroController {
 
     private final EntradaRapidaRepository entradaRapidaRepository;
     private final SalidaRapidaRepository salidaRapidaRepository;
-    private final UsuarioRepository usuarioRepository;
-    private final TipoTelaRepository tipoTelaRepository;
-    private final ColorRepository colorRepository;
     private final DocumentoStorageService documentoStorageService;
-    private final RecepcionRepository recepcionRepository;
-    private final TransferenciaRepository transferenciaRepository;
+    private final RecepcionService recepcionService;
+    private final TransferenciaService transferenciaService;
+    private final UsuarioActualService usuarioActualService;
     private final com.textil.inventario.auditoria.AuditLogService auditLogService;
 
     @GetMapping
@@ -43,9 +37,8 @@ public class AlmaceneroController {
     @PostMapping("/entrada")
     public String entradaGuardar(@RequestParam Integer totalRollos,
                                   @RequestParam("foto") MultipartFile foto,
-                                  Authentication auth,
                                   RedirectAttributes ra) throws java.io.IOException {
-        Usuario usuario = usuarioRepository.findByEmail(auth.getName()).orElseThrow();
+        Usuario usuario = usuarioActualService.obtenerUsuarioActual();
 
         String ruta = documentoStorageService.guardarFotoRapida(foto, "Entradas");
 
@@ -69,9 +62,8 @@ public class AlmaceneroController {
     @PostMapping("/salida")
     public String salidaGuardar(@RequestParam Integer cantidad,
                                  @RequestParam("foto") MultipartFile foto,
-                                 Authentication auth,
                                  RedirectAttributes ra) throws java.io.IOException {
-        Usuario usuario = usuarioRepository.findByEmail(auth.getName()).orElseThrow();
+        Usuario usuario = usuarioActualService.obtenerUsuarioActual();
 
         String ruta = documentoStorageService.guardarFotoRapida(foto, "Salidas");
 
@@ -93,8 +85,8 @@ public class AlmaceneroController {
     public String revision(Model model) {
         model.addAttribute("entradas", entradaRapidaRepository.findByEstadoOrderByCreatedAtDesc("PENDIENTE"));
         model.addAttribute("salidas", salidaRapidaRepository.findByEstadoOrderByCreatedAtDesc("PENDIENTE"));
-        model.addAttribute("recepciones", recepcionRepository.findAllByOrderByCreatedAtDesc());
-        model.addAttribute("transferencias", transferenciaRepository.findAllByOrderByFechaSolicitudDesc());
+        model.addAttribute("recepciones", recepcionService.listarRecepciones());
+        model.addAttribute("transferencias", transferenciaService.listarTransferencias());
         return "almacen/revision";
     }
 
@@ -128,7 +120,7 @@ public class AlmaceneroController {
         er.setEstado("REVISADO");
         er.setObservacionesAdmin(observaciones);
         if (recepcionId != null) {
-            er.setRecepcion(recepcionRepository.findById(recepcionId).orElseThrow());
+            er.setRecepcion(recepcionService.buscarRecepcion(recepcionId));
         }
         entradaRapidaRepository.save(er);
         auditLogService.registrar("EDITAR", "EntradaRapida", er.getId(), "Marco entrada rapida como revisada");
@@ -145,7 +137,7 @@ public class AlmaceneroController {
         sr.setEstado("REVISADO");
         sr.setObservacionesAdmin(observaciones);
         if (transferenciaId != null) {
-            sr.setTransferencia(transferenciaRepository.findById(transferenciaId).orElseThrow());
+            sr.setTransferencia(transferenciaService.buscarTransferencia(transferenciaId));
         }
         salidaRapidaRepository.save(sr);
         auditLogService.registrar("EDITAR", "SalidaRapida", sr.getId(), "Marco salida rapida como revisada");
