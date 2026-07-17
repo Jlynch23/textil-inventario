@@ -41,6 +41,15 @@ public class UsuarioController {
             ra.addFlashAttribute("error", "La contraseña debe tener al menos 6 caracteres.");
             return "redirect:/usuarios";
         }
+        // SEC-04 (auditoria 17-jul-2026): BCrypt trunca silenciosamente cualquier
+        // entrada mayor a 72 bytes -- sin este chequeo, un usuario podria creer que
+        // esta usando una passphrase larga y segura cuando en realidad solo los
+        // primeros 72 bytes importan para el login. Se valida en bytes (no
+        // caracteres) porque BCrypt trunca por bytes UTF-8, no por longitud de String.
+        if (password.getBytes(java.nio.charset.StandardCharsets.UTF_8).length > 72) {
+            ra.addFlashAttribute("error", "La contraseña no puede superar los 72 caracteres (limite tecnico de BCrypt).");
+            return "redirect:/usuarios";
+        }
 
         Usuario u = new Usuario();
         u.setNombre(nombre);
