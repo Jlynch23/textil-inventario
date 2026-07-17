@@ -176,7 +176,7 @@ public class ArchivoHistoricoService {
      * Procesa todos los documentos PENDIENTE con la IA, en lotes, corriendo en
      * un hilo aparte para no bloquear la petición HTTP que subió el ZIP.
      */
-    @Async
+    @Async("archivoHistoricoTaskExecutor")
     public void procesarPendientesAsync() {
         List<DocumentoHistorico> pendientes;
         do {
