@@ -291,6 +291,7 @@ public class RecepcionService {
     }
 
     @Transactional
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('SUPERADMIN')")
     public void eliminarRecepcion(Long id) {
         Recepcion r = recepcionRepository.findById(id).orElseThrow();
         if (r.getEstado() != Recepcion.EstadoRecepcion.PENDIENTE) {

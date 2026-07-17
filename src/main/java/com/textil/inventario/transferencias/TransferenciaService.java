@@ -201,6 +201,7 @@ public class TransferenciaService {
     }
 
     @Transactional
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('SUPERADMIN')")
     public void eliminarTransferencia(Long id) {
         Transferencia t = transferenciaRepository.findById(id).orElseThrow();
         if (t.getEstado() != Transferencia.EstadoTransferencia.BORRADOR) {

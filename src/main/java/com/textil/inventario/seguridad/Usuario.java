@@ -31,6 +31,10 @@ public class Usuario extends BaseEntity {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @PrePersist
+    protected void inicializarUpdatedAt() {
+        updatedAt = LocalDateTime.now();
+    }
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();

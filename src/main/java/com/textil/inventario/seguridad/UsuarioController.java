@@ -1,6 +1,7 @@
 package com.textil.inventario.seguridad;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -25,6 +26,7 @@ public class UsuarioController {
         return "usuarios/lista";
     }
 
+    @PreAuthorize("hasRole('SUPERADMIN')")
     @PostMapping("/guardar")
     public String guardar(@RequestParam String nombre,
                            @RequestParam String email,
@@ -52,6 +54,7 @@ public class UsuarioController {
         return "redirect:/usuarios";
     }
 
+    @PreAuthorize("hasRole('SUPERADMIN')")
     @PostMapping("/inactivar/{id}")
     public String inactivar(@PathVariable Long id, RedirectAttributes ra) {
         Usuario u = usuarioRepository.findById(id).orElseThrow();
@@ -61,6 +64,7 @@ public class UsuarioController {
         return "redirect:/usuarios";
     }
 
+    @PreAuthorize("hasRole('SUPERADMIN')")
     @PostMapping("/reactivar/{id}")
     public String reactivar(@PathVariable Long id, RedirectAttributes ra) {
         Usuario u = usuarioRepository.findById(id).orElseThrow();
@@ -70,6 +74,7 @@ public class UsuarioController {
         return "redirect:/usuarios";
     }
 
+    @PreAuthorize("hasRole('SUPERADMIN')")
     @PostMapping("/eliminar/{id}")
     public String eliminar(@PathVariable Long id, RedirectAttributes ra, Authentication authentication) {
         Usuario u = usuarioRepository.findById(id).orElseThrow();
