@@ -164,6 +164,31 @@ Las migraciones de Flyway se aplican automáticamente. Disponible en `http://loc
 - 🚧 API REST
 - 🚧 Despliegue en producción (VPS)
 
+## 🔐 Variables de entorno
+
+El proyecto usa variables de entorno para credenciales y configuración (nunca hardcodeadas en el repo, ver `application.yml`). Copiar `.env.example` como referencia y definir los valores reales en `~/.bashrc` (o el gestor de secretos que corresponda en producción):
+
+```bash
+DB_USERNAME=textil_user
+DB_PASSWORD=          # obligatoria, sin valor por defecto
+ANTHROPIC_API_KEY=    # para el OCR de guías/facturas
+DOCUMENTOS_PATH=./documentos
+MAX_UPLOAD_SIZE=25MB
+```
+
+## 💾 Backup y restauración de la base de datos
+
+```bash
+# Backup manual (genera un .sql.gz con timestamp en ~/backups/textil-inventario/)
+./scripts/backup-db.sh
+
+# Restaurar desde un backup (SOBREESCRIBE la base de datos actual)
+./scripts/restore-db.sh ~/backups/textil-inventario/textil_inventario_2026-07-17_155514.sql.gz
+```
+
+Para automatizar backups diarios, agregar a `crontab -e` (ajustando la ruta del proyecto y la contraseña):
+Los backups se conservan 30 días por defecto (configurable en `RETENCION_DIAS` dentro del script); los más antiguos se eliminan automáticamente en cada corrida.
+
 ---
 
 ## ⭐ Estado del proyecto
