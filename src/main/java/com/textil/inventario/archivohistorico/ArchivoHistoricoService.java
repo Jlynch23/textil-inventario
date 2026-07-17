@@ -1,5 +1,4 @@
 package com.textil.inventario.archivohistorico;
-
 import com.textil.inventario.catalogo.*;
 import com.textil.inventario.recepciones.AnthropicOcrService;
 import com.textil.inventario.recepciones.ExtraccionFacturaResponse;
@@ -18,14 +17,12 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -34,15 +31,12 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class ArchivoHistoricoService {
-
     @Value("${documentos.ruta-base}")
     private String rutaBase;
-
     private final DocumentoHistoricoRepository documentoHistoricoRepository;
     private final EmpresaRepository empresaRepository;
     private final TipoTelaRepository tipoTelaRepository;
@@ -53,7 +47,8 @@ public class ArchivoHistoricoService {
     private final RecepcionService recepcionService;
     private final UsuarioRepository usuarioRepository;
     private final com.textil.inventario.catalogo.CatalogoService catalogoService;
-
+    private final DocumentoHistoricoClasificador clasificador;
+    private final DocumentoHistoricoFileManager fileManager;
     /**
      * Descomprime el ZIP subido, guarda cada PDF en disco y crea un registro
      * PENDIENTE por documento. NO llama a la IA aquí (eso es rápido y se hace
@@ -81,8 +76,8 @@ public class ArchivoHistoricoService {
                 byte[] contenido = zis.readAllBytes();
                 if (contenido.length == 0) continue;
 
-                DocumentoHistorico.TipoDocumentoHistorico tipo = detectarTipo(nombreEntrada);
-                Empresa empresa = detectarEmpresaPorRuta(nombreEntrada, empresas);
+                DocumentoHistorico.TipoDocumentoHistorico tipo = clasificador.detectarTipo(nombreEntrada);
+                Empresa empresa = clasificador.detectarEmpresaPorRuta(nombreEntrada, empresas);
 
                 String nombreArchivo = Paths.get(nombreEntrada).getFileName().toString();
                 Path carpetaDestino = Paths.get(rutaBase, "HistoricoImportado",
@@ -90,7 +85,7 @@ public class ArchivoHistoricoService {
                         empresa != null ? empresa.getCarpeta() : "SinIdentificar");
                 Files.createDirectories(carpetaDestino);
 
-                String nombreGuardado = evitarColision(nombreArchivo, nombresUsados);
+                String nombreGuardado = clasificador.evitarColision(nombreArchivo, nombresUsados);
                 Path rutaCompleta = carpetaDestino.resolve(nombreGuardado);
                 Files.write(rutaCompleta, contenido);
 
@@ -110,66 +105,6 @@ public class ArchivoHistoricoService {
         }
 
         return contador;
-    }
-
-    private String evitarColision(String nombreOriginal, Set<String> nombresUsados) {
-        String nombre = UUID.randomUUID().toString().substring(0, 8) + "_" + nombreOriginal;
-        nombresUsados.add(nombre);
-        return nombre;
-    }
-
-    // FAST DYE no incluye la palabra "FACTURA" o "GUIA" en el nombre del
-    // archivo: usa el numero de serie real. Guias: TG01-00022558. Facturas:
-    // F003-00037985 (formato estandar de series de facturacion en Peru,
-    // letra F + 3 digitos + guion + correlativo).
-    private static final java.util.regex.Pattern PATRON_GUIA =
-            java.util.regex.Pattern.compile("TG\\d+-\\d+", java.util.regex.Pattern.CASE_INSENSITIVE);
-    private static final java.util.regex.Pattern PATRON_FACTURA =
-            java.util.regex.Pattern.compile("F\\d{3}-\\d+", java.util.regex.Pattern.CASE_INSENSITIVE);
-
-    private DocumentoHistorico.TipoDocumentoHistorico detectarTipo(String rutaEntrada) {
-        String ruta = rutaEntrada.toUpperCase();
-        if (ruta.contains("FACTURA")) return DocumentoHistorico.TipoDocumentoHistorico.FACTURA;
-        if (ruta.contains("GUIA")) return DocumentoHistorico.TipoDocumentoHistorico.GUIA;
-        if (PATRON_FACTURA.matcher(ruta).find()) return DocumentoHistorico.TipoDocumentoHistorico.FACTURA;
-        if (PATRON_GUIA.matcher(ruta).find()) return DocumentoHistorico.TipoDocumentoHistorico.GUIA;
-        return DocumentoHistorico.TipoDocumentoHistorico.OTRO;
-    }
-
-    private Empresa detectarEmpresaPorRuta(String rutaEntrada, List<Empresa> empresas) {
-        String ruta = rutaEntrada.toUpperCase();
-        for (Empresa e : empresas) {
-            if (e.getCarpeta() != null && !e.getCarpeta().isBlank()
-                    && ruta.contains(e.getCarpeta().toUpperCase())) {
-                return e;
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Detecta la empresa a partir de texto REAL leido por la IA (razon social
-     * de la guia/factura), en vez de la ruta del ZIP. Permite subir un ZIP
-     * sin organizar por carpetas de empresa: la IA decide, no la ruta.
-     * Primero intenta con la palabra distintiva de "carpeta" (ej. LAURA,
-     * CLEMENTE); si no matchea, intenta con el nombre completo de la empresa.
-     */
-    private Empresa detectarEmpresaPorTexto(String razonSocialDetectada, List<Empresa> empresas) {
-        if (razonSocialDetectada == null || razonSocialDetectada.isBlank()) return null;
-        String normalizado = razonSocialDetectada.toUpperCase();
-
-        for (Empresa e : empresas) {
-            if (e.getCarpeta() != null && !e.getCarpeta().isBlank()
-                    && normalizado.contains(e.getCarpeta().toUpperCase())) {
-                return e;
-            }
-        }
-        for (Empresa e : empresas) {
-            if (e.getNombre() != null && normalizado.contains(e.getNombre().toUpperCase())) {
-                return e;
-            }
-        }
-        return null;
     }
 
     /**
@@ -196,14 +131,14 @@ public class ArchivoHistoricoService {
             if (doc.getTipoDocumento() == DocumentoHistorico.TipoDocumentoHistorico.FACTURA) {
                 ExtraccionFacturaResponse r = ocrService.extraerDatosFactura(bytes);
                 doc.setNumeroFactura(r.numeroFactura());
-                doc.setFechaDocumento(parseFecha(r.fechaFactura()));
+                doc.setFechaDocumento(clasificador.parseFecha(r.fechaFactura()));
                 doc.setRazonSocialDetectada(r.razonSocialDetectada());
                 razonSocialDetectada = r.razonSocialDetectada();
                 if (r.advertencia() != null) doc.setObservacion(r.advertencia());
 
                 // La empresa se resuelve ANTES de la vinculacion factura-guia,
                 // para que quede consistente con el resto del documento.
-                resolverEmpresaYMoverArchivo(doc, razonSocialDetectada);
+                fileManager.resolverEmpresaYMoverArchivo(doc, razonSocialDetectada);
 
                 if (r.guiasReferenciadas() != null && !r.guiasReferenciadas().isEmpty()) {
                     doc.setGuiasReferenciadas(String.join(", ", r.guiasReferenciadas()));
@@ -230,14 +165,14 @@ public class ArchivoHistoricoService {
                 ExtraccionGuiaResponse r = ocrService.extraerDatosGuia(bytes);
                 doc.setNumeroGuia(r.numeroGuia());
                 if (r.numeroFactura() != null) doc.setNumeroFactura(r.numeroFactura());
-                doc.setFechaDocumento(parseFecha(r.fechaGuia()));
+                doc.setFechaDocumento(clasificador.parseFecha(r.fechaGuia()));
                 doc.setRazonSocialDetectada(r.razonSocialDetectada());
                 razonSocialDetectada = r.razonSocialDetectada();
                 if (r.advertencia() != null) doc.setObservacion(r.advertencia());
 
                 // La empresa se resuelve ANTES de enriquecer el catalogo y crear
                 // la Recepcion, porque crear una Recepcion requiere empresaId.
-                resolverEmpresaYMoverArchivo(doc, razonSocialDetectada);
+                fileManager.resolverEmpresaYMoverArchivo(doc, razonSocialDetectada);
 
                 if ((doc.getNumeroFactura() == null || doc.getNumeroFactura().isBlank())
                         && r.numeroGuia() != null && !r.numeroGuia().isBlank()) {
@@ -438,62 +373,6 @@ public class ArchivoHistoricoService {
         return Optional.empty();
     }
 
-    /**
-     * La IA ya leyo el contenido real del documento: si logra identificar la
-     * empresa por su razon social, esa deteccion manda por encima de lo que
-     * se haya adivinado por la ruta del ZIP al momento de subirlo. Asi no
-     * hace falta organizar el ZIP por carpetas de empresa.
-     */
-    private void resolverEmpresaYMoverArchivo(DocumentoHistorico doc, String razonSocialDetectada) {
-        List<Empresa> empresas = empresaRepository.findByActivoTrue();
-        Empresa empresaDetectadaPorIA = detectarEmpresaPorTexto(razonSocialDetectada, empresas);
-        if (empresaDetectadaPorIA != null) {
-            moverArchivoSiEmpresaCambio(doc, empresaDetectadaPorIA);
-        }
-    }
-
-    /**
-     * Si la empresa detectada por la IA es distinta a la que tiene el
-     * documento (o no tenia ninguna), mueve el PDF en disco a la carpeta
-     * de la empresa correcta y actualiza empresa + rutaArchivo. Si el
-     * movimiento en disco falla por cualquier motivo, NO se toca ni la
-     * empresa ni la ruta en base de datos (para que ambas sigan siendo
-     * consistentes entre si), y se deja constancia en observacion.
-     */
-    private void moverArchivoSiEmpresaCambio(DocumentoHistorico doc, Empresa nuevaEmpresa) {
-        boolean yaCorrecta = doc.getEmpresa() != null && doc.getEmpresa().getId().equals(nuevaEmpresa.getId());
-        if (yaCorrecta) return;
-
-        Path origen = Paths.get(doc.getRutaArchivo());
-        Path carpetaDestino = Paths.get(rutaBase, "HistoricoImportado",
-                doc.getTipoDocumento().name(), nuevaEmpresa.getCarpeta());
-        Path destino = carpetaDestino.resolve(origen.getFileName());
-
-        try {
-            if (!Files.exists(origen) && Files.exists(destino)) {
-                // El archivo ya no esta en el origen pero SI existe en el destino:
-                // ya fue movido antes (ej. procesamiento concurrente del mismo ZIP
-                // subido dos veces). No es un error, solo falta reflejarlo en el
-                // registro para que quede consistente con lo que ya hay en disco.
-                doc.setRutaArchivo(destino.toString());
-                doc.setEmpresa(nuevaEmpresa);
-                return;
-            }
-
-            Files.createDirectories(carpetaDestino);
-            Files.move(origen, destino);
-
-            doc.setRutaArchivo(destino.toString());
-            doc.setEmpresa(nuevaEmpresa);
-        } catch (Exception e) {
-            log.warn("No se pudo mover el documento historico id={} a la carpeta de {}: {}",
-                    doc.getId(), nuevaEmpresa.getNombre(), e.getMessage());
-            String nota = "No se pudo mover el archivo a la carpeta de " + nuevaEmpresa.getNombre()
-                    + " tras detectarla por IA: " + e.getMessage();
-            doc.setObservacion(doc.getObservacion() == null ? nota : doc.getObservacion() + "\n" + nota);
-        }
-    }
-
     private record EnriquecimientoResultado(Articulo articulo, int colorCreado, int articuloCreado) {}
 
     /**
@@ -571,14 +450,5 @@ public class ArchivoHistoricoService {
         }
 
         return new EnriquecimientoResultado(articulo, colorCreado, articuloCreado);
-    }
-
-    private LocalDate parseFecha(String fechaTexto) {
-        if (fechaTexto == null || fechaTexto.isBlank()) return null;
-        try {
-            return LocalDate.parse(fechaTexto.trim(), DateTimeFormatter.ISO_LOCAL_DATE);
-        } catch (Exception e) {
-            return null;
-        }
     }
 }
