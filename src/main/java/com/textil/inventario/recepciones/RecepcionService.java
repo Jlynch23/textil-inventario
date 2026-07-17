@@ -41,7 +41,10 @@ public class RecepcionService {
         }
     }
 
-    @Transactional
+    // ARQ (auditoria 17-jul-2026): sin @Transactional a proposito. La escritura
+    // a disco (I/O lento e impredecible) no debe mantener abierta una conexion
+    // de base de datos. El unico save() posterior ya es atomico por si solo
+    // (Spring Data JPA envuelve cada metodo de repositorio en su propia transaccion).
     public void guardarDocumentoGuia(Long recepcionId, org.springframework.web.multipart.MultipartFile archivo) throws java.io.IOException {
         Recepcion r = recepcionRepository.findById(recepcionId).orElseThrow();
         String ruta = documentoStorageService.guardar(archivo, "GUIA", r.getEmpresa(), r.getFechaGuia());
@@ -57,7 +60,7 @@ public class RecepcionService {
     // Usado por Archivo Historico al crear una Recepcion automatica: el PDF ya
     // esta en disco (Archivo Historico ya lo proceso), asi que se copia
     // directo en vez de pasar por un upload HTTP con MultipartFile.
-    @Transactional
+    // ARQ (auditoria 17-jul-2026): ver nota en guardarDocumentoGuia().
     public void guardarDocumentoGuiaDesdeArchivo(Long recepcionId, java.nio.file.Path archivoOrigen, String nombreOriginal) throws java.io.IOException {
         Recepcion r = recepcionRepository.findById(recepcionId).orElseThrow();
         String ruta = documentoStorageService.guardar(archivoOrigen, nombreOriginal, "GUIA", r.getEmpresa(), r.getFechaGuia());
@@ -72,7 +75,11 @@ public class RecepcionService {
 
     // Version de guardarDocumentoFactura para cuando el PDF ya esta en disco
     // (Archivo Historico ya lo proceso), sin pasar por un upload HTTP.
-    @Transactional
+    // ARQ (auditoria 17-jul-2026): sin @Transactional a proposito, para que la
+    // escritura a disco no mantenga abierta una conexion de BD. Se pierde la
+    // atomicidad "todo o nada" del loop de saves (cada RecepcionDocumento se
+    // guarda en su propia mini-transaccion), aceptable porque esto es metadata
+    // de documentos y no afecta stock_actual ni kardex_movimientos.
     public void guardarDocumentoFacturaDesdeArchivo(List<Long> recepcionIds, java.nio.file.Path archivoOrigen, String nombreOriginal) throws java.io.IOException {
         List<Recepcion> recepciones = recepcionRepository.findAllById(recepcionIds);
         if (recepciones.isEmpty()) return;
@@ -90,7 +97,7 @@ public class RecepcionService {
         }
     }
 
-    @Transactional
+    // ARQ (auditoria 17-jul-2026): ver nota en guardarDocumentoFacturaDesdeArchivo().
     public void guardarDocumentoFactura(List<Long> recepcionIds, org.springframework.web.multipart.MultipartFile archivo) throws java.io.IOException {
         List<Recepcion> recepciones = recepcionRepository.findAllById(recepcionIds);
         if (recepciones.isEmpty()) return;
