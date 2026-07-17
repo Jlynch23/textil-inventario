@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -18,7 +19,18 @@ public class AnthropicOcrService {
     @Value("${anthropic.api-key}")
     private String apiKey;
 
-    private final RestClient restClient = RestClient.create();
+    // SEC-03 (auditoria 17-jul-2026): sin timeout, si la API de Anthropic
+    // tarda o no responde, el hilo queda bloqueado indefinidamente. El OCR
+    // corre dentro de @Async (ver AsyncConfig), asi que sin timeout un
+    // proveedor caido podria agotar el pool de hilos bajo carga.
+    private final RestClient restClient = crearRestClientConTimeouts();
+
+    private static RestClient crearRestClientConTimeouts() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(30_000); // 30s para establecer conexion
+        factory.setReadTimeout(90_000);    // 90s: OCR de PDF puede tardar
+        return RestClient.builder().requestFactory(factory).build();
+    }
     private final ObjectMapper mapper = new ObjectMapper();
 
     private static final String SYSTEM_PROMPT = """

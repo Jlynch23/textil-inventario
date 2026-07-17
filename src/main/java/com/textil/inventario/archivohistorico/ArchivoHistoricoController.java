@@ -75,6 +75,8 @@ public class ArchivoHistoricoController {
                     "recarga esta página en unos minutos para ver el progreso.");
         } catch (IOException e) {
             ra.addFlashAttribute("error", "Error al leer el ZIP: " + e.getMessage());
+        } catch (IllegalArgumentException e) {
+            ra.addFlashAttribute("error", e.getMessage());
         }
         return "redirect:/archivo-historico";
     }

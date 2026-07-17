@@ -61,20 +61,36 @@ public class ArchivoHistoricoService {
      * kardex_movimientos). Pensado SOLO para cargar datos de prueba masivos;
      * por defecto viene en false y el comportamiento original no cambia.
      */
+    // SEC-05 (auditoria 17-jul-2026): proteccion basica contra "zip bomb".
+    private static final int MAX_ENTRADAS_ZIP = 1000;
+    private static final long MAX_TAMANO_DESCOMPRIMIDO_TOTAL = 200L * 1024 * 1024; // 200 MB
     public int subirZip(MultipartFile zip, boolean crearRecepcionAutomatica, Long usuarioId) throws IOException {
         List<Empresa> empresas = empresaRepository.findByActivoTrue();
         int contador = 0;
+        int entradasProcesadas = 0;
+        long tamanoTotalDescomprimido = 0;
         Set<String> nombresUsados = new HashSet<>();
 
         try (ZipInputStream zis = new ZipInputStream(zip.getInputStream())) {
             ZipEntry entry;
             while ((entry = zis.getNextEntry()) != null) {
                 if (entry.isDirectory()) continue;
+                entradasProcesadas++;
+                if (entradasProcesadas > MAX_ENTRADAS_ZIP) {
+                    throw new IllegalArgumentException(
+                            "El ZIP supera el limite de " + MAX_ENTRADAS_ZIP + " archivos permitidos.");
+                }
                 String nombreEntrada = entry.getName();
                 if (!nombreEntrada.toLowerCase().endsWith(".pdf")) continue;
 
                 byte[] contenido = zis.readAllBytes();
                 if (contenido.length == 0) continue;
+                tamanoTotalDescomprimido += contenido.length;
+                if (tamanoTotalDescomprimido > MAX_TAMANO_DESCOMPRIMIDO_TOTAL) {
+                    throw new IllegalArgumentException(
+                            "El contenido descomprimido del ZIP supera el limite de seguridad de "
+                                    + (MAX_TAMANO_DESCOMPRIMIDO_TOTAL / (1024 * 1024)) + " MB.");
+                }
 
                 DocumentoHistorico.TipoDocumentoHistorico tipo = clasificador.detectarTipo(nombreEntrada);
                 Empresa empresa = clasificador.detectarEmpresaPorRuta(nombreEntrada, empresas);
