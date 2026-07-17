@@ -68,7 +68,6 @@ public class CatalogoController {
             Color color = new Color();
             color.setNombreOficial(request.nombreOficial());
             color.setCodigoFastDye(request.codigoFastDye());
-            color.setFamilia(request.familia());
             color.setActivo(true);
             Color guardado = catalogoService.guardarColor(color);
             return ResponseEntity.ok(Map.of("id", guardado.getId(), "nombreOficial", guardado.getNombreOficial()));

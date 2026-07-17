@@ -13,7 +13,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Controller
 @RequestMapping("/programas")
@@ -67,12 +69,26 @@ public class ProgramaController {
     public String verSeguimiento(@PathVariable Long id, Model model) {
         Programa programa = programaService.buscarPrograma(id);
         model.addAttribute("programa", programa);
+
+        Map<Long, List<ProgramaService.HistorialGuiaView>> historialPorLinea = new HashMap<>();
+        for (ProgramaDetalle d : programa.getDetalles()) {
+            if (d.isCompleto()) {
+                historialPorLinea.put(d.getId(), programaService.historialDeLineaConDocumento(d.getId()));
+            }
+        }
+        model.addAttribute("historialPorLinea", historialPorLinea);
+
         return "programas/seguimiento";
     }
 
     @GetMapping("/{id}/editar")
-    public String editar(@PathVariable Long id, Model model) {
-        model.addAttribute("programa", programaService.buscarPrograma(id));
+    public String editar(@PathVariable Long id, Model model, RedirectAttributes ra) {
+        Programa programa = programaService.buscarPrograma(id);
+        if (programa.isCompleto()) {
+            ra.addFlashAttribute("error", "Este programa ya está completo y no se puede editar.");
+            return "redirect:/programas/" + id;
+        }
+        model.addAttribute("programa", programa);
         model.addAttribute("empresas", empresaRepository.findByActivoTrue());
         model.addAttribute("colores", colorRepository.findByActivoTrue());
         model.addAttribute("tiposTela", tipoTelaRepository.findByActivoTrue());

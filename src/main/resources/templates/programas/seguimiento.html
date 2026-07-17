@@ -8,12 +8,16 @@
         <span th:text="${mensaje}"></span>
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show">
+        <span th:text="${error}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
     <div class="card mb-4">
         <div class="card-body p-4">
             <div class="row">
                 <div class="col-md-3">
                     <small class="text-muted">Programa</small>
-                    <p class="fw-bold mb-0"><code th:text="${programa.numero}"></code></p>
+                    <p class="fs-3 fw-bold mb-0 text-primary" th:text="${programa.numero}"></p>
                 </div>
                 <div class="col-md-3">
                     <small class="text-muted">Empresa</small>
@@ -34,7 +38,6 @@
             </div>
         </div>
     </div>
-
     <div class="card">
         <div class="card-body p-0">
             <div class="p-3 border-bottom fw-bold">Seguimiento por Color</div>
@@ -62,7 +65,18 @@
                             <td th:text="${d.cantidadRecibida}"></td>
                             <td th:text="${d.cantidadPendiente}"></td>
                             <td>
-                                <span th:if="${d.completo}" class="badge bg-success">Completo</span>
+                                <div th:if="${d.completo}" class="d-flex align-items-center gap-2 flex-wrap">
+                                    <span class="badge bg-success">Completo</span>
+                                    <span th:each="hg : ${historialPorLinea.get(d.id)}" class="d-inline-flex align-items-center gap-1">
+                                        <a th:if="${hg.documentoId != null}"
+                                           th:href="@{/documentos/{docId}/ver(docId=${hg.documentoId})}"
+                                           target="_blank" title="Ver guía"
+                                           class="text-decoration-none">
+                                            <i class="bi bi-eye"></i> <small th:text="${hg.numeroGuia}"></small>
+                                        </a>
+                                        <small th:unless="${hg.documentoId != null}" class="text-muted" th:text="${hg.numeroGuia}"></small>
+                                    </span>
+                                </div>
                                 <span th:unless="${d.completo}" class="badge bg-warning text-dark">Pendiente</span>
                             </td>
                         </tr>
@@ -71,9 +85,8 @@
             </div>
         </div>
     </div>
-
     <a th:href="@{/programas}" class="btn btn-light mt-3">← Volver a Programas</a>
-    <a th:href="@{/programas/{id}/editar(id=${programa.id})}" class="btn btn-primary mt-3"><i class="bi bi-pencil"></i> Editar Programa</a>
+    <a th:unless="${programa.completo}" th:href="@{/programas/{id}/editar(id=${programa.id})}" class="btn btn-primary mt-3"><i class="bi bi-pencil"></i> Editar Programa</a>
 </section>
 </body>
 </html>

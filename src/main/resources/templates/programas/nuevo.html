@@ -159,10 +159,6 @@
                         <label class="form-label fw-semibold">Código FAST DYE</label>
                         <input type="text" class="form-control" id="modalColorCodigo">
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Familia (opcional)</label>
-                        <input type="text" class="form-control" id="modalColorFamilia" placeholder="Ej: Verdes, Rojos, Neutros">
-                    </div>
                     <div id="modalColorError" class="text-danger small"></div>
                 </div>
                 <div class="modal-footer">
@@ -274,7 +270,6 @@
                     selectColorActual = btn.closest('.linea-color').querySelector('.select-color');
                     document.getElementById('modalColorNombre').value = '';
                     document.getElementById('modalColorCodigo').value = '';
-                    document.getElementById('modalColorFamilia').value = '';
                     document.getElementById('modalColorError').textContent = '';
                     new bootstrap.Modal(document.getElementById('modalColorRapidoPrograma')).show();
                 };
@@ -301,13 +296,12 @@
         document.getElementById('btnGuardarColorRapidoPrograma').addEventListener('click', async () => {
             const nombreOficial = document.getElementById('modalColorNombre').value.trim();
             const codigoFastDye = document.getElementById('modalColorCodigo').value.trim();
-            const familia = document.getElementById('modalColorFamilia').value.trim();
             const errorDiv = document.getElementById('modalColorError');
             if (!nombreOficial || !codigoFastDye) { errorDiv.textContent = 'Nombre y código son obligatorios.'; return; }
             try {
                 const resp = await fetchConCsrf('/catalogo/colores/crear-rapido', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ nombreOficial, codigoFastDye, familia: familia || null })
+                    body: JSON.stringify({ nombreOficial, codigoFastDye })
                 });
                 const data = await resp.json();
                 if (!resp.ok) { errorDiv.textContent = data.error || 'Error al crear el color.'; return; }

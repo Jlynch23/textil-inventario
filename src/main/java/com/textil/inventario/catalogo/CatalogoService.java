@@ -16,27 +16,50 @@ public class CatalogoService {
     private final ColorRepository colorRepository;
     private final ArticuloRepository articuloRepository;
 
+    // Normaliza a mayusculas (recorta espacios) para mantener consistencia
+    // en el catalogo y evitar duplicados como "Negro" / "negro" / "NEGRO".
+    // Null-safe: si el campo viene null o vacio, no se toca.
+    private String normalizar(String valor) {
+        return (valor == null || valor.isBlank()) ? valor : valor.trim().toUpperCase();
+    }
+
     // EMPRESAS
     public List<Empresa> listarEmpresas() { return empresaRepository.findByActivoTrue(); }
-    public Empresa guardarEmpresa(Empresa e) { return empresaRepository.save(e); }
+    public Empresa guardarEmpresa(Empresa e) {
+        e.setNombre(normalizar(e.getNombre()));
+        return empresaRepository.save(e);
+    }
     public Empresa buscarEmpresa(Long id) { return empresaRepository.findById(id).orElseThrow(); }
 
     // UBICACIONES
     public List<Ubicacion> listarUbicaciones() { return ubicacionRepository.findByActivoTrue(); }
-    public Ubicacion guardarUbicacion(Ubicacion u) { return ubicacionRepository.save(u); }
+    public Ubicacion guardarUbicacion(Ubicacion u) {
+        u.setNombre(normalizar(u.getNombre()));
+        return ubicacionRepository.save(u);
+    }
     public Ubicacion buscarUbicacion(Long id) { return ubicacionRepository.findById(id).orElseThrow(); }
 
     // TIPOS DE TELA
     public List<TipoTela> listarTiposTela() { return tipoTelaRepository.findByActivoTrue(); }
-    public TipoTela guardarTipoTela(TipoTela t) { return tipoTelaRepository.save(t); }
+    public TipoTela guardarTipoTela(TipoTela t) {
+        t.setNombre(normalizar(t.getNombre()));
+        return tipoTelaRepository.save(t);
+    }
 
     // TÍTULOS
     public List<Titulo> listarTitulos() { return tituloRepository.findByActivoTrue(); }
-    public Titulo guardarTitulo(Titulo t) { return tituloRepository.save(t); }
+    public Titulo guardarTitulo(Titulo t) {
+        t.setValor(normalizar(t.getValor()));
+        return tituloRepository.save(t);
+    }
 
     // COLORES
     public List<Color> listarColores() { return colorRepository.findByActivoTrue(); }
-    public Color guardarColor(Color c) { return colorRepository.save(c); }
+    public Color guardarColor(Color c) {
+        c.setNombreOficial(normalizar(c.getNombreOficial()));
+        c.setCodigoFastDye(normalizar(c.getCodigoFastDye()));
+        return colorRepository.save(c);
+    }
     public Color buscarColor(Long id) { return colorRepository.findById(id).orElseThrow(); }
 
     // ARTÍCULOS
@@ -98,7 +121,6 @@ public class CatalogoService {
         if (palabras.length == 1) {
             return palabras[0].replace(" ", "").substring(0, Math.min(3, palabras[0].length())).toUpperCase();
         }
-        // Primera palabra completa (ej. "RIB") + hasta 3 caracteres de la segunda palabra (ej. "2x1" -> "2X1")
         String primera = palabras[0].toUpperCase();
         String segunda = palabras[1].replaceAll("[^a-zA-Z0-9]", "");
         segunda = segunda.substring(0, Math.min(3, segunda.length())).toUpperCase();

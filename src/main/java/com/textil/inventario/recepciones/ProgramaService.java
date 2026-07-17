@@ -16,11 +16,19 @@ public class ProgramaService {
     private final ProgramaRepository programaRepository;
     private final ProgramaDetalleRepository programaDetalleRepository;
     private final RecepcionDetalleRepository recepcionDetalleRepository;
+    private final RecepcionDocumentoRepository recepcionDocumentoRepository;
     private final EmpresaRepository empresaRepository;
     private final TipoTelaRepository tipoTelaRepository;
     private final TituloRepository tituloRepository;
     private final ColorRepository colorRepository;
     private final CatalogoService catalogoService;
+
+    // Normaliza a mayusculas (recorta espacios), igual que en Catalogo y
+    // Recepciones, para mantener consistencia aunque el numero de programa
+    // hoy en la practica solo tenga digitos.
+    private String normalizar(String valor) {
+        return (valor == null || valor.isBlank()) ? valor : valor.trim().toUpperCase();
+    }
 
     public List<Programa> listarProgramas() {
         return programaRepository.findAllByOrderByFechaDesc();
@@ -43,7 +51,7 @@ public class ProgramaService {
         }
 
         Programa p = new Programa();
-        p.setNumero(numero.trim());
+        p.setNumero(normalizar(numero));
         p.setEmpresa(empresaRepository.findById(empresaId).orElseThrow());
         p.setFecha(fecha);
         p.setObservaciones(observaciones);
@@ -99,6 +107,9 @@ public class ProgramaService {
      * existente, solo su cantidad, para no romper vinculos ya hechos con
      * recepciones reales. Valida que totalRollos coincida con la suma de
      * TODAS las cantidades finales (existentes que quedan + nuevas).
+     * Bloquea la edicion por completo si el programa ya esta completo
+     * (todas sus lineas recibieron la cantidad solicitada), como defensa
+     * adicional al bloqueo que ya existe en el Controller a nivel de GET.
      */
     @Transactional
     public void actualizarPrograma(Long programaId, String numero, Long empresaId, LocalDate fecha, String observaciones,
@@ -107,6 +118,11 @@ public class ProgramaService {
                                     List<Long> detalleIdsAEliminar,
                                     List<Long> nuevosTipoTelaIds, List<Long> nuevosTituloIds,
                                     List<Long> nuevosColorIds, List<Integer> nuevasCantidades) {
+
+        Programa p = programaRepository.findById(programaId).orElseThrow();
+        if (p.isCompleto()) {
+            throw new IllegalArgumentException("Este programa ya está completo y no se puede editar.");
+        }
 
         int sumaExistentes = cantidadesExistentes.stream().mapToInt(c -> c != null ? c : 0).sum();
         int sumaNuevas = nuevasCantidades.stream().mapToInt(c -> c != null ? c : 0).sum();
@@ -117,8 +133,7 @@ public class ProgramaService {
                     ") no coincide con la suma de las cantidades de las líneas (" + sumaTotal + ").");
         }
 
-        Programa p = programaRepository.findById(programaId).orElseThrow();
-        p.setNumero(numero.trim());
+        p.setNumero(normalizar(numero));
         p.setEmpresa(empresaRepository.findById(empresaId).orElseThrow());
         p.setFecha(fecha);
         p.setObservaciones(observaciones);
@@ -150,5 +165,26 @@ public class ProgramaService {
 
     public List<RecepcionDetalle> historialDeLinea(Long programaDetalleId) {
         return recepcionDetalleRepository.findByProgramaDetalleId(programaDetalleId);
+    }
+
+    /**
+     * Vista simplificada del historial de una linea para la pantalla de
+     * seguimiento: por cada recepcion que aporto a esta linea, incluye el
+     * id del RecepcionDocumento tipo GUIA (si el PDF fue subido) para poder
+     * mostrar un link directo al visor de PDF (/documentos/{id}/ver) en vez
+     * de mandar a la pantalla de detalle de la recepcion.
+     */
+    public record HistorialGuiaView(Long recepcionId, String numeroGuia, Long documentoId) {}
+
+    public List<HistorialGuiaView> historialDeLineaConDocumento(Long programaDetalleId) {
+        List<RecepcionDetalle> detalles = recepcionDetalleRepository.findByProgramaDetalleId(programaDetalleId);
+        return detalles.stream().map(rd -> {
+            Long docId = recepcionDocumentoRepository.findByRecepcionId(rd.getRecepcion().getId()).stream()
+                    .filter(d -> "GUIA".equals(d.getTipoDocumento()))
+                    .map(RecepcionDocumento::getId)
+                    .findFirst()
+                    .orElse(null);
+            return new HistorialGuiaView(rd.getRecepcion().getId(), rd.getRecepcion().getNumeroGuia(), docId);
+        }).toList();
     }
 }

@@ -10,17 +10,16 @@
             <i class="bi bi-plus-lg me-1"></i>Nuevo Programa
         </a>
     </div>
-
     <div class="card">
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover mb-0">
+                <table class="table table-hover mb-0 align-middle">
                     <thead>
                         <tr>
                             <th>Número</th>
                             <th>Empresa</th>
                             <th>Fecha</th>
-                            <th>Colores</th>
+                            <th style="min-width: 220px;">Progreso</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -29,10 +28,28 @@
                         </tr>
                         <tr th:each="p : ${programas}" style="cursor:pointer;"
                             th:onclick="'window.location=\'' + @{/programas/{id}(id=${p.id})} + '\''">
-                            <td><code th:text="${p.numero}"></code></td>
+                            <td>
+                                <span class="fs-5 fw-bold" th:text="${p.numero}"></span>
+                            </td>
                             <td th:text="${p.empresa.nombre}"></td>
                             <td th:text="${p.fecha}"></td>
-                            <td th:text="${p.detalles.size()}"></td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="progress flex-grow-1" style="height: 8px; min-width: 100px;">
+                                        <div class="progress-bar"
+                                             th:classappend="${p.completo} ? 'bg-success' : (${p.detallesCompletos} > 0 ? 'bg-warning' : 'bg-secondary')"
+                                             role="progressbar"
+                                             th:style="'width: ' + ${p.porcentajeProgreso} + '%'"
+                                             th:aria-valuenow="${p.porcentajeProgreso}"
+                                             aria-valuemin="0" aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                    <span class="badge"
+                                          th:classappend="${p.completo} ? 'bg-success' : (${p.detallesCompletos} > 0 ? 'bg-warning text-dark' : 'bg-secondary')"
+                                          th:text="${p.detallesCompletos} + '/' + ${p.totalDetalles}">
+                                    </span>
+                                </div>
+                            </td>
                         </tr>
                     </tbody>
                 </table>

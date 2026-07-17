@@ -100,10 +100,6 @@
                     <label class="form-label fw-semibold">Código FAST DYE</label>
                     <input type="text" class="form-control" id="modalColorCodigo">
                 </div>
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">Familia (opcional)</label>
-                    <input type="text" class="form-control" id="modalColorFamilia" placeholder="Ej: Verdes, Rojos, Neutros">
-                </div>
                 <div id="modalColorError" class="text-danger small"></div>
             </div>
             <div class="modal-footer">
@@ -234,7 +230,6 @@
                 const linea = lineasExtraidas[idxColorPendiente];
                 document.getElementById('modalColorNombre').value = linea.colorNombre || '';
                 document.getElementById('modalColorCodigo').value = linea.colorCodigo || '';
-                document.getElementById('modalColorFamilia').value = '';
                 document.getElementById('modalColorError').textContent = '';
                 new bootstrap.Modal(document.getElementById('modalColorRapido')).show();
             });
@@ -309,7 +304,6 @@
     document.getElementById('btnGuardarColorRapido').addEventListener('click', async () => {
         const nombreOficial = document.getElementById('modalColorNombre').value.trim();
         const codigoFastDye = document.getElementById('modalColorCodigo').value.trim();
-        const familia = document.getElementById('modalColorFamilia').value.trim();
         const errorDiv = document.getElementById('modalColorError');
 
         if (!nombreOficial || !codigoFastDye) {
@@ -321,7 +315,7 @@
             const resp = await fetchConCsrf('/catalogo/colores/crear-rapido', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ nombreOficial, codigoFastDye, familia: familia || null })
+                body: JSON.stringify({ nombreOficial, codigoFastDye })
             });
             const data = await resp.json();
 

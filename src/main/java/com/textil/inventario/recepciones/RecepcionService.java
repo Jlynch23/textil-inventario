@@ -27,6 +27,13 @@ public class RecepcionService {
     private final DocumentoStorageService documentoStorageService;
     private final com.textil.inventario.auditoria.AuditLogService auditLogService;
 
+    // Normaliza numeros de guia/factura a mayusculas (recorta espacios) para
+    // que el matching guia<->factura y las busquedas por numero no fallen
+    // por diferencias de mayus/minus (ej. "tg01-00022558" vs "TG01-00022558").
+    private String normalizar(String valor) {
+        return (valor == null || valor.isBlank()) ? valor : valor.trim().toUpperCase();
+    }
+
     public List<Recepcion> listarRecepcionesSinFactura() {
         return recepcionRepository.findByNumeroFacturaIsNullOrderByFechaGuiaDesc();
     }
@@ -35,7 +42,7 @@ public class RecepcionService {
     public void asignarFactura(String numeroFactura, LocalDate fechaFactura, List<Long> recepcionIds) {
         for (Long id : recepcionIds) {
             Recepcion r = recepcionRepository.findById(id).orElseThrow();
-            r.setNumeroFactura(numeroFactura);
+            r.setNumeroFactura(normalizar(numeroFactura));
             r.setFechaFactura(fechaFactura);
             recepcionRepository.save(r);
         }
@@ -126,7 +133,7 @@ public class RecepcionService {
     }
 
     public java.util.Optional<Recepcion> buscarPorNumeroGuia(String numeroGuia) {
-        return recepcionRepository.findFirstByNumeroGuia(numeroGuia);
+        return recepcionRepository.findFirstByNumeroGuia(normalizar(numeroGuia));
     }
 
     public Recepcion buscarRecepcion(Long id) {
@@ -142,8 +149,8 @@ public class RecepcionService {
     public Recepcion crearRecepcion(Long empresaId, String numeroGuia, String numeroFactura, LocalDate fechaGuia, String observaciones) {
         Recepcion r = new Recepcion();
         r.setEmpresa(empresaRepository.findById(empresaId).orElseThrow());
-        r.setNumeroGuia(numeroGuia);
-        r.setNumeroFactura((numeroFactura == null || numeroFactura.isBlank()) ? null : numeroFactura.trim());
+        r.setNumeroGuia(normalizar(numeroGuia));
+        r.setNumeroFactura(normalizar(numeroFactura));
         r.setFechaGuia(fechaGuia);
         r.setFechaRecepcion(LocalDate.now());
         r.setObservaciones(observaciones);
@@ -152,7 +159,7 @@ public class RecepcionService {
         r.setUpdatedAt(java.time.LocalDateTime.now());
         Recepcion guardada = recepcionRepository.save(r);
         auditLogService.registrar("CREAR", "Recepcion", guardada.getId(),
-                "Creo recepcion con guia " + numeroGuia);
+                "Creo recepcion con guia " + guardada.getNumeroGuia());
         return guardada;
     }
 
