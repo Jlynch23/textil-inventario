@@ -406,7 +406,7 @@ public class ArchivoHistoricoService {
      * normaliza quitando los ceros a la izquierda de la parte numerica para
      * poder compararlos como el mismo numero.
      */
-    private String normalizarNumeroGuia(String numero) {
+    String normalizarNumeroGuia(String numero) {
         if (numero == null) return "";
         String limpio = numero.trim().toUpperCase();
         int guionIdx = limpio.indexOf('-');

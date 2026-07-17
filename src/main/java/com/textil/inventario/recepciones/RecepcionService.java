@@ -176,7 +176,7 @@ public class RecepcionService {
      * (ej. "534"). Se intenta primero un match exacto y, si no hay, se
      * reintenta quitando los ceros a la izquierda.
      */
-    private java.util.Optional<Programa> buscarProgramaNormalizado(String numero) {
+    java.util.Optional<Programa> buscarProgramaNormalizado(String numero) {
         String limpio = numero.trim();
         java.util.Optional<Programa> exacto = programaRepository.findByNumero(limpio);
         if (exacto.isPresent()) return exacto;
