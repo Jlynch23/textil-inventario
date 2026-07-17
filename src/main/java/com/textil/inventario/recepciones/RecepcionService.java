@@ -227,7 +227,11 @@ public class RecepcionService {
 
             // Actualizar stock (pool único por artículo+ubicación, sin partición por empresa)
             int rollos = d.getRollosRecibidos();
-            java.math.BigDecimal peso = d.getPesoBrutoKg() != null
+            // Auditoria 17-jul-2026: si rollosGuia llega en 0 o null (dato de OCR
+            // fallido), evitamos ArithmeticException: / by zero en medio de una
+            // transaccion que mueve stock real. Sin base confiable para prorratear,
+            // se usa BigDecimal.ZERO en vez de tronar.
+            java.math.BigDecimal peso = (d.getPesoBrutoKg() != null && d.getRollosGuia() != null && d.getRollosGuia() > 0)
                 ? d.getPesoBrutoKg().multiply(new java.math.BigDecimal(rollos)).divide(new java.math.BigDecimal(d.getRollosGuia()), 2, java.math.RoundingMode.HALF_UP)
                 : java.math.BigDecimal.ZERO;
 
