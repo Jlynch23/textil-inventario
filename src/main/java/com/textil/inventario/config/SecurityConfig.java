@@ -36,7 +36,7 @@ public class SecurityConfig {
                 .requestMatchers("/login", "/logout", "/css/**", "/js/**", "/img/**").permitAll()
                 .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                 .requestMatchers("/almacen/revision/**").hasRole("SUPERADMIN")
-                .requestMatchers("/almacen/**").hasAnyRole("ALMACENERO", "SUPERADMIN")
+                .requestMatchers("/almacen/**").hasAnyRole("SUPERVISOR", "SUPERADMIN")
                 .anyRequest().hasRole("SUPERADMIN")
             )
             .formLogin(form -> form
@@ -57,14 +57,14 @@ public class SecurityConfig {
     @Bean
     public org.springframework.security.web.authentication.AuthenticationSuccessHandler authenticationSuccessHandler() {
         return (request, response, authentication) -> {
-            boolean esAlmacenero = authentication.getAuthorities().stream()
-                    .anyMatch(a -> a.getAuthority().equals("ROLE_ALMACENERO"));
+            boolean esSupervisor = authentication.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_SUPERVISOR"));
             boolean esSuperadmin = authentication.getAuthorities().stream()
                     .anyMatch(a -> a.getAuthority().equals("ROLE_SUPERADMIN"));
 
             auditLogService.registrarLogin(authentication.getName());
 
-            if (esAlmacenero && !esSuperadmin) {
+            if (esSupervisor && !esSuperadmin) {
                 response.sendRedirect("/almacen");
             } else {
                 response.sendRedirect("/");
