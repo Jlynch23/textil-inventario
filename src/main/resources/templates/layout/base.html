@@ -116,8 +116,8 @@
 
             <div class="nav-section">Operaciones</div>
             <a th:href="@{/recepciones}" class="nav-link"><i class="bi bi-truck me-2"></i>Recepciones</a>
-            <a th:href="@{/recepciones/facturar}" class="nav-link"><i class="bi bi-receipt me-2"></i>Facturar Guías</a>
-            <a th:href="@{/almacen/revision}" class="nav-link"><i class="bi bi-camera me-2"></i>Revisión Almacén</a>
+            <a th:href="@{/recepciones/facturar}" sec:authorize="hasRole('SUPERADMIN')" class="nav-link"><i class="bi bi-receipt me-2"></i>Facturar Guías</a>
+            <a th:href="@{/almacen/revision}" sec:authorize="hasRole('SUPERADMIN')" class="nav-link"><i class="bi bi-camera me-2"></i>Revisión Almacén</a>
             <a th:href="@{/log}" sec:authorize="hasRole('SUPERADMIN')" class="nav-link"><i class="bi bi-clock-history me-2"></i>Log de Eventos</a>
             <a th:href="@{/usuarios}" sec:authorize="hasRole('SUPERADMIN')" class="nav-link"><i class="bi bi-people me-2"></i>Usuarios</a>
             <a th:href="@{/programas}" class="nav-link"><i class="bi bi-list-check me-2"></i>Programas</a>
@@ -146,7 +146,7 @@
             </button>
             <h5 class="mb-0 fw-bold" th:text="${titulo}">Título</h5>
         </div>
-        <span class="text-muted small"><i class="bi bi-person-circle me-1"></i>Administrador</span>
+        <span class="text-muted small"><i class="bi bi-person-circle me-1"></i>Bienvenido, <span th:text="${nombreUsuarioActual}">Usuario</span></span>
     </div>
 
     <!-- CONTENIDO -->
@@ -155,7 +155,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
+    <script th:inline="javascript">
         // Wrapper de fetch() que agrega automáticamente el token CSRF como
         // header (ver AUDIT.md, hallazgo SEC-10). Usar en vez de fetch()
         // directo para cualquier llamada AJAX que mute datos (POST/PUT/DELETE).
@@ -175,12 +175,20 @@
         (function () {
             const body = document.body;
             const btn = document.getElementById('btnToggleSidebar');
-            if (localStorage.getItem('sidebarColapsado') === '1') {
+            const colapsarPorDefecto = /*[[${sidebarInicialColapsado}]]*/ false;
+            // Clave separada para GERENTE: si se usa la misma clave que el resto
+            // de los roles, una preferencia guardada previamente con OTRA cuenta
+            // en el mismo navegador (ej. SUPERADMIN dejando el sidebar abierto)
+            // anularia el colapso por defecto de GERENTE sin que tenga sentido,
+            // ya que localStorage es compartido por navegador, no por usuario.
+            const claveStorage = colapsarPorDefecto ? 'sidebarColapsadoGerente' : 'sidebarColapsado';
+            const guardado = localStorage.getItem(claveStorage);
+            if (guardado === '1' || (guardado === null && colapsarPorDefecto)) {
                 body.classList.add('sidebar-collapsed');
             }
             btn.addEventListener('click', function () {
                 body.classList.toggle('sidebar-collapsed');
-                localStorage.setItem('sidebarColapsado', body.classList.contains('sidebar-collapsed') ? '1' : '0');
+                localStorage.setItem(claveStorage, body.classList.contains('sidebar-collapsed') ? '1' : '0');
             });
         })();
     </script>

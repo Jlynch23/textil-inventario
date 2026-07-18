@@ -25,8 +25,9 @@
                             <input type="text" class="form-control" name="nombre" required>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label fw-semibold">Email</label>
-                            <input type="email" class="form-control" name="email" required>
+                            <label class="form-label fw-semibold">Usuario</label>
+                            <input type="text" class="form-control" name="username" placeholder="jlynch" required>
+                            <small class="text-muted">Primera letra del nombre + apellido completo, sin espacios.</small>
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Contraseña</label>
@@ -61,7 +62,7 @@
                             <thead>
                                 <tr>
                                     <th>Nombre</th>
-                                    <th>Email</th>
+                                    <th>Usuario</th>
                                     <th>Rol</th>
                                     <th>Estado</th>
                                     <th>Acciones</th>
@@ -70,7 +71,7 @@
                             <tbody>
                                 <tr th:each="u : ${usuarios}">
                                     <td th:text="${u.nombre}"></td>
-                                    <td th:text="${u.email}"></td>
+                                    <td th:text="${u.username}"></td>
                                     <td>
                                         <span class="badge bg-primary" th:text="${u.rol.nombre}"></span>
                                     </td>
@@ -79,6 +80,10 @@
                                         <span th:unless="${u.activo}" class="badge bg-secondary">Inactivo</span>
                                     </td>
                                     <td>
+                                        <button type="button" class="btn btn-sm btn-outline-primary" title="Resetear contraseña"
+                                                data-bs-toggle="modal" th:data-bs-target="'#modalReset' + ${u.id}">
+                                            <i class="bi bi-key"></i>
+                                        </button>
                                         <form th:if="${u.activo}" th:action="@{/usuarios/inactivar/{id}(id=${u.id})}" method="post" style="display:inline">
                                             <button type="submit" class="btn btn-sm btn-outline-warning" title="Inactivar (reversible)"
                                                     onclick="return confirm('¿Inactivar este usuario? No podrá iniciar sesión, pero se conserva su historial.')">
@@ -96,6 +101,29 @@
                                                 <i class="bi bi-trash"></i>
                                             </button>
                                         </form>
+
+                                        <!-- Modal de reset de contraseña -->
+                                        <div class="modal fade" th:id="'modalReset' + ${u.id}" tabindex="-1">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <form th:action="@{/usuarios/resetear-password/{id}(id=${u.id})}" method="post">
+                                                        <div class="modal-header">
+                                                            <h6 class="modal-title">Resetear contraseña de <span th:text="${u.nombre}"></span></h6>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <label class="form-label fw-semibold">Nueva contraseña</label>
+                                                            <input type="password" class="form-control" name="password" minlength="6" required>
+                                                            <small class="text-muted">Mínimo 6 caracteres.</small>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                            <button type="submit" class="btn btn-primary">Actualizar contraseña</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </td>
                                 </tr>
                             </tbody>

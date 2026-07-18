@@ -316,7 +316,7 @@ public class ArchivoHistoricoService {
             throw new IllegalStateException("No se registro que usuario subio este documento; no se puede crear la Recepcion.");
         }
         Usuario usuario = usuarioRepository.findById(usuarioId).orElseThrow();
-        var auth = new UsernamePasswordAuthenticationToken(usuario.getEmail(), null, java.util.List.of());
+        var auth = new UsernamePasswordAuthenticationToken(usuario.getUsername(), null, java.util.List.of());
         SecurityContextHolder.getContext().setAuthentication(auth);
     }
 

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       th:replace="~{layout/base :: layout(~{::title/text()}, ~{::section})}">
 <head><title>Recepciones</title></head>
 <body>
@@ -13,7 +13,7 @@
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 
-    <div class="d-flex justify-content-end mb-3">
+    <div class="d-flex justify-content-end mb-3" sec:authorize="hasRole('SUPERADMIN')">
         <a th:href="@{/recepciones/nueva}" class="btn btn-primary">
             <i class="bi bi-plus-lg me-2"></i>Nueva Recepción
         </a>
@@ -58,10 +58,11 @@
                                 </a>
                                 <a th:if="${r.estado.name() == 'PENDIENTE'}"
                                    th:href="@{/recepciones/{id}/confirmar(id=${r.id})}"
+                                   sec:authorize="hasRole('SUPERADMIN')"
                                    class="btn btn-sm btn-outline-success">
                                     <i class="bi bi-check-lg"></i>
                                 </a>
-                                <form th:if="${r.estado.name() == 'PENDIENTE'}" th:action="@{/recepciones/{id}/eliminar(id=${r.id})}" method="post" style="display:inline">
+                                <form th:if="${r.estado.name() == 'PENDIENTE'}" sec:authorize="hasRole('SUPERADMIN')" th:action="@{/recepciones/{id}/eliminar(id=${r.id})}" method="post" style="display:inline">
                                     <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar (solo posible en PENDIENTE)"
                                             onclick="return confirm('¿ELIMINAR esta recepción de forma permanente? Solo es posible porque aún no confirmada.')">
                                         <i class="bi bi-trash"></i>

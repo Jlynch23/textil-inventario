@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       th:replace="~{layout/base :: layout(~{::title/text()}, ~{::section})}">
 <head><title>Programa</title></head>
 <body>
@@ -86,7 +86,8 @@
         </div>
     </div>
     <a th:href="@{/programas}" class="btn btn-light mt-3">← Volver a Programas</a>
-    <a th:unless="${programa.completo}" th:href="@{/programas/{id}/editar(id=${programa.id})}" class="btn btn-primary mt-3"><i class="bi bi-pencil"></i> Editar Programa</a>
+    <a th:unless="${programa.completo}" th:href="@{/programas/{id}/editar(id=${programa.id})}"
+       sec:authorize="hasRole('SUPERADMIN')" class="btn btn-primary mt-3"><i class="bi bi-pencil"></i> Editar Programa</a>
 </section>
 </body>
 </html>

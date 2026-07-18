@@ -37,6 +37,25 @@ public class SecurityConfig {
                 .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                 .requestMatchers("/almacen/revision/**").hasRole("SUPERADMIN")
                 .requestMatchers("/almacen/**").hasAnyRole("SUPERVISOR", "SUPERADMIN")
+                // GERENTE: solo lectura (GET) en las areas operativas relevantes.
+                // Antes de la regla general de lectura, se bloquean explicitamente
+                // las paginas de creacion/edicion (subida de guias/facturas,
+                // confirmacion de recepcion, edicion de programa) -- aunque sean
+                // GET (muestran un formulario), son puntos de entrada a una accion
+                // de escritura y no deben ser accesibles de solo-lectura.
+                .requestMatchers(org.springframework.http.HttpMethod.GET,
+                        "/recepciones/nueva", "/recepciones/facturar", "/recepciones/*/confirmar",
+                        "/programas/nuevo", "/programas/*/editar"
+                ).hasRole("SUPERADMIN")
+                // NUNCA se le da acceso a /log/** ni /reportes/** (ni siquiera de
+                // lectura), y cualquier accion de escritura (POST/PUT/DELETE) a
+                // estas mismas rutas cae al anyRequest().hasRole("SUPERADMIN") de
+                // abajo, que GERENTE no cumple -- queda bloqueada automaticamente.
+                .requestMatchers(org.springframework.http.HttpMethod.GET,
+                        "/", "/dashboard",
+                        "/inventario/**", "/catalogo/**", "/programas/**",
+                        "/documentos/**", "/recepciones/**", "/transferencias/**"
+                ).hasAnyRole("GERENTE", "SUPERADMIN")
                 .anyRequest().hasRole("SUPERADMIN")
             )
             .formLogin(form -> form

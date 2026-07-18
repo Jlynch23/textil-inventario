@@ -54,7 +54,7 @@ public class CatalogoService {
     }
 
     // COLORES
-    public List<Color> listarColores() { return colorRepository.findByActivoTrue(); }
+    public List<Color> listarColores() { return colorRepository.findByActivoTrueOrderByNombreOficialAsc(); }
     public Color guardarColor(Color c) {
         c.setNombreOficial(normalizar(c.getNombreOficial()));
         c.setCodigoFastDye(normalizar(c.getCodigoFastDye()));

@@ -27,8 +27,8 @@ public class UsuarioActualService {
      *         usuario del token ya no existe en base de datos.
      */
     public Usuario obtenerUsuarioActual() {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        return usuarioRepository.findByEmail(email).orElseThrow();
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return usuarioRepository.findByUsername(username).orElseThrow();
     }
 
     /**

@@ -7,6 +7,8 @@ import com.textil.inventario.recepciones.Recepcion;
 import com.textil.inventario.recepciones.RecepcionRepository;
 import com.textil.inventario.recepciones.EntradaRapidaRepository;
 import com.textil.inventario.recepciones.SalidaRapidaRepository;
+import com.textil.inventario.recepciones.Programa;
+import com.textil.inventario.recepciones.ProgramaRepository;
 import com.textil.inventario.transferencias.Transferencia;
 import com.textil.inventario.transferencias.TransferenciaRepository;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +29,7 @@ public class HomeController {
     private final EntradaRapidaRepository entradaRapidaRepository;
     private final SalidaRapidaRepository salidaRapidaRepository;
     private final UbicacionRepository ubicacionRepository;
+    private final ProgramaRepository programaRepository;
 
     private static final int UMBRAL_STOCK_BAJO = 10;
 
@@ -88,6 +91,19 @@ public class HomeController {
         model.addAttribute("articulosStockBajo", articulosStockBajo);
         model.addAttribute("totalPorArticulo", totalPorArticulo);
         model.addAttribute("umbralStockBajo", UMBRAL_STOCK_BAJO);
+
+        List<Programa> programas = programaRepository.findAllByOrderByFechaDesc();
+        long programasEnProceso = programas.stream().filter(p -> !p.isCompleto()).count();
+        model.addAttribute("programasEnProceso", programasEnProceso);
+
+        // GERENTE ve una version simplificada, pensada para celular: tarjetas
+        // grandes con lo esencial, en vez del dashboard tecnico completo.
+        boolean esGerente = org.springframework.security.core.context.SecurityContextHolder
+                .getContext().getAuthentication().getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_GERENTE"));
+        if (esGerente) {
+            return "dashboard/gerente";
+        }
 
         return "dashboard/index";
     }

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title/text()}, ~{::section})}">
+<head><title>Inicio</title></head>
+<body>
+<section>
+    <style>
+        .tarjeta-gerente {
+            display: block;
+            border-radius: 16px;
+            padding: 28px 20px;
+            color: white;
+            text-align: center;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+            text-decoration: none;
+        }
+        .tarjeta-gerente:hover { color: white; opacity: 0.92; }
+        .tarjeta-gerente .numero { font-size: 2.5rem; font-weight: 800; line-height: 1; margin: 8px 0; }
+        .tarjeta-gerente .etiqueta { font-size: 1rem; opacity: 0.9; }
+        .tarjeta-gerente i { font-size: 2rem; }
+        .bg-azul { background: linear-gradient(135deg, #1F4E79, #2d6ba3); }
+        .bg-verde { background: linear-gradient(135deg, #1e7e34, #28a745); }
+        .bg-naranja { background: linear-gradient(135deg, #c9760c, #f0932b); }
+        .bg-morado { background: linear-gradient(135deg, #5a3d8a, #7952b3); }
+        .bg-rojo { background: linear-gradient(135deg, #a3242f, #dc3545); }
+        .lista-ubicacion {
+            font-size: 1.15rem;
+            padding: 16px;
+            border-radius: 12px;
+            background: white;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+        }
+        .accion-grande {
+            display: block;
+            text-align: center;
+            padding: 20px;
+            border-radius: 14px;
+            background: white;
+            box-shadow: 0 1px 8px rgba(0,0,0,0.07);
+            text-decoration: none;
+            color: #1F4E79;
+            font-weight: 700;
+            font-size: 1.05rem;
+        }
+        .accion-grande i { font-size: 1.8rem; display: block; margin-bottom: 8px; }
+        .accion-grande:hover { background: #f0f4f8; color: #1F4E79; }
+    </style>
+
+    <h4 class="fw-bold mb-3">Resumen general</h4>
+
+    <div class="row g-3 mb-4">
+        <div class="col-6">
+            <a th:href="@{/inventario/stock}" class="tarjeta-gerente bg-azul">
+                <i class="bi bi-boxes"></i>
+                <div class="numero" th:text="${totalRollos}">0</div>
+                <div class="etiqueta">Rollos en total</div>
+            </a>
+        </div>
+        <div class="col-6">
+            <a th:href="@{/transferencias}" class="tarjeta-gerente bg-naranja">
+                <i class="bi bi-truck"></i>
+                <div class="numero" th:text="${transferenciasEnTransito.size()}">0</div>
+                <div class="etiqueta">Transferencias en camino</div>
+            </a>
+        </div>
+        <div class="col-6">
+            <a th:href="@{/inventario/stock}" class="tarjeta-gerente bg-morado">
+                <i class="bi bi-exclamation-triangle"></i>
+                <div class="numero" th:text="${articulosStockBajo.size()}">0</div>
+                <div class="etiqueta">Colores con poco stock</div>
+            </a>
+        </div>
+        <div class="col-6">
+            <a th:href="@{/programas}" class="tarjeta-gerente bg-rojo">
+                <i class="bi bi-list-check"></i>
+                <div class="numero" th:text="${programasEnProceso}">0</div>
+                <div class="etiqueta">Programas en proceso</div>
+            </a>
+        </div>
+    </div>
+
+    <h5 class="fw-bold mb-3">Stock por depósito</h5>
+    <div class="mb-4">
+        <div class="lista-ubicacion" th:each="entry : ${stockPorUbicacion}">
+            <span><i class="bi bi-geo-alt me-2 text-primary"></i><span th:text="${entry.key}"></span></span>
+            <span class="fw-bold" th:text="${entry.value} + ' rollos'"></span>
+        </div>
+        <div th:if="${stockPorUbicacion.isEmpty()}" class="text-muted text-center py-3">
+            No hay stock registrado todavía.
+        </div>
+    </div>
+
+    <h5 class="fw-bold mb-3">Ver más</h5>
+    <div class="row g-3">
+        <div class="col-6">
+            <a th:href="@{/inventario/stock}" class="accion-grande">
+                <i class="bi bi-boxes"></i>Stock actual
+            </a>
+        </div>
+        <div class="col-6">
+            <a th:href="@{/catalogo/colores}" class="accion-grande">
+                <i class="bi bi-palette"></i>Colores
+            </a>
+        </div>
+        <div class="col-6">
+            <a th:href="@{/programas}" class="accion-grande">
+                <i class="bi bi-list-check"></i>Programas
+            </a>
+        </div>
+        <div class="col-6">
+            <a th:href="@{/documentos}" class="accion-grande">
+                <i class="bi bi-file-earmark-pdf"></i>Guías
+            </a>
+        </div>
+        <div class="col-6">
+            <a th:href="@{/catalogo/ubicaciones}" class="accion-grande">
+                <i class="bi bi-geo-alt"></i>Depósitos
+            </a>
+        </div>
+        <div class="col-6">
+            <a th:href="@{/transferencias}" class="accion-grande">
+                <i class="bi bi-arrow-left-right"></i>Transferencias
+            </a>
+        </div>
+    </div>
+</section>
+</body>
+</html>

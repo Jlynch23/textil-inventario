@@ -30,13 +30,13 @@ public class AuditLogService {
         }
     }
 
-    public void registrarLogin(String email) {
+    public void registrarLogin(String username) {
         try {
-            Usuario usuario = usuarioRepository.findByEmail(email).orElse(null);
+            Usuario usuario = usuarioRepository.findByUsername(username).orElse(null);
             LogEvento log = new LogEvento();
             log.setUsuario(usuario);
             log.setAccion("LOGIN");
-            log.setDescripcion("Inicio de sesion: " + email);
+            log.setDescripcion("Inicio de sesion: " + username);
             logEventoRepository.save(log);
         } catch (Exception e) {
             System.err.println("Error al registrar login: " + e.getMessage());
@@ -45,8 +45,8 @@ public class AuditLogService {
 
     private Usuario obtenerUsuarioActual() {
         try {
-            String email = SecurityContextHolder.getContext().getAuthentication().getName();
-            return usuarioRepository.findByEmail(email).orElse(null);
+            String username = SecurityContextHolder.getContext().getAuthentication().getName();
+            return usuarioRepository.findByUsername(username).orElse(null);
         } catch (Exception e) {
             return null;
         }

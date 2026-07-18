@@ -3,6 +3,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 public interface ColorRepository extends JpaRepository<Color, Long> {
     List<Color> findByActivoTrue();
+    List<Color> findByActivoTrueOrderByNombreOficialAsc();
     // FAST DYE reasigna codigos con el tiempo: puede haber mas de un color
     // con el mismo codigo_fast_dye (uno viejo y uno nuevo). Ver
     // CatalogoService.resolverColorPorCodigo() para la logica de desambiguacion.

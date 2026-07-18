@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       th:replace="~{layout/base :: layout(~{::title/text()}, ~{::section})}">
 <head><title>Ubicaciones</title></head>
 <body>
@@ -14,8 +14,8 @@
     </div>
 
     <div class="row g-4">
-        <!-- FORMULARIO -->
-        <div class="col-md-4">
+        <!-- FORMULARIO (solo SUPERADMIN puede crear) -->
+        <div class="col-md-4" sec:authorize="hasRole('SUPERADMIN')">
             <div class="card">
                 <div class="card-body p-4">
                     <h6 class="fw-bold mb-3">Nueva Ubicación</h6>
@@ -52,7 +52,7 @@
         </div>
 
         <!-- TABLA -->
-        <div class="col-md-8">
+        <div th:class="${esSuperadmin} ? 'col-md-8' : 'col-md-8 offset-md-2'">
             <div class="card">
                 <div class="card-body p-0">
                     <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
@@ -67,7 +67,7 @@
                                     <th>Nombre</th>
                                     <th>Tipo</th>
                                     <th>Principal</th>
-                                    <th>Acciones</th>
+                                    <th sec:authorize="hasRole('SUPERADMIN')">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -82,7 +82,7 @@
                                     <td>
                                         <i th:if="${u.esPrincipal}" class="bi bi-star-fill text-warning"></i>
                                     </td>
-                                    <td>
+                                    <td sec:authorize="hasRole('SUPERADMIN')">
                                         <form th:action="@{/catalogo/ubicaciones/eliminar/{id}(id=${u.id})}" method="post" style="display:inline">
                                             <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar definitivamente"
                                                     onclick="return confirm('¿ELIMINAR esta ubicación de forma permanente? Esta acción no se puede deshacer. Si tiene stock o transferencias, el sistema lo bloqueará.')">

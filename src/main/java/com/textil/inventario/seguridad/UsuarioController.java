@@ -29,12 +29,13 @@ public class UsuarioController {
     @PreAuthorize("hasRole('SUPERADMIN')")
     @PostMapping("/guardar")
     public String guardar(@RequestParam String nombre,
-                           @RequestParam String email,
+                           @RequestParam String username,
+                           @RequestParam(required = false) String email,
                            @RequestParam String password,
                            @RequestParam Long rolId,
                            RedirectAttributes ra) {
-        if (usuarioRepository.existsByEmail(email)) {
-            ra.addFlashAttribute("error", "Ya existe un usuario registrado con ese email.");
+        if (usuarioRepository.existsByUsername(username)) {
+            ra.addFlashAttribute("error", "Ya existe un usuario registrado con ese nombre de usuario.");
             return "redirect:/usuarios";
         }
         if (password == null || password.length() < 6) {
@@ -53,13 +54,36 @@ public class UsuarioController {
 
         Usuario u = new Usuario();
         u.setNombre(nombre);
-        u.setEmail(email);
+        u.setUsername(username);
+        u.setEmail((email == null || email.isBlank()) ? null : email);
         u.setPasswordHash(passwordEncoder.encode(password));
         u.setRol(rolRepository.findById(rolId).orElseThrow());
         u.setActivo(true);
         usuarioRepository.save(u);
 
         ra.addFlashAttribute("mensaje", "Usuario creado correctamente.");
+        return "redirect:/usuarios";
+    }
+
+    @PreAuthorize("hasRole('SUPERADMIN')")
+    @PostMapping("/resetear-password/{id}")
+    public String resetearPassword(@PathVariable Long id,
+                                    @RequestParam String password,
+                                    RedirectAttributes ra) {
+        if (password == null || password.length() < 6) {
+            ra.addFlashAttribute("error", "La contraseña debe tener al menos 6 caracteres.");
+            return "redirect:/usuarios";
+        }
+        if (password.getBytes(java.nio.charset.StandardCharsets.UTF_8).length > 72) {
+            ra.addFlashAttribute("error", "La contraseña no puede superar los 72 caracteres (limite tecnico de BCrypt).");
+            return "redirect:/usuarios";
+        }
+
+        Usuario u = usuarioRepository.findById(id).orElseThrow();
+        u.setPasswordHash(passwordEncoder.encode(password));
+        usuarioRepository.save(u);
+
+        ra.addFlashAttribute("mensaje", "Contraseña de " + u.getNombre() + " actualizada correctamente.");
         return "redirect:/usuarios";
     }
 
@@ -88,7 +112,7 @@ public class UsuarioController {
     public String eliminar(@PathVariable Long id, RedirectAttributes ra, Authentication authentication) {
         Usuario u = usuarioRepository.findById(id).orElseThrow();
 
-        if (authentication != null && u.getEmail().equalsIgnoreCase(authentication.getName())) {
+        if (authentication != null && u.getUsername().equalsIgnoreCase(authentication.getName())) {
             ra.addFlashAttribute("error", "No puedes eliminar tu propio usuario mientras tienes la sesión activa.");
             return "redirect:/usuarios";
         }

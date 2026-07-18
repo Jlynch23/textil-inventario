@@ -40,16 +40,16 @@
         </div>
         <div class="card-body p-4">
             <div th:if="${param.error}" class="alert alert-danger py-2">
-                Email o contraseña incorrectos.
+                Usuario o contraseña incorrectos.
             </div>
             <div th:if="${param.logout}" class="alert alert-success py-2">
                 Sesión cerrada correctamente.
             </div>
             <form th:action="@{/login}" method="post">
                 <div class="mb-3">
-                    <label for="username" class="form-label fw-semibold">Email</label>
-                    <input type="email" class="form-control" id="username" name="username"
-                           placeholder="correo@textil.com" required autofocus>
+                    <label for="username" class="form-label fw-semibold">Usuario</label>
+                    <input type="text" class="form-control" id="username" name="username"
+                           placeholder="jlynch" required autofocus>
                 </div>
                 <div class="mb-4">
                     <label for="password" class="form-label fw-semibold">Contraseña</label>
@@ -63,5 +63,12 @@
             </form>
         </div>
     </div>
+    <script>
+        // Cada vez que se llega a esta pantalla (entre una sesion y la
+        // siguiente) se limpia la preferencia guardada del sidebar de
+        // GERENTE, para que la proxima sesion siempre arranque con el
+        // menu oculto, sin importar si en la sesion anterior lo abrieron.
+        localStorage.removeItem('sidebarColapsadoGerente');
+    </script>
 </body>
 </html>
