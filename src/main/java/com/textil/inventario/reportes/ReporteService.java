@@ -144,7 +144,7 @@ public class ReporteService {
     }
 
     public String descripcionArticulo(Articulo a) {
-        return a.getTipoTela().getNombre() + " - " + a.getTitulo().getValor() + " - " + a.getColor().getNombreOficial();
+        return a.getTipoTela().getNombre() + " - " + a.getTitulo().getValor() + " - " + a.getColor().getNombreMostrar();
     }
 
     // ---------- ERRORES DEL SISTEMA ----------

@@ -58,6 +58,7 @@ public class CatalogoService {
     public Color guardarColor(Color c) {
         c.setNombreOficial(normalizar(c.getNombreOficial()));
         c.setCodigoFastDye(normalizar(c.getCodigoFastDye()));
+        c.setApodo(normalizar(c.getApodo()));
         return colorRepository.save(c);
     }
     public Color buscarColor(Long id) { return colorRepository.findById(id).orElseThrow(); }

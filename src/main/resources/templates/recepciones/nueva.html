@@ -115,7 +115,7 @@
     let lineasExtraidas = [];
 
     function articuloLabel(a) {
-        return a.tipoTela.nombre + ' ' + a.titulo.valor + ' / ' + a.color.nombreOficial;
+        return a.tipoTela.nombre + ' ' + a.titulo.valor + ' / ' + (a.color.nombreMostrar || a.color.nombreOficial);
     }
 
     document.getElementById('btnExtraer').addEventListener('click', async () => {

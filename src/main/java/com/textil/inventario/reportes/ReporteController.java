@@ -66,7 +66,7 @@ public class ReporteController {
                     s.getUbicacion().getNombre(),
                     s.getArticulo().getTipoTela().getNombre(),
                     s.getArticulo().getTitulo().getValor(),
-                    s.getArticulo().getColor().getNombreOficial(),
+                    s.getArticulo().getColor().getNombreMostrar(),
                     s.getRollos(),
                     s.getPesoKg()
             ));

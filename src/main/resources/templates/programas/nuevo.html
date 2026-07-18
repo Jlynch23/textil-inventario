@@ -75,7 +75,7 @@
                                         <select class="form-select select-color" name="colorId">
                                             <option value="">Color...</option>
                                             <option th:each="c : ${colores}" th:value="${c.id}"
-                                                    th:text="${c.nombreOficial + ' (' + c.codigoFastDye + ')'}"></option>
+                                                    th:text="${c.nombreMostrar + ' (' + c.codigoFastDye + ')'}"></option>
                                         </select>
                                         <button type="button" class="btn btn-outline-primary btn-color-nuevo" title="Crear color nuevo"><i class="bi bi-plus-lg"></i></button>
                                     </div>
@@ -173,6 +173,33 @@
         const tiposTelaData = /*[[${tiposTela}]]*/ [];
         const titulosData = /*[[${titulos}]]*/ [];
         let coloresData = /*[[${colores}]]*/ [];
+
+        // Auto-relleno de Titulo segun el Tipo de Tela elegido: en la
+        // practica, RIB 2x1 casi siempre va con 24/1 y RIB Acanalado casi
+        // siempre con 30/1. Solo se aplica si el Titulo de esa fila esta
+        // vacio todavia (nunca pisa una eleccion manual del usuario).
+        // Se puede ampliar esta lista si aparecen mas patrones consistentes.
+        const AUTO_TITULO_POR_TIPO = [
+            { patron: /2X1/, tituloValor: '24/1' },
+            { patron: /ACANALADO/, tituloValor: '30/1' }
+        ];
+        function tituloIdPorValor(valor) {
+            const t = titulosData.find(ti => ti.valor === valor);
+            return t ? t.id : null;
+        }
+        document.getElementById('lineasContainer').addEventListener('change', function (e) {
+            if (!e.target.classList.contains('select-tipo-tela')) return;
+            const opcionSeleccionada = e.target.options[e.target.selectedIndex];
+            const nombreTipo = (opcionSeleccionada ? opcionSeleccionada.text : '').toUpperCase();
+            const fila = e.target.closest('.linea-color');
+            const selectTitulo = fila ? fila.querySelector('.select-titulo') : null;
+            if (!selectTitulo || selectTitulo.value) return;
+
+            const regla = AUTO_TITULO_POR_TIPO.find(r => r.patron.test(nombreTipo));
+            if (!regla) return;
+            const idTitulo = tituloIdPorValor(regla.tituloValor);
+            if (idTitulo) selectTitulo.value = idTitulo;
+        });
         let selectColorActual = null;
         let selectTipoTelaActual = null;
         let selectTituloActual = null;
@@ -181,7 +208,7 @@
             let options = '<option value="">Color...</option>';
             coloresData.forEach(c => {
                 const sel = seleccionarId && c.id === seleccionarId ? ' selected' : '';
-                options += '<option value="' + c.id + '"' + sel + '>' + c.nombreOficial + ' (' + c.codigoFastDye + ')</option>';
+                options += '<option value="' + c.id + '"' + sel + '>' + (c.nombreMostrar || c.nombreOficial) + ' (' + c.codigoFastDye + ')</option>';
             });
             return options;
         }

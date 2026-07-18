@@ -26,6 +26,13 @@
                             <label class="form-label fw-semibold">Nombre Oficial</label>
                             <input type="text" class="form-control" th:field="*{nombreOficial}"
                                    placeholder="Ej: Verde Botella" required>
+                            <small class="text-muted">El nombre real, tal como aparece en la guía de FAST DYE.</small>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Apodo (opcional)</label>
+                            <input type="text" class="form-control" th:field="*{apodo}"
+                                   placeholder="Ej: PPT">
+                            <small class="text-muted">Si lo llenas, este es el nombre que se mostrará en todo el sistema en vez del nombre oficial largo.</small>
                         </div>
                         <div class="mb-4">
                             <label class="form-label fw-semibold">Código FAST DYE</label>
@@ -53,14 +60,19 @@
                         <table class="table table-hover mb-0">
                             <thead>
                                 <tr>
-                                    <th>Nombre Oficial</th>
+                                    <th>Nombre</th>
                                     <th>Código FAST DYE</th>
                                     <th>Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr th:each="c : ${colores}">
-                                    <td th:text="${c.nombreOficial}"></td>
+                                    <td>
+                                        <span th:text="${c.nombreMostrar}"></span>
+                                        <br th:if="${c.apodo != null and !#strings.isEmpty(c.apodo)}">
+                                        <small class="text-muted" th:if="${c.apodo != null and !#strings.isEmpty(c.apodo)}"
+                                               th:text="${c.nombreOficial}"></small>
+                                    </td>
                                     <td><code th:text="${c.codigoFastDye}"></code></td>
                                     <td>
                                         <a th:href="@{/catalogo/colores/editar/{id}(id=${c.id})}"

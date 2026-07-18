@@ -38,7 +38,7 @@
                         </thead>
                         <tbody>
                             <tr th:each="d : ${transferencia.detalles}">
-                                <td th:text="${d.articulo.tipoTela.nombre + ' ' + d.articulo.titulo.valor + ' / ' + d.articulo.color.nombreOficial}"></td>
+                                <td th:text="${d.articulo.tipoTela.nombre + ' ' + d.articulo.titulo.valor + ' / ' + d.articulo.color.nombreMostrar}"></td>
                                 <td th:text="${d.cantidadSolicitada}"></td>
                                 <td>
                                     <input type="number" class="form-control form-control-sm"

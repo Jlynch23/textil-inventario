@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Iniciar Sesión - Textil Inventario</title>
+    <title>Iniciar Sesión - TEXCONTROL</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
@@ -15,7 +15,7 @@
         }
         .login-card {
             width: 100%;
-            max-width: 420px;
+            max-width: 500px;
             border-radius: 12px;
             box-shadow: 0 4px 24px rgba(0,0,0,0.10);
         }
@@ -23,26 +23,20 @@
             background-color: #1F4E79;
             color: white;
             border-radius: 12px 12px 0 0;
-            padding: 32px;
+            padding: 32px 24px;
             text-align: center;
         }
-        .login-header h4 {
-            margin: 0;
-            font-weight: 700;
-            font-size: 1.3rem;
-        }
-        .login-header p {
-            margin: 6px 0 0;
-            opacity: 0.8;
-            font-size: 0.9rem;
+        .login-header img {
+            max-width: 440px;
+            width: 100%;
+            height: auto;
         }
     </style>
 </head>
 <body>
     <div class="login-card card border-0">
         <div class="login-header">
-            <h4>Sistema de Inventario Textil</h4>
-            <p>Textil Laura &amp; Textil Clemente</p>
+            <img src="/img/texcontrol-logo-recortado.png" alt="TEXCONTROL">
         </div>
         <div class="card-body p-4">
             <div th:if="${param.error}" class="alert alert-danger py-2">

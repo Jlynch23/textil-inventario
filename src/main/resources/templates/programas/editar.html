@@ -55,7 +55,7 @@
                                 </div>
                                 <div class="col-md-2" th:text="${d.articulo.titulo.valor}"></div>
                                 <div class="col-md-3">
-                                    <span th:text="${d.articulo.color.nombreOficial}"></span>
+                                    <span th:text="${d.articulo.color.nombreMostrar}"></span>
                                     <span class="badge bg-light text-dark" th:text="${d.articulo.color.codigoFastDye}"></span>
                                 </div>
                                 <div class="col-md-2">
@@ -172,7 +172,7 @@
             let options = '<option value="">Color...</option>';
             coloresData.forEach(c => {
                 const sel = seleccionarId && c.id === seleccionarId ? ' selected' : '';
-                options += '<option value="' + c.id + '"' + sel + '>' + c.nombreOficial + ' (' + c.codigoFastDye + ')</option>';
+                options += '<option value="' + c.id + '"' + sel + '>' + (c.nombreMostrar || c.nombreOficial) + ' (' + c.codigoFastDye + ')</option>';
             });
             return options;
         }

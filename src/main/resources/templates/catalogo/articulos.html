@@ -51,7 +51,7 @@
                                     <option value="">Seleccionar...</option>
                                     <option th:each="c : ${colores}"
                                             th:value="${c.id}"
-                                            th:text="${c.nombreOficial}"></option>
+                                            th:text="${c.nombreMostrar}"></option>
                                 </select>
                                 <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalColorNuevo" title="Crear color nuevo"><i class="bi bi-plus-lg"></i></button>
                             </div>
@@ -88,7 +88,7 @@
                                     <td><code th:text="${a.codigoInterno}"></code></td>
                                     <td th:text="${a.tipoTela.nombre}"></td>
                                     <td th:text="${a.titulo.valor}"></td>
-                                    <td th:text="${a.color.nombreOficial}"></td>
+                                    <td th:text="${a.color.nombreMostrar}"></td>
                                     <td>
                                         <form th:action="@{/catalogo/articulos/eliminar/{id}(id=${a.id})}" method="post" style="display:inline">
                                             <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar definitivamente"

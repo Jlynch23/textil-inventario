@@ -33,7 +33,7 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/login", "/logout", "/css/**", "/js/**").permitAll()
+                .requestMatchers("/login", "/logout", "/css/**", "/js/**", "/img/**").permitAll()
                 .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                 .requestMatchers("/almacen/revision/**").hasRole("SUPERADMIN")
                 .requestMatchers("/almacen/**").hasAnyRole("ALMACENERO", "SUPERADMIN")
