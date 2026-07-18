@@ -1,6 +1,7 @@
 package com.textil.inventario.recepciones;
 
 import com.textil.inventario.catalogo.ArticuloRepository;
+import com.textil.inventario.catalogo.ColorRepository;
 import com.textil.inventario.catalogo.Empresa;
 import com.textil.inventario.catalogo.EmpresaRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ public class RecepcionController {
     private final RecepcionService recepcionService;
     private final EmpresaRepository empresaRepository;
     private final ArticuloRepository articuloRepository;
+    private final ColorRepository colorRepository;
     private final AnthropicOcrService anthropicOcrService;
     private final ArticuloMatchingService articuloMatchingService;
 
@@ -63,6 +65,7 @@ public class RecepcionController {
     public String nueva(Model model) {
         model.addAttribute("empresas", empresaRepository.findByActivoTrue());
         model.addAttribute("articulos", articuloRepository.findByActivoTrue());
+        model.addAttribute("colores", colorRepository.findByActivoTrue());
         return "recepciones/nueva";
     }
 
@@ -82,17 +85,19 @@ public class RecepcionController {
     public String detalle(@PathVariable Long id, Model model) {
         model.addAttribute("recepcion", recepcionService.buscarRecepcion(id));
         model.addAttribute("articulos", articuloRepository.findByActivoTrue());
+        model.addAttribute("colores", colorRepository.findByActivoTrue());
         return "recepciones/detalle";
     }
 
     @PostMapping("/{id}/agregar-linea")
     public String agregarLinea(@PathVariable Long id,
                                 @RequestParam Long articuloId,
+                                @RequestParam Long colorId,
                                 @RequestParam String programaTenido,
                                 @RequestParam Integer rollosGuia,
                                 @RequestParam(required = false) BigDecimal pesoBrutoKg,
                                 RedirectAttributes ra) {
-        recepcionService.agregarDetalle(id, articuloId, programaTenido, rollosGuia, pesoBrutoKg);
+        recepcionService.agregarDetalle(id, articuloId, colorId, programaTenido, rollosGuia, pesoBrutoKg);
         ra.addFlashAttribute("mensaje", "Línea agregada correctamente.");
         return "redirect:/recepciones/" + id + "/detalle";
     }

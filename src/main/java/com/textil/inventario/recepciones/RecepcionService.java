@@ -17,6 +17,7 @@ public class RecepcionService {
     private final RecepcionDetalleRepository detalleRepository;
     private final EmpresaRepository empresaRepository;
     private final ArticuloRepository articuloRepository;
+    private final ColorRepository colorRepository;
     private final UsuarioActualService usuarioActualService;
     private final StockActualRepository stockActualRepository;
     private final KardexMovimientoRepository kardexRepository;
@@ -164,20 +165,21 @@ public class RecepcionService {
     }
 
     @Transactional
-    public RecepcionDetalle agregarDetalle(Long recepcionId, Long articuloId,
+    public RecepcionDetalle agregarDetalle(Long recepcionId, Long articuloId, Long colorId,
                                            String programa, Integer rollosGuia,
                                            java.math.BigDecimal pesoBruto) {
         RecepcionDetalle d = new RecepcionDetalle();
         d.setRecepcion(recepcionRepository.findById(recepcionId).orElseThrow());
         Articulo articulo = articuloRepository.findById(articuloId).orElseThrow();
         d.setArticulo(articulo);
+        d.setColor(colorRepository.findById(colorId).orElseThrow());
         d.setProgramaTenido(programa);
         d.setRollosGuia(rollosGuia);
         d.setPesoBrutoKg(pesoBruto);
 
         if (programa != null && !programa.isBlank()) {
             buscarProgramaNormalizado(programa).ifPresent(prog ->
-                elegirLineaDePrograma(prog.getId(), articulo.getId()).ifPresent(d::setProgramaDetalle)
+                elegirLineaDePrograma(prog.getId(), articulo.getId(), colorId).ifPresent(d::setProgramaDetalle)
             );
         }
 
@@ -209,8 +211,8 @@ public class RecepcionService {
      * (FIFO), para ir llenando las lineas en orden; si todas ya estan
      * completas, se usa la primera igual, para no perder la trazabilidad.
      */
-    private java.util.Optional<ProgramaDetalle> elegirLineaDePrograma(Long programaId, Long articuloId) {
-        List<ProgramaDetalle> lineas = programaDetalleRepository.findByProgramaIdAndArticuloIdOrderByIdAsc(programaId, articuloId);
+    private java.util.Optional<ProgramaDetalle> elegirLineaDePrograma(Long programaId, Long articuloId, Long colorId) {
+        List<ProgramaDetalle> lineas = programaDetalleRepository.findByProgramaIdAndArticuloIdAndColorIdOrderByIdAsc(programaId, articuloId, colorId);
         if (lineas.isEmpty()) return java.util.Optional.empty();
 
         return lineas.stream()
@@ -250,10 +252,11 @@ public class RecepcionService {
                 : java.math.BigDecimal.ZERO;
 
             StockActual stock = stockActualRepository
-                .findByArticuloIdAndUbicacionId(d.getArticulo().getId(), praderas.getId())
+                .findByArticuloIdAndUbicacionIdAndColorId(d.getArticulo().getId(), praderas.getId(), d.getColor().getId())
                 .orElseGet(() -> {
                     StockActual s = new StockActual();
                     s.setArticulo(d.getArticulo());
+                    s.setColor(d.getColor());
                     s.setUbicacion(praderas);
                     s.setRollos(0);
                     s.setPesoKg(java.math.BigDecimal.ZERO);
@@ -273,6 +276,7 @@ public class RecepcionService {
             // Kardex: la Recepción sí registra la empresa (dato informativo/trazabilidad)
             KardexMovimiento k = new KardexMovimiento();
             k.setArticulo(d.getArticulo());
+            k.setColor(d.getColor());
             k.setEmpresa(r.getEmpresa());
             k.setUbicacionDestino(praderas);
             k.setTipoMovimiento(KardexMovimiento.TipoMovimiento.INGRESO);
@@ -297,8 +301,8 @@ public class RecepcionService {
                                               List<CrearRecepcionConLineasRequest.LineaRequest> lineas) {
         Recepcion r = crearRecepcion(empresaId, numeroGuia, numeroFactura, fechaGuia, observaciones);
         for (CrearRecepcionConLineasRequest.LineaRequest linea : lineas) {
-            if (linea.articuloId() == null) continue;
-            agregarDetalle(r.getId(), linea.articuloId(), linea.programaTenido(),
+            if (linea.articuloId() == null || linea.colorId() == null) continue;
+            agregarDetalle(r.getId(), linea.articuloId(), linea.colorId(), linea.programaTenido(),
                     linea.rollosGuia(), linea.pesoBrutoKg());
         }
         return r;

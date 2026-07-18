@@ -122,6 +122,28 @@ public class CatalogoController {
         }
     }
 
+    @PostMapping("/composiciones/crear-rapido")
+    @ResponseBody
+    public ResponseEntity<?> crearComposicionRapido(@RequestBody ComposicionRapidoRequest request) {
+        try {
+            if (request.nombre() == null || request.nombre().isBlank()) {
+                return ResponseEntity.status(400).body(Map.of("error", "El nombre es obligatorio."));
+            }
+            Optional<Composicion> existente = catalogoService.buscarComposicionPorNombre(request.nombre());
+            if (existente.isPresent()) {
+                return ResponseEntity.ok(Map.of("id", existente.get().getId(), "nombre", existente.get().getNombre(), "yaExistia", true));
+            }
+            Composicion composicion = new Composicion();
+            composicion.setNombre(request.nombre().trim());
+            composicion.setActivo(true);
+            Composicion guardado = catalogoService.guardarComposicion(composicion);
+            return ResponseEntity.ok(Map.of("id", guardado.getId(), "nombre", guardado.getNombre(), "yaExistia", false));
+        } catch (Exception e) {
+            log.error("Error en crearComposicionRapido: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body(Map.of("error", "Ocurrió un error interno. Intenta de nuevo o contacta al administrador."));
+        }
+    }
+
     // ─── ARTÍCULOS ─────────────────────────────────────────
     @PostMapping("/articulos/crear-rapido")
     @ResponseBody
@@ -139,14 +161,14 @@ public class CatalogoController {
                         "Título '" + request.tituloValor() + "' no existe en el catálogo base."));
             }
 
-            Optional<Color> color = catalogoService.buscarColorPorCodigoFastDye(request.colorCodigo());
-            if (color.isEmpty()) {
+            Optional<Composicion> composicion = catalogoService.buscarComposicionPorNombre(request.composicionNombre());
+            if (composicion.isEmpty()) {
                 return ResponseEntity.status(400).body(Map.of("error",
-                        "Primero debes crear el color (código '" + request.colorCodigo() + "')."));
+                        "Composición '" + request.composicionNombre() + "' no existe en el catálogo base."));
             }
 
             Optional<Articulo> existente = catalogoService.buscarArticuloPorCombinacion(
-                    tipoTela.get().getId(), titulo.get().getId(), color.get().getId());
+                    tipoTela.get().getId(), titulo.get().getId(), composicion.get().getId());
             if (existente.isPresent()) {
                 return ResponseEntity.ok(Map.of("id", existente.get().getId(), "yaExistia", true));
             }
@@ -154,8 +176,8 @@ public class CatalogoController {
             Articulo articulo = new Articulo();
             articulo.setTipoTela(tipoTela.get());
             articulo.setTitulo(titulo.get());
-            articulo.setColor(color.get());
-            articulo.setCodigoInterno(catalogoService.generarCodigoInterno(tipoTela.get(), titulo.get(), color.get()));
+            articulo.setComposicion(composicion.get());
+            articulo.setCodigoInterno(catalogoService.generarCodigoInterno(tipoTela.get(), titulo.get(), composicion.get()));
             articulo.setActivo(true);
 
             Articulo guardado = catalogoService.guardarArticulo(articulo);
@@ -174,7 +196,7 @@ public class CatalogoController {
         model.addAttribute("articulo", new Articulo());
         model.addAttribute("tiposTela", catalogoService.listarTiposTela());
         model.addAttribute("titulos", catalogoService.listarTitulos());
-        model.addAttribute("colores", catalogoService.listarColores());
+        model.addAttribute("composiciones", catalogoService.listarComposiciones());
         return "catalogo/articulos";
     }
 
@@ -182,25 +204,26 @@ public class CatalogoController {
     public String guardarArticulo(@ModelAttribute Articulo articulo,
                                    @RequestParam Long tipoTelaId,
                                    @RequestParam Long tituloId,
-                                   @RequestParam Long colorId,
+                                   @RequestParam Long composicionId,
                                    RedirectAttributes ra) {
         articulo.setTipoTela(catalogoService.listarTiposTela().stream()
             .filter(t -> t.getId().equals(tipoTelaId)).findFirst().orElseThrow());
         articulo.setTitulo(catalogoService.listarTitulos().stream()
             .filter(t -> t.getId().equals(tituloId)).findFirst().orElseThrow());
-        articulo.setColor(catalogoService.buscarColor(colorId));
+        articulo.setComposicion(catalogoService.listarComposiciones().stream()
+            .filter(c -> c.getId().equals(composicionId)).findFirst().orElseThrow());
 
         // Generar código interno automático
         if (articulo.getCodigoInterno() == null || articulo.getCodigoInterno().isBlank()) {
             articulo.setCodigoInterno(catalogoService.generarCodigoInterno(
-                    articulo.getTipoTela(), articulo.getTitulo(), articulo.getColor()));
+                    articulo.getTipoTela(), articulo.getTitulo(), articulo.getComposicion()));
         }
 
         try {
             catalogoService.guardarArticulo(articulo);
             ra.addFlashAttribute("mensaje", "Artículo guardado correctamente.");
         } catch (DataIntegrityViolationException e) {
-            ra.addFlashAttribute("error", "Ya existe un artículo con esa combinación de tipo de tela, título y color.");
+            ra.addFlashAttribute("error", "Ya existe un artículo con esa combinación de tipo de tela, título y composición.");
         }
         return "redirect:/catalogo/articulos";
     }

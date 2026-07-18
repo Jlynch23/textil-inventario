@@ -42,6 +42,7 @@ public class ArchivoHistoricoService {
     private final TipoTelaRepository tipoTelaRepository;
     private final TituloRepository tituloRepository;
     private final ColorRepository colorRepository;
+    private final ComposicionRepository composicionRepository;
     private final ArticuloRepository articuloRepository;
     private final AnthropicOcrService ocrService;
     private final RecepcionService recepcionService;
@@ -206,7 +207,7 @@ public class ArchivoHistoricoService {
                         coloresCreados += resultado.colorCreado();
                         articulosCreados += resultado.articuloCreado();
                         if (resultado.articulo() != null) {
-                            lineasParaRecepcion.add(new LineaParaRecepcion(resultado.articulo(), p));
+                            lineasParaRecepcion.add(new LineaParaRecepcion(resultado.articulo(), resultado.color(), p));
                         }
                     }
                 }
@@ -229,7 +230,7 @@ public class ArchivoHistoricoService {
         documentoHistoricoRepository.save(doc);
     }
 
-    private record LineaParaRecepcion(Articulo articulo, ProductoExtraido producto) {}
+    private record LineaParaRecepcion(Articulo articulo, Color color, ProductoExtraido producto) {}
 
     /**
      * Crea una Recepcion real con una linea por cada producto ya enriquecido
@@ -271,7 +272,7 @@ public class ArchivoHistoricoService {
             for (LineaParaRecepcion linea : lineas) {
                 ProductoExtraido p = linea.producto();
                 RecepcionDetalle d = recepcionService.agregarDetalle(
-                        recepcion.getId(), linea.articulo().getId(),
+                        recepcion.getId(), linea.articulo().getId(), linea.color().getId(),
                         p.programaTenido(), p.rollos(), p.pesoBrutoKg());
                 detalleIds.add(d.getId());
                 rollosRecibidos.add(d.getRollosGuia());
@@ -389,7 +390,7 @@ public class ArchivoHistoricoService {
         return Optional.empty();
     }
 
-    private record EnriquecimientoResultado(Articulo articulo, int colorCreado, int articuloCreado) {}
+    private record EnriquecimientoResultado(Articulo articulo, Color color, int colorCreado, int articuloCreado) {}
 
     /**
      * Resuelve (o crea si hace falta) el Articulo correspondiente al producto
@@ -400,14 +401,25 @@ public class ArchivoHistoricoService {
      */
     private EnriquecimientoResultado intentarEnriquecerCatalogo(ProductoExtraido p) {
         if (p.tipoTela() == null || p.titulo() == null || p.colorCodigo() == null) {
-            return new EnriquecimientoResultado(null, 0, 0);
+            return new EnriquecimientoResultado(null, null, 0, 0);
         }
 
         Optional<TipoTela> tipoTela = tipoTelaRepository.findByNombreIgnoreCase(p.tipoTela().trim());
-        if (tipoTela.isEmpty()) return new EnriquecimientoResultado(null, 0, 0);
+        if (tipoTela.isEmpty()) return new EnriquecimientoResultado(null, null, 0, 0);
 
         Optional<Titulo> titulo = tituloRepository.findByValorIgnoreCase(p.titulo().trim());
-        if (titulo.isEmpty()) return new EnriquecimientoResultado(null, 0, 0);
+        if (titulo.isEmpty()) return new EnriquecimientoResultado(null, null, 0, 0);
+
+        // La composicion (ALGODON, MELANGE N%) es obligatoria para poder
+        // identificar/crear el Articulo, ya que este ya no incluye Color
+        // (ver V26). Si el PDF no trajo una composicion reconocible, no se
+        // auto-crea el articulo -- mejor no enriquecer esta linea que
+        // adivinar y dejar datos mal etiquetados en el catalogo.
+        if (p.composicion() == null || p.composicion().isBlank()) {
+            return new EnriquecimientoResultado(null, null, 0, 0);
+        }
+        Optional<Composicion> composicion = composicionRepository.findByNombreIgnoreCase(p.composicion().trim());
+        if (composicion.isEmpty()) return new EnriquecimientoResultado(null, null, 0, 0);
 
         int colorCreado = 0;
         Optional<Color> colorOpt = catalogoService.resolverColorPorCodigo(p.colorCodigo().trim(), p.colorNombre());
@@ -434,15 +446,15 @@ public class ArchivoHistoricoService {
                     colorCreado = 1;
                 } catch (Exception e) {
                     // choque de datos que no pudimos anticipar: no se puede crear con seguridad
-                    return new EnriquecimientoResultado(null, 0, 0);
+                    return new EnriquecimientoResultado(null, null, 0, 0);
                 }
             }
         }
 
         int articuloCreado = 0;
         Articulo articulo;
-        Optional<Articulo> articuloOpt = articuloRepository.findByTipoTelaIdAndTituloIdAndColorId(
-                tipoTela.get().getId(), titulo.get().getId(), color.getId());
+        Optional<Articulo> articuloOpt = articuloRepository.findByTipoTelaIdAndTituloIdAndComposicionId(
+                tipoTela.get().getId(), titulo.get().getId(), composicion.get().getId());
         if (articuloOpt.isPresent()) {
             articulo = articuloOpt.get();
         } else {
@@ -450,21 +462,17 @@ public class ArchivoHistoricoService {
                 Articulo nuevo = new Articulo();
                 nuevo.setTipoTela(tipoTela.get());
                 nuevo.setTitulo(titulo.get());
-                nuevo.setColor(color);
-                String codigo = tipoTela.get().getNombre().replace(" ", "").substring(0, 3).toUpperCase()
-                        + "-" + titulo.get().getValor().replace("/", "")
-                        + "-" + color.getNombreOficial().replace(" ", "").substring(0, Math.min(4, color.getNombreOficial().length())).toUpperCase()
-                        + "-" + UUID.randomUUID().toString().substring(0, 4).toUpperCase();
-                nuevo.setCodigoInterno(codigo);
+                nuevo.setComposicion(composicion.get());
+                nuevo.setCodigoInterno(catalogoService.generarCodigoInterno(tipoTela.get(), titulo.get(), composicion.get()));
                 nuevo.setActivo(true);
                 articulo = articuloRepository.save(nuevo);
                 articuloCreado = 1;
             } catch (Exception e) {
                 // no se pudo crear el articulo
-                return new EnriquecimientoResultado(null, 0, 0);
+                return new EnriquecimientoResultado(null, null, 0, 0);
             }
         }
 
-        return new EnriquecimientoResultado(articulo, colorCreado, articuloCreado);
+        return new EnriquecimientoResultado(articulo, color, colorCreado, articuloCreado);
     }
 }

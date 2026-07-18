@@ -14,6 +14,7 @@ public record CrearRecepcionConLineasRequest(
 ) {
     public record LineaRequest(
             Long articuloId,
+            Long colorId,
             String programaTenido,
             Integer rollosGuia,
             BigDecimal pesoBrutoKg

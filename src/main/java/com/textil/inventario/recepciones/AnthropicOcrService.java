@@ -39,13 +39,18 @@ public class AnthropicOcrService {
 
         En la descripcion de cada producto suele aparecer un texto como:
         "Servicio Tenido: Tela RIB 2X1 30/1 ALG ACANALADO Color 631085 COCOA LOLA / Rollos: 27 / P.Bruto: 602.52 Guia: 658"
+        o tambien, con composicion Melange:
+        "Servicio Tenido: Tela RIB 2X1 24/1 MELLANGE 10% Color 732631 NEGRO 2 / Rollos: 18 / P.Bruto: 416.00 Guia: 665"
 
         De ese texto debes separar los siguientes campos:
-        - tipoTela: el tipo de tela base, normalizado a uno de estos valores EXACTOS si aplica: "RIB 1x1", "RIB 2x1", "RIB Acanalado", "RIB Listado". Reglas de prioridad, en orden:
-          (1) Si el texto dice "ACANALADO" junto con "RIB 2X1" o "RIB 1x1", el tipo de tela correcto es "RIB Acanalado" (el acanalado prevalece sobre el 2x1/1x1 base).
-          (2) Si el texto dice "MELANGE" o su abreviatura "MEL." (con o sin porcentaje, ej "MELANGE 10%", "MEL. 10%") junto con "RIB 2X1" o "RIB 1x1", el tipo de tela correcto es "RIB 2x1 MELANGE N%" o "RIB 1x1 MELANGE N%" (usa el numero de porcentaje exacto que aparece en el texto; si no aparece porcentaje, omite el "N%"). IMPORTANTE: MELANGE (con una sola L) es una tela DISTINTA y separada de la tela base sin melange -- nunca omitas ese dato aunque el resto del texto se vea igual a una tela normal.
+        - tipoTela: el tipo de tela base, normalizado a uno de estos valores EXACTOS: "RIB 1x1", "RIB 2x1", "RIB Acanalado", "RIB Listado".
+          Si el texto dice "ACANALADO" junto con "RIB 2X1" o "RIB 1x1", el tipo de tela correcto es "RIB Acanalado" (el acanalado prevalece sobre el 2x1/1x1 base).
           Si no calza con ninguna de estas reglas, devuelve el texto tal cual aparece.
         - titulo: el numero de titulo de hilo, ej "24/1" o "30/1" (solo el numero con formato N/1, sin las siglas ALG u otras)
+        - composicion: la composicion o variante de fibra, normalizada a uno de estos valores EXACTOS:
+          "ALGODON" (cuando el texto dice "ALG" o "ALGODON", o no menciona ninguna variante especial),
+          "MELANGE 10%", "MELANGE 3%", "MELANGE 1%" (usa el porcentaje exacto que aparece en el texto).
+          IMPORTANTE: en las guias reales esta palabra suele aparecer escrita "MELLANGE" (con DOBLE L), aunque tambien puede aparecer como "MELANGE" (una sola L) -- ambas grafias significan exactamente lo mismo y deben normalizarse siempre a "MELANGE N%". Es una composicion DISTINTA de ALGODON -- nunca la ignores aunque el resto del texto se vea igual a una tela normal.
         - colorCodigo: el codigo numerico de color (ej "631085")
         - colorNombre: el nombre del color tal como aparece (ej "COCOA LOLA")
         - programaTenido: el numero de programa que aparece como "Guia: NNN" dentro de la descripcion (ese numero, ej "658", NO es el numero de guia principal del documento)
@@ -62,6 +67,7 @@ public class AnthropicOcrService {
             {
               "tipoTela": "string",
               "titulo": "string",
+              "composicion": "string",
               "colorCodigo": "string",
               "colorNombre": "string",
               "programaTenido": "string",

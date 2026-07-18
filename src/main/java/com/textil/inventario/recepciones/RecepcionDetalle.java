@@ -1,6 +1,7 @@
 package com.textil.inventario.recepciones;
 
 import com.textil.inventario.catalogo.Articulo;
+import com.textil.inventario.catalogo.Color;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -22,6 +23,10 @@ public class RecepcionDetalle {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "articulo_id", nullable = false)
     private Articulo articulo;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "color_id", nullable = false)
+    private Color color;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "programa_detalle_id")

@@ -21,6 +21,7 @@ public class ProgramaService {
     private final TipoTelaRepository tipoTelaRepository;
     private final TituloRepository tituloRepository;
     private final ColorRepository colorRepository;
+    private final ComposicionRepository composicionRepository;
     private final CatalogoService catalogoService;
 
     // Normaliza a mayusculas (recorta espacios), igual que en Catalogo y
@@ -41,8 +42,8 @@ public class ProgramaService {
     @Transactional
     public Programa crearPrograma(String numero, Long empresaId, LocalDate fecha, String observaciones,
                                    Integer totalRollos,
-                                   List<Long> tipoTelaIds, List<Long> tituloIds, List<Long> colorIds,
-                                   List<Integer> cantidades) {
+                                   List<Long> tipoTelaIds, List<Long> tituloIds, List<Long> composicionIds,
+                                   List<Long> colorIds, List<Integer> cantidades) {
         int suma = cantidades.stream().mapToInt(c -> c != null ? c : 0).sum();
         if (totalRollos == null || !totalRollos.equals(suma)) {
             throw new IllegalArgumentException(
@@ -59,13 +60,16 @@ public class ProgramaService {
         p = programaRepository.save(p);
 
         for (int i = 0; i < cantidades.size(); i++) {
-            if (tipoTelaIds.get(i) == null || tituloIds.get(i) == null || colorIds.get(i) == null) continue;
+            if (tipoTelaIds.get(i) == null || tituloIds.get(i) == null
+                    || composicionIds.get(i) == null || colorIds.get(i) == null) continue;
 
-            Articulo articulo = resolverOCrearArticulo(tipoTelaIds.get(i), tituloIds.get(i), colorIds.get(i));
+            Articulo articulo = resolverOCrearArticulo(tipoTelaIds.get(i), tituloIds.get(i), composicionIds.get(i));
+            Color color = colorRepository.findById(colorIds.get(i)).orElseThrow();
 
             ProgramaDetalle pd = new ProgramaDetalle();
             pd.setPrograma(p);
             pd.setArticulo(articulo);
+            pd.setColor(color);
             pd.setCantidadSolicitada(cantidades.get(i));
             pd.setCantidadRecibida(0);
             programaDetalleRepository.save(pd);
@@ -75,25 +79,26 @@ public class ProgramaService {
     }
 
     /**
-     * Un programa puede pedir una combinacion tipo de tela + titulo + color
-     * que todavia no exista como Articulo en el catalogo (ej. un color
-     * recien creado para este programa). Se reutiliza la misma logica de
-     * generacion de codigo interno que ARQ-02 (CatalogoService), en vez de
-     * duplicarla aqui.
+     * Un programa puede pedir una combinacion tipo de tela + titulo +
+     * composicion que todavia no exista como Articulo en el catalogo (ej.
+     * una composicion nueva para este programa). Se reutiliza la misma
+     * logica de generacion de codigo interno que ARQ-02 (CatalogoService),
+     * en vez de duplicarla aqui. El Color ya no forma parte del Articulo
+     * (ver V26): se resuelve/asigna por separado a nivel de ProgramaDetalle.
      */
-    private Articulo resolverOCrearArticulo(Long tipoTelaId, Long tituloId, Long colorId) {
-        Optional<Articulo> existente = catalogoService.buscarArticuloPorCombinacion(tipoTelaId, tituloId, colorId);
+    private Articulo resolverOCrearArticulo(Long tipoTelaId, Long tituloId, Long composicionId) {
+        Optional<Articulo> existente = catalogoService.buscarArticuloPorCombinacion(tipoTelaId, tituloId, composicionId);
         if (existente.isPresent()) return existente.get();
 
         TipoTela tipoTela = tipoTelaRepository.findById(tipoTelaId).orElseThrow();
         Titulo titulo = tituloRepository.findById(tituloId).orElseThrow();
-        Color color = colorRepository.findById(colorId).orElseThrow();
+        Composicion composicion = composicionRepository.findById(composicionId).orElseThrow();
 
         Articulo nuevo = new Articulo();
         nuevo.setTipoTela(tipoTela);
         nuevo.setTitulo(titulo);
-        nuevo.setColor(color);
-        nuevo.setCodigoInterno(catalogoService.generarCodigoInterno(tipoTela, titulo, color));
+        nuevo.setComposicion(composicion);
+        nuevo.setCodigoInterno(catalogoService.generarCodigoInterno(tipoTela, titulo, composicion));
         nuevo.setActivo(true);
         return catalogoService.guardarArticulo(nuevo);
     }
@@ -117,7 +122,8 @@ public class ProgramaService {
                                     List<Long> detalleIdsExistentes, List<Integer> cantidadesExistentes,
                                     List<Long> detalleIdsAEliminar,
                                     List<Long> nuevosTipoTelaIds, List<Long> nuevosTituloIds,
-                                    List<Long> nuevosColorIds, List<Integer> nuevasCantidades) {
+                                    List<Long> nuevosComposicionIds, List<Long> nuevosColorIds,
+                                    List<Integer> nuevasCantidades) {
 
         Programa p = programaRepository.findById(programaId).orElseThrow();
         if (p.isCompleto()) {
@@ -151,12 +157,15 @@ public class ProgramaService {
         }
 
         for (int i = 0; i < nuevasCantidades.size(); i++) {
-            if (nuevosTipoTelaIds.get(i) == null || nuevosTituloIds.get(i) == null || nuevosColorIds.get(i) == null) continue;
-            Articulo articulo = resolverOCrearArticulo(nuevosTipoTelaIds.get(i), nuevosTituloIds.get(i), nuevosColorIds.get(i));
+            if (nuevosTipoTelaIds.get(i) == null || nuevosTituloIds.get(i) == null
+                    || nuevosComposicionIds.get(i) == null || nuevosColorIds.get(i) == null) continue;
+            Articulo articulo = resolverOCrearArticulo(nuevosTipoTelaIds.get(i), nuevosTituloIds.get(i), nuevosComposicionIds.get(i));
+            Color color = colorRepository.findById(nuevosColorIds.get(i)).orElseThrow();
 
             ProgramaDetalle pd = new ProgramaDetalle();
             pd.setPrograma(p);
             pd.setArticulo(articulo);
+            pd.setColor(color);
             pd.setCantidadSolicitada(nuevasCantidades.get(i));
             pd.setCantidadRecibida(0);
             programaDetalleRepository.save(pd);

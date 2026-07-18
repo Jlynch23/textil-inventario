@@ -66,7 +66,7 @@ public class ReporteController {
                     s.getUbicacion().getNombre(),
                     s.getArticulo().getTipoTela().getNombre(),
                     s.getArticulo().getTitulo().getValor(),
-                    s.getArticulo().getColor().getNombreMostrar(),
+                    s.getColor().getNombreMostrar(),
                     s.getRollos(),
                     s.getPesoKg()
             ));
@@ -96,7 +96,7 @@ public class ReporteController {
             filas.add(List.of(
                     m.getFecha().format(FMT_FECHA_HORA),
                     m.getTipoMovimiento().toString(),
-                    reporteService.descripcionArticulo(m.getArticulo()),
+                    reporteService.descripcionArticulo(m.getArticulo(), m.getColor()),
                     m.getUbicacionOrigen() != null ? m.getUbicacionOrigen().getNombre() : "",
                     m.getUbicacionDestino() != null ? m.getUbicacionDestino().getNombre() : "",
                     m.getRollos(),

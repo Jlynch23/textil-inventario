@@ -30,6 +30,10 @@ public class KardexMovimiento {
     private Articulo articulo;
 
     @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "color_id", nullable = false)
+    private Color color;
+
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "empresa_id")
     private Empresa empresa;
 

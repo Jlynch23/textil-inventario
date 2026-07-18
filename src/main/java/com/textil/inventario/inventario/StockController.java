@@ -53,7 +53,7 @@ public class StockController {
         }
         if (colorId != null) {
             stock = stock.stream()
-                    .filter(s -> s.getArticulo().getColor().getId().equals(colorId))
+                    .filter(s -> s.getColor().getId().equals(colorId))
                     .toList();
         }
 

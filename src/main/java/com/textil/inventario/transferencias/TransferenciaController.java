@@ -1,6 +1,7 @@
 package com.textil.inventario.transferencias;
 
 import com.textil.inventario.catalogo.ArticuloRepository;
+import com.textil.inventario.catalogo.ColorRepository;
 import com.textil.inventario.catalogo.UbicacionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -18,6 +19,7 @@ public class TransferenciaController {
 
     private final TransferenciaService transferenciaService;
     private final ArticuloRepository articuloRepository;
+    private final ColorRepository colorRepository;
     private final UbicacionRepository ubicacionRepository;
 
     @GetMapping
@@ -54,16 +56,18 @@ public class TransferenciaController {
     public String detalle(@PathVariable Long id, Model model) {
         model.addAttribute("transferencia", transferenciaService.buscarTransferencia(id));
         model.addAttribute("articulos", articuloRepository.findByActivoTrue());
+        model.addAttribute("colores", colorRepository.findByActivoTrue());
         return "transferencias/detalle";
     }
 
     @PostMapping("/{id}/agregar-linea")
     public String agregarLinea(@PathVariable Long id,
                                 @RequestParam Long articuloId,
+                                @RequestParam Long colorId,
                                 @RequestParam Integer cantidadSolicitada,
                                 @RequestParam(required = false) String observaciones,
                                 RedirectAttributes ra) {
-        transferenciaService.agregarDetalle(id, articuloId, cantidadSolicitada, observaciones);
+        transferenciaService.agregarDetalle(id, articuloId, colorId, cantidadSolicitada, observaciones);
         ra.addFlashAttribute("mensaje", "Artículo agregado a la transferencia.");
         return "redirect:/transferencias/" + id + "/detalle";
     }

@@ -21,6 +21,7 @@ public class TransferenciaService {
     private final TransferenciaDetalleRepository detalleRepository;
     private final TransferenciaDistribucionRepository distribucionRepository;
     private final ArticuloRepository articuloRepository;
+    private final ColorRepository colorRepository;
     private final UsuarioActualService usuarioActualService;
     private final StockActualRepository stockActualRepository;
     private final KardexMovimientoRepository kardexRepository;
@@ -58,10 +59,12 @@ public class TransferenciaService {
     }
 
     @Transactional
-    public TransferenciaDetalle agregarDetalle(Long transferenciaId, Long articuloId, Integer cantidadSolicitada, String observaciones) {
+    public TransferenciaDetalle agregarDetalle(Long transferenciaId, Long articuloId, Long colorId,
+                                                Integer cantidadSolicitada, String observaciones) {
         TransferenciaDetalle d = new TransferenciaDetalle();
         d.setTransferencia(transferenciaRepository.findById(transferenciaId).orElseThrow());
         d.setArticulo(articuloRepository.findById(articuloId).orElseThrow());
+        d.setColor(colorRepository.findById(colorId).orElseThrow());
         d.setCantidadSolicitada(cantidadSolicitada);
         d.setObservaciones(observaciones);
         return detalleRepository.save(d);
@@ -80,11 +83,14 @@ public class TransferenciaService {
             detalleRepository.save(d);
 
             StockActual stockOrigen = stockActualRepository
-                .findByArticuloIdAndUbicacionId(d.getArticulo().getId(), t.getUbicacionOrigen().getId())
-                .orElseThrow(() -> new IllegalStateException("No hay stock registrado en Praderas para el artículo " + d.getArticulo().getId()));
+                .findByArticuloIdAndUbicacionIdAndColorId(d.getArticulo().getId(), t.getUbicacionOrigen().getId(), d.getColor().getId())
+                .orElseThrow(() -> new IllegalStateException(
+                        "No hay stock registrado en Praderas para el artículo " + d.getArticulo().getId()
+                        + " / color " + d.getColor().getId()));
 
             if (stockOrigen.getRollos() < cantidad) {
                 throw new IllegalStateException("Stock insuficiente en Praderas para el artículo " + d.getArticulo().getId()
+                    + " / color " + d.getColor().getId()
                     + ". Disponible: " + stockOrigen.getRollos() + ", solicitado: " + cantidad);
             }
 
@@ -99,6 +105,7 @@ public class TransferenciaService {
 
             KardexMovimiento k = new KardexMovimiento();
             k.setArticulo(d.getArticulo());
+            k.setColor(d.getColor());
             k.setUbicacionOrigen(t.getUbicacionOrigen());
             k.setTipoMovimiento(KardexMovimiento.TipoMovimiento.TRANSFERENCIA_OUT);
             k.setRollos(cantidad);
@@ -163,10 +170,11 @@ public class TransferenciaService {
                 distribucionRepository.save(dist);
 
                 StockActual stockDestino = stockActualRepository
-                    .findByArticuloIdAndUbicacionId(d.getArticulo().getId(), destino.getId())
+                    .findByArticuloIdAndUbicacionIdAndColorId(d.getArticulo().getId(), destino.getId(), d.getColor().getId())
                     .orElseGet(() -> {
                         StockActual s = new StockActual();
                         s.setArticulo(d.getArticulo());
+                        s.setColor(d.getColor());
                         s.setUbicacion(destino);
                         s.setRollos(0);
                         s.setPesoKg(BigDecimal.ZERO);
@@ -179,6 +187,7 @@ public class TransferenciaService {
 
                 KardexMovimiento k = new KardexMovimiento();
                 k.setArticulo(d.getArticulo());
+                k.setColor(d.getColor());
                 k.setUbicacionDestino(destino);
                 k.setTipoMovimiento(KardexMovimiento.TipoMovimiento.TRANSFERENCIA_IN);
                 k.setRollos(cantidad);

@@ -133,7 +133,7 @@ public class ReporteService {
         List<StockActual> stockDisponible = stockActualRepository.findStockDisponible();
         Map<String, Integer> totalPorArticulo = stockDisponible.stream()
                 .collect(Collectors.groupingBy(
-                        s -> descripcionArticulo(s.getArticulo()),
+                        this::descripcionArticulo,
                         java.util.LinkedHashMap::new,
                         Collectors.summingInt(StockActual::getRollos)
                 ));
@@ -143,8 +143,14 @@ public class ReporteService {
                         (a, b) -> a, java.util.LinkedHashMap::new));
     }
 
-    public String descripcionArticulo(Articulo a) {
-        return a.getTipoTela().getNombre() + " - " + a.getTitulo().getValor() + " - " + a.getColor().getNombreMostrar();
+    // El Color ya no vive en Articulo (ver V26): se toma del propio
+    // StockActual, que es donde realmente esta cada rollo con su color.
+    public String descripcionArticulo(StockActual s) {
+        return descripcionArticulo(s.getArticulo(), s.getColor());
+    }
+
+    public String descripcionArticulo(Articulo a, Color c) {
+        return a.getTipoTela().getNombre() + " - " + a.getTitulo().getValor() + " - " + c.getNombreMostrar();
     }
 
     // ---------- ERRORES DEL SISTEMA ----------

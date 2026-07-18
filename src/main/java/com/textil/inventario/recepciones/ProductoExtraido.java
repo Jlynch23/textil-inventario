@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 public record ProductoExtraido(
         String tipoTela,
         String titulo,
+        String composicion,
         String colorCodigo,
         String colorNombre,
         String programaTenido,
