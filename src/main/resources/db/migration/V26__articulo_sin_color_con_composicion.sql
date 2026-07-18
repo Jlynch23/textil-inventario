@@ -5,11 +5,15 @@
 -- El codigo interno del Articulo ya NO incluye color; el color se combina
 -- "al vuelo" con el codigo del articulo a nivel de cada movimiento.
 --
--- Como el sistema arranca de cero en produccion (sin datos reales que
--- preservar), no hace falta logica de migracion de datos: se elimina la
--- columna color_id directamente.
+-- Nota tecnica: el indice unico uq_articulo (tipo_tela_id, titulo_id, color_id)
+-- tambien servia como indice de soporte de la FK de tipo_tela_id (nunca
+-- existio un indice dedicado solo para esa columna). Antes de poder borrar
+-- uq_articulo hay que crear un indice de reemplazo para esa FK, si no MySQL
+-- rechaza el DROP INDEX con error 1553.
 
 ALTER TABLE articulos DROP FOREIGN KEY fk_articulos_color;
+
+ALTER TABLE articulos ADD INDEX idx_articulos_tipo_tela_temp (tipo_tela_id);
 ALTER TABLE articulos DROP INDEX uq_articulo;
 ALTER TABLE articulos DROP COLUMN color_id;
 
@@ -19,3 +23,7 @@ ALTER TABLE articulos ADD CONSTRAINT fk_articulos_composicion
 
 ALTER TABLE articulos ADD CONSTRAINT uq_articulo
     UNIQUE (tipo_tela_id, titulo_id, composicion_id);
+
+-- El indice temporal ya no hace falta: el nuevo uq_articulo vuelve a
+-- servir de soporte para la FK de tipo_tela_id (empieza con esa columna).
+ALTER TABLE articulos DROP INDEX idx_articulos_tipo_tela_temp;
