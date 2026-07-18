@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       th:replace="~{layout/base :: layout(~{::title/text()}, ~{::section})}">
 <head><title>Transferencias</title></head>
 <body>
@@ -15,7 +15,7 @@
 
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="fw-bold mb-0">Transferencias</h4>
-        <a href="/transferencias/nueva" class="btn btn-primary">
+        <a href="/transferencias/nueva" sec:authorize="hasRole('SUPERADMIN')" class="btn btn-primary">
             <i class="bi bi-plus-lg me-2"></i>Nueva Transferencia
         </a>
     </div>
@@ -54,14 +54,17 @@
                             <td>
                                 <a th:if="${t.estado.name() == 'BORRADOR'}"
                                    th:href="@{/transferencias/{id}/detalle(id=${t.id})}"
+                                   sec:authorize="hasRole('SUPERADMIN')"
                                    class="btn btn-sm btn-outline-primary">Agregar líneas</a>
                                 <a th:if="${t.estado.name() == 'BORRADOR'}"
                                    th:href="@{/transferencias/{id}/confirmar-salida(id=${t.id})}"
+                                   sec:authorize="hasRole('SUPERADMIN')"
                                    class="btn btn-sm btn-outline-success">Confirmar salida</a>
                                 <a th:if="${t.estado.name() == 'CONFIRMADA_SALIDA'}"
                                    th:href="@{/transferencias/{id}/confirmar-llegada(id=${t.id})}"
+                                   sec:authorize="hasRole('SUPERADMIN')"
                                    class="btn btn-sm btn-outline-success">Confirmar llegada</a>
-                                <form th:if="${t.estado.name() == 'BORRADOR'}" th:action="@{/transferencias/{id}/eliminar(id=${t.id})}" method="post" style="display:inline">
+                                <form th:if="${t.estado.name() == 'BORRADOR'}" sec:authorize="hasRole('SUPERADMIN')" th:action="@{/transferencias/{id}/eliminar(id=${t.id})}" method="post" style="display:inline">
                                     <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar (solo posible en BORRADOR)"
                                             onclick="return confirm('¿ELIMINAR esta transferencia de forma permanente? Solo es posible porque aún está en borrador.')">
                                         <i class="bi bi-trash"></i>

@@ -45,7 +45,8 @@ public class SecurityConfig {
                 // de escritura y no deben ser accesibles de solo-lectura.
                 .requestMatchers(org.springframework.http.HttpMethod.GET,
                         "/recepciones/nueva", "/recepciones/facturar", "/recepciones/*/confirmar",
-                        "/programas/nuevo", "/programas/*/editar"
+                        "/programas/nuevo", "/programas/*/editar",
+                        "/transferencias/nueva", "/transferencias/*/confirmar-salida", "/transferencias/*/confirmar-llegada"
                 ).hasRole("SUPERADMIN")
                 // NUNCA se le da acceso a /log/** ni /reportes/** (ni siquiera de
                 // lectura), y cualquier accion de escritura (POST/PUT/DELETE) a
