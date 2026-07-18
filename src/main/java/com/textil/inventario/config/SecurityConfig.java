@@ -46,7 +46,8 @@ public class SecurityConfig {
                 .requestMatchers(org.springframework.http.HttpMethod.GET,
                         "/recepciones/nueva", "/recepciones/facturar", "/recepciones/*/confirmar",
                         "/programas/nuevo", "/programas/*/editar",
-                        "/transferencias/nueva", "/transferencias/*/confirmar-salida", "/transferencias/*/confirmar-llegada"
+                        "/transferencias/nueva", "/transferencias/*/confirmar-salida", "/transferencias/*/confirmar-llegada",
+                        "/catalogo/ubicaciones"
                 ).hasRole("SUPERADMIN")
                 // NUNCA se le da acceso a /log/** ni /reportes/** (ni siquiera de
                 // lectura), y cualquier accion de escritura (POST/PUT/DELETE) a
