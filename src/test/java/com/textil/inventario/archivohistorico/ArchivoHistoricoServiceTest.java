@@ -29,6 +29,7 @@ class ArchivoHistoricoServiceTest {
     @Mock private TipoTelaRepository tipoTelaRepository;
     @Mock private TituloRepository tituloRepository;
     @Mock private ColorRepository colorRepository;
+    @Mock private ComposicionRepository composicionRepository;
     @Mock private ArticuloRepository articuloRepository;
     @Mock private AnthropicOcrService ocrService;
     @Mock private RecepcionService recepcionService;

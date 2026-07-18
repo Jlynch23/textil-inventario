@@ -2,6 +2,8 @@ package com.textil.inventario.recepciones;
 
 import com.textil.inventario.auditoria.AuditLogService;
 import com.textil.inventario.catalogo.ArticuloRepository;
+import com.textil.inventario.catalogo.Color;
+import com.textil.inventario.catalogo.ColorRepository;
 import com.textil.inventario.catalogo.EmpresaRepository;
 import com.textil.inventario.inventario.KardexMovimientoRepository;
 import com.textil.inventario.inventario.StockActualRepository;
@@ -32,6 +34,7 @@ class RecepcionServiceTest {
     @Mock private RecepcionDetalleRepository detalleRepository;
     @Mock private EmpresaRepository empresaRepository;
     @Mock private ArticuloRepository articuloRepository;
+    @Mock private ColorRepository colorRepository;
     @Mock private UsuarioActualService usuarioActualService;
     @Mock private StockActualRepository stockActualRepository;
     @Mock private KardexMovimientoRepository kardexRepository;
@@ -122,22 +125,33 @@ class RecepcionServiceTest {
         return a;
     }
 
+    // El Color ya no vive en Articulo (ver V26): cada RecepcionDetalle/StockActual
+    // de prueba necesita su propio Color, igual que en el diseño real.
+    private Color colorDePrueba() {
+        Color c = new Color();
+        c.setId(20L);
+        c.setNombreOficial("NEGRO");
+        return c;
+    }
+
     @Test
     void confirmarRecepcion_sinDiferencias_calculaPesoCompletoYActualizaStockYKardex() {
         Recepcion recepcion = recepcionDePrueba();
         Ubicacion praderas = praderasDePrueba();
         Articulo articulo = articuloDePrueba();
+        Color color = colorDePrueba();
 
         RecepcionDetalle detalle = new RecepcionDetalle();
         detalle.setId(100L);
         detalle.setArticulo(articulo);
+        detalle.setColor(color);
         detalle.setRollosGuia(14);
         detalle.setPesoBrutoKg(new BigDecimal("300"));
 
         when(recepcionRepository.findById(1L)).thenReturn(Optional.of(recepcion));
         when(ubicacionRepository.findByEsPrincipalTrue()).thenReturn(Optional.of(praderas));
         when(detalleRepository.findByRecepcionId(1L)).thenReturn(List.of(detalle));
-        when(stockActualRepository.findByArticuloIdAndUbicacionId(10L, 1L)).thenReturn(Optional.empty());
+        when(stockActualRepository.findByArticuloIdAndUbicacionIdAndColorId(10L, 1L, 20L)).thenReturn(Optional.empty());
 
         service.confirmarRecepcion(1L, List.of(100L), List.of(14), List.of(""));
 
@@ -162,17 +176,19 @@ class RecepcionServiceTest {
         Recepcion recepcion = recepcionDePrueba();
         Ubicacion praderas = praderasDePrueba();
         Articulo articulo = articuloDePrueba();
+        Color color = colorDePrueba();
 
         RecepcionDetalle detalle = new RecepcionDetalle();
         detalle.setId(100L);
         detalle.setArticulo(articulo);
+        detalle.setColor(color);
         detalle.setRollosGuia(14);
         detalle.setPesoBrutoKg(new BigDecimal("300"));
 
         when(recepcionRepository.findById(1L)).thenReturn(Optional.of(recepcion));
         when(ubicacionRepository.findByEsPrincipalTrue()).thenReturn(Optional.of(praderas));
         when(detalleRepository.findByRecepcionId(1L)).thenReturn(List.of(detalle));
-        when(stockActualRepository.findByArticuloIdAndUbicacionId(10L, 1L)).thenReturn(Optional.empty());
+        when(stockActualRepository.findByArticuloIdAndUbicacionIdAndColorId(10L, 1L, 20L)).thenReturn(Optional.empty());
 
         service.confirmarRecepcion(1L, List.of(100L), List.of(13), List.of("Falto 1 rollo"));
 
@@ -190,17 +206,19 @@ class RecepcionServiceTest {
         Recepcion recepcion = recepcionDePrueba();
         Ubicacion praderas = praderasDePrueba();
         Articulo articulo = articuloDePrueba();
+        Color color = colorDePrueba();
 
         RecepcionDetalle detalle = new RecepcionDetalle();
         detalle.setId(100L);
         detalle.setArticulo(articulo);
+        detalle.setColor(color);
         detalle.setRollosGuia(0);
         detalle.setPesoBrutoKg(new BigDecimal("300"));
 
         when(recepcionRepository.findById(1L)).thenReturn(Optional.of(recepcion));
         when(ubicacionRepository.findByEsPrincipalTrue()).thenReturn(Optional.of(praderas));
         when(detalleRepository.findByRecepcionId(1L)).thenReturn(List.of(detalle));
-        when(stockActualRepository.findByArticuloIdAndUbicacionId(10L, 1L)).thenReturn(Optional.empty());
+        when(stockActualRepository.findByArticuloIdAndUbicacionIdAndColorId(10L, 1L, 20L)).thenReturn(Optional.empty());
 
         assertThatCode(() ->
             service.confirmarRecepcion(1L, List.of(100L), List.of(0), List.of("OCR fallido, revisar"))
