@@ -20,21 +20,21 @@ public class ArticuloMatchingService {
 
     public LineaSugerida matchLinea(ProductoExtraido p) {
         if (p.tipoTela() == null || p.titulo() == null || p.colorCodigo() == null) {
-            return new LineaSugerida(null, p.tipoTela(), p.titulo(), null, p.colorCodigo(), p.colorNombre(),
+            return new LineaSugerida(null, p.tipoTela(), p.titulo(), p.composicion(), null, p.colorCodigo(), p.colorNombre(),
                     p.programaTenido(), p.rollos(), p.pesoBrutoKg(), false,
                     "Faltan datos en el PDF para identificar el artículo");
         }
 
         Optional<TipoTela> tipoTela = tipoTelaRepository.findByNombreIgnoreCase(p.tipoTela().trim());
         if (tipoTela.isEmpty()) {
-            return new LineaSugerida(null, p.tipoTela(), p.titulo(), null, p.colorCodigo(), p.colorNombre(),
+            return new LineaSugerida(null, p.tipoTela(), p.titulo(), p.composicion(), null, p.colorCodigo(), p.colorNombre(),
                     p.programaTenido(), p.rollos(), p.pesoBrutoKg(), false,
                     "Tipo de tela '" + p.tipoTela() + "' no existe en el catálogo");
         }
 
         Optional<Titulo> titulo = tituloRepository.findByValorIgnoreCase(p.titulo().trim());
         if (titulo.isEmpty()) {
-            return new LineaSugerida(null, p.tipoTela(), p.titulo(), null, p.colorCodigo(), p.colorNombre(),
+            return new LineaSugerida(null, p.tipoTela(), p.titulo(), p.composicion(), null, p.colorCodigo(), p.colorNombre(),
                     p.programaTenido(), p.rollos(), p.pesoBrutoKg(), false,
                     "Título '" + p.titulo() + "' no existe en el catálogo");
         }
@@ -43,20 +43,20 @@ public class ArticuloMatchingService {
         // ya que el Articulo ya no incluye Color -- si el PDF no trajo una composicion
         // reconocible, no se puede armar el match sin adivinar.
         if (p.composicion() == null || p.composicion().isBlank()) {
-            return new LineaSugerida(null, p.tipoTela(), p.titulo(), null, p.colorCodigo(), p.colorNombre(),
+            return new LineaSugerida(null, p.tipoTela(), p.titulo(), p.composicion(), null, p.colorCodigo(), p.colorNombre(),
                     p.programaTenido(), p.rollos(), p.pesoBrutoKg(), false,
                     "No se pudo identificar la composición (ALGODON, MELANGE, etc.) en el PDF");
         }
         Optional<Composicion> composicion = composicionRepository.findByNombreIgnoreCase(p.composicion().trim());
         if (composicion.isEmpty()) {
-            return new LineaSugerida(null, p.tipoTela(), p.titulo(), null, p.colorCodigo(), p.colorNombre(),
+            return new LineaSugerida(null, p.tipoTela(), p.titulo(), p.composicion(), null, p.colorCodigo(), p.colorNombre(),
                     p.programaTenido(), p.rollos(), p.pesoBrutoKg(), false,
                     "Composición '" + p.composicion() + "' no existe en el catálogo");
         }
 
         Optional<Color> color = catalogoService.resolverColorPorCodigo(p.colorCodigo().trim(), p.colorNombre());
         if (color.isEmpty()) {
-            return new LineaSugerida(null, p.tipoTela(), p.titulo(), null, p.colorCodigo(), p.colorNombre(),
+            return new LineaSugerida(null, p.tipoTela(), p.titulo(), p.composicion(), null, p.colorCodigo(), p.colorNombre(),
                     p.programaTenido(), p.rollos(), p.pesoBrutoKg(), false,
                     "Color código '" + p.colorCodigo() + "' (" + p.colorNombre() + ") no existe en el catálogo");
         }
@@ -65,12 +65,12 @@ public class ArticuloMatchingService {
                 tipoTela.get().getId(), titulo.get().getId(), composicion.get().getId());
 
         if (articulo.isEmpty()) {
-            return new LineaSugerida(null, p.tipoTela(), p.titulo(), color.get().getId(), p.colorCodigo(), p.colorNombre(),
+            return new LineaSugerida(null, p.tipoTela(), p.titulo(), p.composicion(), color.get().getId(), p.colorCodigo(), p.colorNombre(),
                     p.programaTenido(), p.rollos(), p.pesoBrutoKg(), false,
                     "Esa combinación de tela/título/composición no está registrada como artículo");
         }
 
-        return new LineaSugerida(articulo.get().getId(), p.tipoTela(), p.titulo(), color.get().getId(), p.colorCodigo(), p.colorNombre(),
+        return new LineaSugerida(articulo.get().getId(), p.tipoTela(), p.titulo(), p.composicion(), color.get().getId(), p.colorCodigo(), p.colorNombre(),
                 p.programaTenido(), p.rollos(), p.pesoBrutoKg(), true, null);
     }
 

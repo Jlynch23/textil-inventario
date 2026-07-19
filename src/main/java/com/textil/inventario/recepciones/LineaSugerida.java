@@ -6,6 +6,7 @@ public record LineaSugerida(
         Long articuloId,
         String tipoTela,
         String titulo,
+        String composicion,
         Long colorId,
         String colorCodigo,
         String colorNombre,

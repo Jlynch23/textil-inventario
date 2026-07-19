@@ -115,7 +115,7 @@
     let lineasExtraidas = [];
 
     function articuloLabel(a) {
-        return a.tipoTela.nombre + ' ' + a.titulo.valor + ' / ' + (a.color.nombreMostrar || a.color.nombreOficial);
+        return a.tipoTela.nombre + ' ' + a.titulo.valor + ' / ' + (a.composicion ? a.composicion.nombre : '');
     }
 
     document.getElementById('btnExtraer').addEventListener('click', async () => {
@@ -193,10 +193,17 @@
 
             if (!linea.matched) {
                 selectHtml += '<br><small class="text-danger">' + linea.motivoNoMatch + '</small>';
-                selectHtml += '<br><small class="text-muted">Tela detectada: ' + linea.tipoTela + ' ' + linea.titulo + '</small>';
+                selectHtml += '<br><small class="text-muted">Tela detectada: ' + linea.tipoTela + ' ' + linea.titulo + ' / Composición: ' + (linea.composicion || '-') + '</small>';
 
                 const motivoEsColor = linea.motivoNoMatch && linea.motivoNoMatch.indexOf('Color') !== -1 && linea.motivoNoMatch.indexOf('no existe') !== -1;
-                if (!motivoEsColor) {
+                // Si la composicion no se pudo identificar o no existe en el catalogo,
+                // el endpoint de creacion rapida de articulo va a fallar igual (la
+                // necesita para armar el articulo) -- se avisa en vez de ofrecer un
+                // boton que va a fallar.
+                const motivoEsComposicion = linea.motivoNoMatch && linea.motivoNoMatch.indexOf('omposici') !== -1;
+                if (motivoEsComposicion) {
+                    selectHtml += '<br><small class="text-warning"><i class="bi bi-exclamation-triangle me-1"></i>Agrega esta composición en Catálogo &gt; Artículos antes de continuar.</small>';
+                } else if (!motivoEsColor) {
                     selectHtml += '<br><button type="button" class="btn btn-sm btn-outline-success mt-1 btn-crear-articulo" data-idx="' + idx + '">' +
                                   '<i class="bi bi-plus-circle me-1"></i>Crear artículo</button>';
                 }
@@ -253,7 +260,7 @@
                     body: JSON.stringify({
                         tipoTelaNombre: linea.tipoTela,
                         tituloValor: linea.titulo,
-                        colorCodigo: linea.colorCodigo
+                        composicionNombre: linea.composicion
                     })
                 });
                 const data = await resp.json();
@@ -271,7 +278,7 @@
                         id: nuevoId,
                         tipoTela: { nombre: linea.tipoTela },
                         titulo: { valor: linea.titulo },
-                        color: { nombreOficial: linea.colorNombre }
+                        composicion: { nombre: linea.composicion }
                     });
                 }
 
@@ -281,6 +288,7 @@
                     body: JSON.stringify({
                         tipoTela: linea.tipoTela,
                         titulo: linea.titulo,
+                        composicion: linea.composicion,
                         colorCodigo: linea.colorCodigo,
                         colorNombre: linea.colorNombre,
                         programaTenido: linea.programaTenido,
@@ -328,7 +336,7 @@
                 id: -1,
                 tipoTela: { nombre: '(nuevo color, revisa el articulo)' },
                 titulo: { valor: '' },
-                color: { nombreOficial: data.nombreOficial }
+                composicion: { nombre: '' }
             });
 
             const linea = lineasExtraidas[idxColorPendiente];
@@ -338,6 +346,7 @@
                 body: JSON.stringify({
                     tipoTela: linea.tipoTela,
                     titulo: linea.titulo,
+                    composicion: linea.composicion,
                     colorCodigo: linea.colorCodigo,
                     colorNombre: linea.colorNombre,
                     programaTenido: linea.programaTenido,
@@ -393,11 +402,14 @@
             const idx = sel.dataset.idx;
             const articuloId = sel.value;
             if (!articuloId) return;
+            const colorId = lineasExtraidas[idx] ? lineasExtraidas[idx].colorId : null;
+            if (!colorId) return;
             const programa = document.querySelector('.linea-programa[data-idx="' + idx + '"]').value;
             const rollos = document.querySelector('.linea-rollos[data-idx="' + idx + '"]').value;
             const peso = document.querySelector('.linea-peso[data-idx="' + idx + '"]').value;
             lineas.push({
                 articuloId: parseInt(articuloId),
+                colorId: parseInt(colorId),
                 programaTenido: programa,
                 rollosGuia: parseInt(rollos),
                 pesoBrutoKg: peso ? parseFloat(peso) : null
