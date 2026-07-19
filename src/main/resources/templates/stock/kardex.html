@@ -9,7 +9,7 @@
     <h5 class="text-muted mb-4" th:if="${articulo != null}">
         <span th:text="${articulo.tipoTela.nombre}"></span> -
         <span th:text="${articulo.titulo.valor}"></span> -
-        <span th:text="${articulo.color.nombreMostrar}"></span>
+        <span th:text="${articulo.composicion.nombre}"></span>
         (<span th:text="${articulo.codigoInterno}"></span>)
     </h5>
 
@@ -20,7 +20,7 @@
                 <option th:each="a : ${articulos}"
                         th:value="${a.id}"
                         th:selected="${a.id == filtroArticuloId}"
-                        th:text="${a.tipoTela.nombre + ' - ' + a.titulo.valor + ' - ' + a.color.nombreMostrar}"></option>
+                        th:text="${a.tipoTela.nombre + ' - ' + a.titulo.valor + ' - ' + a.composicion.nombre}"></option>
             </select>
         </div>
         <div class="col-md-2">
@@ -48,7 +48,7 @@
         <tr th:each="m : ${movimientos}">
             <td th:text="${#temporals.format(m.fecha, 'dd/MM/yyyy HH:mm')}"></td>
             <td th:text="${m.tipoMovimiento}"></td>
-            <td th:text="${m.articulo.tipoTela.nombre + ' - ' + m.articulo.titulo.valor + ' - ' + m.articulo.color.nombreMostrar}"></td>
+            <td th:text="${m.articulo.tipoTela.nombre + ' - ' + m.articulo.titulo.valor + ' - ' + m.articulo.composicion.nombre + ' - ' + m.color.nombreMostrar}"></td>
             <td th:text="${m.ubicacionOrigen != null ? m.ubicacionOrigen.nombre : '-'}"></td>
             <td th:text="${m.ubicacionDestino != null ? m.ubicacionDestino.nombre : '-'}"></td>
             <td th:text="${m.rollos}"></td>

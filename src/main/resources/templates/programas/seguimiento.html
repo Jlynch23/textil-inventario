@@ -59,8 +59,8 @@
                         <tr th:each="d : ${programa.detalles}">
                             <td th:text="${d.articulo.tipoTela.nombre}"></td>
                             <td th:text="${d.articulo.titulo.valor}"></td>
-                            <td th:text="${d.articulo.color.nombreMostrar}"></td>
-                            <td><span class="badge bg-light text-dark" th:text="${d.articulo.color.codigoFastDye}"></span></td>
+                            <td th:text="${d.color.nombreMostrar}"></td>
+                            <td><span class="badge bg-light text-dark" th:text="${d.color.codigoFastDye}"></span></td>
                             <td th:text="${d.cantidadSolicitada}"></td>
                             <td th:text="${d.cantidadRecibida}"></td>
                             <td th:text="${d.cantidadPendiente}"></td>
