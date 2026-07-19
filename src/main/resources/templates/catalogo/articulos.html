@@ -56,6 +56,18 @@
                                 <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalComposicionNueva" title="Crear composición nueva"><i class="bi bi-plus-lg"></i></button>
                             </div>
                         </div>
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Acabado</label>
+                            <div class="input-group">
+                                <select class="form-select" id="selectAcabado" name="acabadoId" required>
+                                    <option value="">Seleccionar...</option>
+                                    <option th:each="ac : ${acabados}"
+                                            th:value="${ac.id}"
+                                            th:text="${ac.nombre}"></option>
+                                </select>
+                                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalAcabadoNuevo" title="Crear acabado nuevo"><i class="bi bi-plus-lg"></i></button>
+                            </div>
+                        </div>
                         <button type="submit" class="btn btn-primary w-100">
                             <i class="bi bi-save me-2"></i>Guardar Artículo
                         </button>
@@ -80,6 +92,7 @@
                                     <th>Tipo de Tela</th>
                                     <th>Título</th>
                                     <th>Composición</th>
+                                    <th>Acabado</th>
                                     <th sec:authorize="hasRole('SUPERADMIN')">Acciones</th>
                                 </tr>
                             </thead>
@@ -89,6 +102,7 @@
                                     <td th:text="${a.tipoTela.nombre}"></td>
                                     <td th:text="${a.titulo.valor}"></td>
                                     <td th:text="${a.composicion.nombre}"></td>
+                                    <td th:text="${a.acabado.nombre}"></td>
                                     <td sec:authorize="hasRole('SUPERADMIN')">
                                         <form th:action="@{/catalogo/articulos/eliminar/{id}(id=${a.id})}" method="post" style="display:inline">
                                             <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar definitivamente"
@@ -169,6 +183,27 @@
         </div>
     </div>
 
+    <!-- Modal: Acabado nuevo -->
+    <div class="modal fade" id="modalAcabadoNuevo" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h6 class="modal-title fw-bold">Crear Acabado Nuevo</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label fw-semibold">Nombre</label>
+                    <input type="text" class="form-control" id="modalAcabadoNombre" placeholder="Ej: LISTADO GRIS">
+                    <div id="modalAcabadoError" class="text-danger small mt-2"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="btnGuardarAcabado">Crear</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         function agregarOpcion(select, id, texto) {
             const option = document.createElement('option');
@@ -234,6 +269,26 @@
                 agregarOpcion(document.getElementById('selectComposicion'), data.id, data.nombre);
                 bootstrap.Modal.getInstance(document.getElementById('modalComposicionNueva')).hide();
                 document.getElementById('modalComposicionNombre').value = '';
+                errorDiv.textContent = '';
+            } catch (e) { errorDiv.textContent = 'Error de conexión: ' + e.message; }
+        });
+
+        document.getElementById('btnGuardarAcabado').addEventListener('click', async () => {
+            const nombre = document.getElementById('modalAcabadoNombre').value.trim();
+            const errorDiv = document.getElementById('modalAcabadoError');
+            if (!nombre) { errorDiv.textContent = 'El nombre es obligatorio.'; return; }
+
+            try {
+                const resp = await fetchConCsrf('/catalogo/acabados/crear-rapido', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nombre })
+                });
+                const data = await resp.json();
+                if (!resp.ok) { errorDiv.textContent = data.error || 'Error al crear.'; return; }
+
+                agregarOpcion(document.getElementById('selectAcabado'), data.id, data.nombre);
+                bootstrap.Modal.getInstance(document.getElementById('modalAcabadoNuevo')).hide();
+                document.getElementById('modalAcabadoNombre').value = '';
                 errorDiv.textContent = '';
             } catch (e) { errorDiv.textContent = 'Error de conexión: ' + e.message; }
         });
