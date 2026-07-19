@@ -56,7 +56,7 @@
                                 <option value="">Seleccionar...</option>
                                 <option th:each="a : ${articulos}"
                                         th:value="${a.id}"
-                                        th:text="${a.tipoTela.nombre + ' ' + a.titulo.valor + ' / ' + a.composicion.nombre}">
+                                        th:text="${a.tipoTela.nombre + ' ' + a.titulo.valor + ' / ' + a.composicion.nombre + (a.acabado.nombre != 'LISO' ? ' · ' + a.acabado.nombre : '')}">
                                 </option>
                             </select>
                         </div>
@@ -125,7 +125,7 @@
                                     </td>
                                 </tr>
                                 <tr th:each="d : ${recepcion.detalles}">
-                                    <td th:text="${d.articulo.tipoTela.nombre + ' ' + d.articulo.titulo.valor + ' / ' + d.articulo.composicion.nombre}"></td>
+                                    <td th:text="${d.articulo.tipoTela.nombre + ' ' + d.articulo.titulo.valor + ' / ' + d.articulo.composicion.nombre + (d.articulo.acabado.nombre != 'LISO' ? ' · ' + d.articulo.acabado.nombre : '')}"></td>
                                     <td th:text="${d.color.nombreMostrar}"></td>
                                     <td><span class="badge bg-light text-dark" th:text="${d.color.codigoFastDye}"></span></td>
                                     <td><code th:text="${d.programaTenido}"></code></td>
