@@ -30,7 +30,6 @@ public class UsuarioController {
     @PostMapping("/guardar")
     public String guardar(@RequestParam String nombre,
                            @RequestParam String username,
-                           @RequestParam(required = false) String email,
                            @RequestParam String password,
                            @RequestParam Long rolId,
                            RedirectAttributes ra) {
@@ -55,7 +54,6 @@ public class UsuarioController {
         Usuario u = new Usuario();
         u.setNombre(nombre);
         u.setUsername(username);
-        u.setEmail((email == null || email.isBlank()) ? null : email);
         u.setPasswordHash(passwordEncoder.encode(password));
         u.setRol(rolRepository.findById(rolId).orElseThrow());
         u.setActivo(true);

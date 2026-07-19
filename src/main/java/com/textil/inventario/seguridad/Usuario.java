@@ -18,9 +18,6 @@ public class Usuario extends BaseEntity {
     @Column(nullable = false, unique = true, length = 50)
     private String username;
 
-    @Column(length = 100)
-    private String email;
-
     @Column(name = "password_hash", nullable = false, length = 255)
     private String passwordHash;
 
