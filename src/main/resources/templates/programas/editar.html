@@ -45,18 +45,19 @@
                         </div>
 
                         <h6 class="fw-bold mb-3">Artículos del Programa</h6>
-                        <p class="text-muted small">El artículo (tipo de tela, título, color) de una línea ya existente no se puede cambiar aquí, solo su cantidad — si necesitas otro artículo, quítala y agrega una línea nueva.</p>
+                        <p class="text-muted small">El artículo (tipo de tela, título, composición, color) de una línea ya existente no se puede cambiar aquí, solo su cantidad — si necesitas otro artículo, quítala y agrega una línea nueva.</p>
 
                         <div id="lineasExistentesContainer">
                             <div class="row g-2 mb-2 align-items-center linea-existente" th:each="d : ${programa.detalles}">
                                 <input type="hidden" name="detalleId" th:value="${d.id}">
-                                <div class="col-md-3">
+                                <div class="col-md-2">
                                     <span class="fw-semibold" th:text="${d.articulo.tipoTela.nombre}"></span>
                                 </div>
                                 <div class="col-md-2" th:text="${d.articulo.titulo.valor}"></div>
-                                <div class="col-md-3">
-                                    <span th:text="${d.articulo.color.nombreMostrar}"></span>
-                                    <span class="badge bg-light text-dark" th:text="${d.articulo.color.codigoFastDye}"></span>
+                                <div class="col-md-2" th:text="${d.articulo.composicion.nombre}"></div>
+                                <div class="col-md-2">
+                                    <span th:text="${d.color.nombreMostrar}"></span>
+                                    <span class="badge bg-light text-dark" th:text="${d.color.codigoFastDye}"></span>
                                 </div>
                                 <div class="col-md-2">
                                     <input type="number" class="form-control input-cantidad-existente" name="cantidadExistente" th:value="${d.cantidadSolicitada}" min="1" required>
@@ -73,9 +74,10 @@
 
                         <h6 class="fw-bold mb-2 mt-4">Agregar Artículos Nuevos</h6>
                         <div class="row g-2 mb-1 d-none d-md-flex">
-                            <div class="col-md-3"><small class="text-muted fw-semibold">Tipo de Tela</small></div>
+                            <div class="col-md-2"><small class="text-muted fw-semibold">Tipo de Tela</small></div>
                             <div class="col-md-2"><small class="text-muted fw-semibold">Título</small></div>
-                            <div class="col-md-3"><small class="text-muted fw-semibold">Color</small></div>
+                            <div class="col-md-2"><small class="text-muted fw-semibold">Composición</small></div>
+                            <div class="col-md-2"><small class="text-muted fw-semibold">Color</small></div>
                             <div class="col-md-2"><small class="text-muted fw-semibold">Cantidad</small></div>
                         </div>
                         <div id="lineasNuevasContainer"></div>
@@ -133,6 +135,27 @@
         </div>
     </div>
 
+    <!-- Modal: Composición nueva -->
+    <div class="modal fade" id="modalComposicionPrograma" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h6 class="modal-title fw-bold">Crear Composición Nueva</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label fw-semibold">Nombre</label>
+                    <input type="text" class="form-control" id="modalComposicionNombre" placeholder="Ej: MELANGE 5%">
+                    <div id="modalComposicionError" class="text-danger small mt-2"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="btnGuardarComposicionPrograma">Crear</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal: Color nuevo -->
     <div class="modal fade" id="modalColorRapidoPrograma" tabindex="-1">
         <div class="modal-dialog">
@@ -164,7 +187,9 @@
         const tiposTelaData = /*[[${tiposTela}]]*/ [];
         const titulosData = /*[[${titulos}]]*/ [];
         let coloresData = /*[[${colores}]]*/ [];
+        let composicionesData = /*[[${composiciones}]]*/ [];
         let selectColorActual = null;
+        let selectComposicionActual = null;
         let selectTipoTelaActual = null;
         let selectTituloActual = null;
 
@@ -173,6 +198,14 @@
             coloresData.forEach(c => {
                 const sel = seleccionarId && c.id === seleccionarId ? ' selected' : '';
                 options += '<option value="' + c.id + '"' + sel + '>' + (c.nombreMostrar || c.nombreOficial) + ' (' + c.codigoFastDye + ')</option>';
+            });
+            return options;
+        }
+        function opcionesComposicion(seleccionarId) {
+            let options = '<option value="">Composición...</option>';
+            composicionesData.forEach(c => {
+                const sel = seleccionarId && c.id === seleccionarId ? ' selected' : '';
+                options += '<option value="' + c.id + '"' + sel + '>' + c.nombre + '</option>';
             });
             return options;
         }
@@ -195,11 +228,13 @@
 
         function buildLineaNuevaHtml() {
             return '<div class="row g-2 mb-2 linea-nueva">' +
-                   '<div class="col-md-3"><div class="input-group"><select class="form-select select-tipo-tela" name="nuevoTipoTelaId">' + opcionesTipoTela() + '</select>' +
+                   '<div class="col-md-2"><div class="input-group"><select class="form-select select-tipo-tela" name="nuevoTipoTelaId">' + opcionesTipoTela() + '</select>' +
                    '<button type="button" class="btn btn-outline-primary btn-tipotela-nuevo" title="Crear tipo de tela nuevo"><i class="bi bi-plus-lg"></i></button></div></div>' +
                    '<div class="col-md-2"><div class="input-group"><select class="form-select select-titulo" name="nuevoTituloId">' + opcionesTitulos() + '</select>' +
                    '<button type="button" class="btn btn-outline-primary btn-titulo-nuevo" title="Crear título nuevo"><i class="bi bi-plus-lg"></i></button></div></div>' +
-                   '<div class="col-md-3"><div class="input-group"><select class="form-select select-color" name="nuevoColorId">' + opcionesColores() + '</select>' +
+                   '<div class="col-md-2"><div class="input-group"><select class="form-select select-composicion" name="nuevoComposicionId">' + opcionesComposicion() + '</select>' +
+                   '<button type="button" class="btn btn-outline-primary btn-composicion-nuevo" title="Crear composición nueva"><i class="bi bi-plus-lg"></i></button></div></div>' +
+                   '<div class="col-md-2"><div class="input-group"><select class="form-select select-color" name="nuevoColorId">' + opcionesColores() + '</select>' +
                    '<button type="button" class="btn btn-outline-primary btn-color-nuevo" title="Crear color nuevo"><i class="bi bi-plus-lg"></i></button></div></div>' +
                    '<div class="col-md-2"><input type="number" class="form-control input-cantidad-nueva" name="nuevaCantidad" placeholder="Cantidad" min="1"></div>' +
                    '<div class="col-md-2"><button type="button" class="btn btn-outline-danger w-100 btn-quitar-nueva">✕ Quitar</button></div>' +
@@ -272,6 +307,14 @@
                     document.getElementById('modalColorCodigo').value = '';
                     document.getElementById('modalColorError').textContent = '';
                     new bootstrap.Modal(document.getElementById('modalColorRapidoPrograma')).show();
+                };
+            });
+            document.querySelectorAll('.btn-composicion-nuevo').forEach(btn => {
+                btn.onclick = () => {
+                    selectComposicionActual = btn.closest('.linea-nueva').querySelector('.select-composicion');
+                    document.getElementById('modalComposicionNombre').value = '';
+                    document.getElementById('modalComposicionError').textContent = '';
+                    new bootstrap.Modal(document.getElementById('modalComposicionPrograma')).show();
                 };
             });
             document.querySelectorAll('.btn-tipotela-nuevo').forEach(btn => {
@@ -357,6 +400,28 @@
                     if (!idPreseleccionar && valorActual) sel.value = valorActual;
                 });
                 bootstrap.Modal.getInstance(document.getElementById('modalTituloPrograma')).hide();
+            } catch (e) { errorDiv.textContent = 'Error de conexión: ' + e.message; }
+        });
+
+        document.getElementById('btnGuardarComposicionPrograma').addEventListener('click', async () => {
+            const nombre = document.getElementById('modalComposicionNombre').value.trim();
+            const errorDiv = document.getElementById('modalComposicionError');
+            if (!nombre) { errorDiv.textContent = 'El nombre es obligatorio.'; return; }
+            try {
+                const resp = await fetchConCsrf('/catalogo/composiciones/crear-rapido', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nombre })
+                });
+                const data = await resp.json();
+                if (!resp.ok) { errorDiv.textContent = data.error || 'Error al crear.'; return; }
+                composicionesData.push({ id: data.id, nombre: data.nombre });
+                document.querySelectorAll('.select-composicion').forEach(sel => {
+                    const idPreseleccionar = sel === selectComposicionActual ? data.id : null;
+                    const valorActual = sel.value;
+                    sel.innerHTML = opcionesComposicion(idPreseleccionar);
+                    if (!idPreseleccionar && valorActual) sel.value = valorActual;
+                });
+                bootstrap.Modal.getInstance(document.getElementById('modalComposicionPrograma')).hide();
             } catch (e) { errorDiv.textContent = 'Error de conexión: ' + e.message; }
         });
     </script>

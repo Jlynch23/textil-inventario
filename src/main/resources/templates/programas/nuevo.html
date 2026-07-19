@@ -45,14 +45,15 @@
 
                         <h6 class="fw-bold mb-3">Artículos Solicitados</h6>
                         <div class="row g-2 mb-1 d-none d-md-flex">
-                            <div class="col-md-3"><small class="text-muted fw-semibold">Tipo de Tela</small></div>
+                            <div class="col-md-2"><small class="text-muted fw-semibold">Tipo de Tela</small></div>
                             <div class="col-md-2"><small class="text-muted fw-semibold">Título</small></div>
-                            <div class="col-md-3"><small class="text-muted fw-semibold">Color</small></div>
+                            <div class="col-md-2"><small class="text-muted fw-semibold">Composición</small></div>
+                            <div class="col-md-2"><small class="text-muted fw-semibold">Color</small></div>
                             <div class="col-md-2"><small class="text-muted fw-semibold">Cantidad</small></div>
                         </div>
                         <div id="lineasContainer">
                             <div class="row g-2 mb-2 linea-color">
-                                <div class="col-md-3">
+                                <div class="col-md-2">
                                     <div class="input-group">
                                         <select class="form-select select-tipo-tela" name="tipoTelaId">
                                             <option value="">Tipo de tela...</option>
@@ -70,7 +71,16 @@
                                         <button type="button" class="btn btn-outline-primary btn-titulo-nuevo" title="Crear título nuevo"><i class="bi bi-plus-lg"></i></button>
                                     </div>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-2">
+                                    <div class="input-group">
+                                        <select class="form-select select-composicion" name="composicionId">
+                                            <option value="">Composición...</option>
+                                            <option th:each="co : ${composiciones}" th:value="${co.id}" th:text="${co.nombre}"></option>
+                                        </select>
+                                        <button type="button" class="btn btn-outline-primary btn-composicion-nuevo" title="Crear composición nueva"><i class="bi bi-plus-lg"></i></button>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
                                     <div class="input-group">
                                         <select class="form-select select-color" name="colorId">
                                             <option value="">Color...</option>
@@ -142,6 +152,27 @@
         </div>
     </div>
 
+    <!-- Modal: Composición nueva -->
+    <div class="modal fade" id="modalComposicionPrograma" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h6 class="modal-title fw-bold">Crear Composición Nueva</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label fw-semibold">Nombre</label>
+                    <input type="text" class="form-control" id="modalComposicionNombre" placeholder="Ej: MELANGE 5%">
+                    <div id="modalComposicionError" class="text-danger small mt-2"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="btnGuardarComposicionPrograma">Crear</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal: Color nuevo -->
     <div class="modal fade" id="modalColorRapidoPrograma" tabindex="-1">
         <div class="modal-dialog">
@@ -173,6 +204,7 @@
         const tiposTelaData = /*[[${tiposTela}]]*/ [];
         const titulosData = /*[[${titulos}]]*/ [];
         let coloresData = /*[[${colores}]]*/ [];
+        let composicionesData = /*[[${composiciones}]]*/ [];
 
         // Auto-relleno de Titulo segun el Tipo de Tela elegido: en la
         // practica, RIB 2x1 casi siempre va con 24/1 y RIB Acanalado casi
@@ -201,6 +233,7 @@
             if (idTitulo) selectTitulo.value = idTitulo;
         });
         let selectColorActual = null;
+        let selectComposicionActual = null;
         let selectTipoTelaActual = null;
         let selectTituloActual = null;
 
@@ -209,6 +242,14 @@
             coloresData.forEach(c => {
                 const sel = seleccionarId && c.id === seleccionarId ? ' selected' : '';
                 options += '<option value="' + c.id + '"' + sel + '>' + (c.nombreMostrar || c.nombreOficial) + ' (' + c.codigoFastDye + ')</option>';
+            });
+            return options;
+        }
+        function opcionesComposicion(seleccionarId) {
+            let options = '<option value="">Composición...</option>';
+            composicionesData.forEach(c => {
+                const sel = seleccionarId && c.id === seleccionarId ? ' selected' : '';
+                options += '<option value="' + c.id + '"' + sel + '>' + c.nombre + '</option>';
             });
             return options;
         }
@@ -231,11 +272,13 @@
 
         function buildLineaHtml() {
             return '<div class="row g-2 mb-2 linea-color">' +
-                   '<div class="col-md-3"><div class="input-group"><select class="form-select select-tipo-tela" name="tipoTelaId">' + opcionesTipoTela() + '</select>' +
+                   '<div class="col-md-2"><div class="input-group"><select class="form-select select-tipo-tela" name="tipoTelaId">' + opcionesTipoTela() + '</select>' +
                    '<button type="button" class="btn btn-outline-primary btn-tipotela-nuevo" title="Crear tipo de tela nuevo"><i class="bi bi-plus-lg"></i></button></div></div>' +
                    '<div class="col-md-2"><div class="input-group"><select class="form-select select-titulo" name="tituloId">' + opcionesTitulos() + '</select>' +
                    '<button type="button" class="btn btn-outline-primary btn-titulo-nuevo" title="Crear título nuevo"><i class="bi bi-plus-lg"></i></button></div></div>' +
-                   '<div class="col-md-3"><div class="input-group"><select class="form-select select-color" name="colorId">' + opcionesColores() + '</select>' +
+                   '<div class="col-md-2"><div class="input-group"><select class="form-select select-composicion" name="composicionId">' + opcionesComposicion() + '</select>' +
+                   '<button type="button" class="btn btn-outline-primary btn-composicion-nuevo" title="Crear composición nueva"><i class="bi bi-plus-lg"></i></button></div></div>' +
+                   '<div class="col-md-2"><div class="input-group"><select class="form-select select-color" name="colorId">' + opcionesColores() + '</select>' +
                    '<button type="button" class="btn btn-outline-primary btn-color-nuevo" title="Crear color nuevo"><i class="bi bi-plus-lg"></i></button></div></div>' +
                    '<div class="col-md-2"><input type="number" class="form-control input-cantidad" name="cantidad" placeholder="Cantidad" min="1"></div>' +
                    '<div class="col-md-2"><button type="button" class="btn btn-outline-danger w-100 btn-quitar-linea">✕ Quitar</button></div>' +
@@ -299,6 +342,14 @@
                     document.getElementById('modalColorCodigo').value = '';
                     document.getElementById('modalColorError').textContent = '';
                     new bootstrap.Modal(document.getElementById('modalColorRapidoPrograma')).show();
+                };
+            });
+            document.querySelectorAll('.btn-composicion-nuevo').forEach(btn => {
+                btn.onclick = () => {
+                    selectComposicionActual = btn.closest('.linea-color').querySelector('.select-composicion');
+                    document.getElementById('modalComposicionNombre').value = '';
+                    document.getElementById('modalComposicionError').textContent = '';
+                    new bootstrap.Modal(document.getElementById('modalComposicionPrograma')).show();
                 };
             });
             document.querySelectorAll('.btn-tipotela-nuevo').forEach(btn => {
@@ -384,6 +435,28 @@
                     if (!idPreseleccionar && valorActual) sel.value = valorActual;
                 });
                 bootstrap.Modal.getInstance(document.getElementById('modalTituloPrograma')).hide();
+            } catch (e) { errorDiv.textContent = 'Error de conexión: ' + e.message; }
+        });
+
+        document.getElementById('btnGuardarComposicionPrograma').addEventListener('click', async () => {
+            const nombre = document.getElementById('modalComposicionNombre').value.trim();
+            const errorDiv = document.getElementById('modalComposicionError');
+            if (!nombre) { errorDiv.textContent = 'El nombre es obligatorio.'; return; }
+            try {
+                const resp = await fetchConCsrf('/catalogo/composiciones/crear-rapido', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nombre })
+                });
+                const data = await resp.json();
+                if (!resp.ok) { errorDiv.textContent = data.error || 'Error al crear.'; return; }
+                composicionesData.push({ id: data.id, nombre: data.nombre });
+                document.querySelectorAll('.select-composicion').forEach(sel => {
+                    const idPreseleccionar = sel === selectComposicionActual ? data.id : null;
+                    const valorActual = sel.value;
+                    sel.innerHTML = opcionesComposicion(idPreseleccionar);
+                    if (!idPreseleccionar && valorActual) sel.value = valorActual;
+                });
+                bootstrap.Modal.getInstance(document.getElementById('modalComposicionPrograma')).hide();
             } catch (e) { errorDiv.textContent = 'Error de conexión: ' + e.message; }
         });
     </script>

@@ -45,15 +45,15 @@
                             </div>
                         </div>
                         <div class="mb-4">
-                            <label class="form-label fw-semibold">Color</label>
+                            <label class="form-label fw-semibold">Composición</label>
                             <div class="input-group">
-                                <select class="form-select" id="selectColor" name="colorId" required>
+                                <select class="form-select" id="selectComposicion" name="composicionId" required>
                                     <option value="">Seleccionar...</option>
-                                    <option th:each="c : ${colores}"
+                                    <option th:each="c : ${composiciones}"
                                             th:value="${c.id}"
-                                            th:text="${c.nombreMostrar}"></option>
+                                            th:text="${c.nombre}"></option>
                                 </select>
-                                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalColorNuevo" title="Crear color nuevo"><i class="bi bi-plus-lg"></i></button>
+                                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalComposicionNueva" title="Crear composición nueva"><i class="bi bi-plus-lg"></i></button>
                             </div>
                         </div>
                         <button type="submit" class="btn btn-primary w-100">
@@ -79,7 +79,7 @@
                                     <th>Código</th>
                                     <th>Tipo de Tela</th>
                                     <th>Título</th>
-                                    <th>Color</th>
+                                    <th>Composición</th>
                                     <th sec:authorize="hasRole('SUPERADMIN')">Acciones</th>
                                 </tr>
                             </thead>
@@ -88,7 +88,7 @@
                                     <td><code th:text="${a.codigoInterno}"></code></td>
                                     <td th:text="${a.tipoTela.nombre}"></td>
                                     <td th:text="${a.titulo.valor}"></td>
-                                    <td th:text="${a.color.nombreMostrar}"></td>
+                                    <td th:text="${a.composicion.nombre}"></td>
                                     <td sec:authorize="hasRole('SUPERADMIN')">
                                         <form th:action="@{/catalogo/articulos/eliminar/{id}(id=${a.id})}" method="post" style="display:inline">
                                             <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar definitivamente"
@@ -148,28 +148,22 @@
         </div>
     </div>
 
-    <!-- Modal: Color nuevo -->
-    <div class="modal fade" id="modalColorNuevo" tabindex="-1">
+    <!-- Modal: Composición nueva -->
+    <div class="modal fade" id="modalComposicionNueva" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h6 class="modal-title fw-bold">Crear Color Nuevo</h6>
+                    <h6 class="modal-title fw-bold">Crear Composición Nueva</h6>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Nombre del Color</label>
-                        <input type="text" class="form-control" id="modalColorNombre">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Código FAST DYE</label>
-                        <input type="text" class="form-control" id="modalColorCodigo">
-                    </div>
-                    <div id="modalColorError" class="text-danger small"></div>
+                    <label class="form-label fw-semibold">Nombre</label>
+                    <input type="text" class="form-control" id="modalComposicionNombre" placeholder="Ej: MELANGE 5%">
+                    <div id="modalComposicionError" class="text-danger small mt-2"></div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary" id="btnGuardarColorNuevo">Crear Color</button>
+                    <button type="button" class="btn btn-primary" id="btnGuardarComposicion">Crear</button>
                 </div>
             </div>
         </div>
@@ -224,24 +218,22 @@
             } catch (e) { errorDiv.textContent = 'Error de conexión: ' + e.message; }
         });
 
-        document.getElementById('btnGuardarColorNuevo').addEventListener('click', async () => {
-            const nombreOficial = document.getElementById('modalColorNombre').value.trim();
-            const codigoFastDye = document.getElementById('modalColorCodigo').value.trim();
-            const errorDiv = document.getElementById('modalColorError');
-            if (!nombreOficial || !codigoFastDye) { errorDiv.textContent = 'Nombre y código son obligatorios.'; return; }
+        document.getElementById('btnGuardarComposicion').addEventListener('click', async () => {
+            const nombre = document.getElementById('modalComposicionNombre').value.trim();
+            const errorDiv = document.getElementById('modalComposicionError');
+            if (!nombre) { errorDiv.textContent = 'El nombre es obligatorio.'; return; }
 
             try {
-                const resp = await fetchConCsrf('/catalogo/colores/crear-rapido', {
+                const resp = await fetchConCsrf('/catalogo/composiciones/crear-rapido', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ nombreOficial, codigoFastDye })
+                    body: JSON.stringify({ nombre })
                 });
                 const data = await resp.json();
-                if (!resp.ok) { errorDiv.textContent = data.error || 'Error al crear el color.'; return; }
+                if (!resp.ok) { errorDiv.textContent = data.error || 'Error al crear.'; return; }
 
-                agregarOpcion(document.getElementById('selectColor'), data.id, data.nombreOficial);
-                bootstrap.Modal.getInstance(document.getElementById('modalColorNuevo')).hide();
-                document.getElementById('modalColorNombre').value = '';
-                document.getElementById('modalColorCodigo').value = '';
+                agregarOpcion(document.getElementById('selectComposicion'), data.id, data.nombre);
+                bootstrap.Modal.getInstance(document.getElementById('modalComposicionNueva')).hide();
+                document.getElementById('modalComposicionNombre').value = '';
                 errorDiv.textContent = '';
             } catch (e) { errorDiv.textContent = 'Error de conexión: ' + e.message; }
         });
