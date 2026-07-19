@@ -115,7 +115,8 @@
     let lineasExtraidas = [];
 
     function articuloLabel(a) {
-        return a.tipoTela.nombre + ' ' + a.titulo.valor + ' / ' + (a.composicion ? a.composicion.nombre : '');
+        return a.tipoTela.nombre + ' ' + a.titulo.valor + ' / ' + (a.composicion ? a.composicion.nombre : '')
+             + (a.acabado && a.acabado.nombre !== 'LISO' ? ' · ' + a.acabado.nombre : '');
     }
 
     document.getElementById('btnExtraer').addEventListener('click', async () => {
@@ -193,14 +194,19 @@
 
             if (!linea.matched) {
                 selectHtml += '<br><small class="text-danger">' + linea.motivoNoMatch + '</small>';
-                selectHtml += '<br><small class="text-muted">Tela detectada: ' + linea.tipoTela + ' ' + linea.titulo + ' / Composición: ' + (linea.composicion || '-') + '</small>';
+                selectHtml += '<br><small class="text-muted">Tela detectada: ' + linea.tipoTela + ' ' + linea.titulo + ' / Composición: ' + (linea.composicion || '-') + ' / Acabado: ' + (linea.acabado || 'LISO') + '</small>';
 
                 const motivoEsColor = linea.motivoNoMatch && linea.motivoNoMatch.indexOf('Color') !== -1 && linea.motivoNoMatch.indexOf('no existe') !== -1;
                 // Si la composicion no se pudo identificar o no existe en el catalogo,
                 // el endpoint de creacion rapida de articulo va a fallar igual (la
                 // necesita para armar el articulo) -- se avisa en vez de ofrecer un
                 // boton que va a fallar.
-                const motivoEsComposicion = linea.motivoNoMatch && linea.motivoNoMatch.indexOf('omposici') !== -1;
+                // Solo aplica cuando la composicion en si falta o no existe en el
+                // catalogo -- no cuando el mensaje generico de combinacion no
+                // registrada menciona la palabra "composición" de pasada.
+                const motivoEsComposicion = linea.motivoNoMatch && (
+                    linea.motivoNoMatch.indexOf('No se pudo identificar la composici') !== -1 ||
+                    linea.motivoNoMatch.indexOf("Composición '") !== -1);
                 if (motivoEsComposicion) {
                     selectHtml += '<br><small class="text-warning"><i class="bi bi-exclamation-triangle me-1"></i>Agrega esta composición en Catálogo &gt; Artículos antes de continuar.</small>';
                 } else if (!motivoEsColor) {
@@ -212,7 +218,10 @@
             let colorCell = '';
             if (linea.colorNombre) {
                 colorCell = linea.colorNombre;
-                if (!linea.matched) {
+                // El boton de crear color solo tiene sentido si el color NO se
+                // resolvio (colorId vacio); si la linea no matchea por otra razon
+                // (ej. falta el articulo), ofrecerlo solo genera duplicados.
+                if (!linea.matched && !linea.colorId) {
                     colorCell += '<br><button type="button" class="btn btn-sm btn-outline-primary mt-1 btn-crear-color" data-idx="' + idx + '">' +
                                  '<i class="bi bi-plus-circle me-1"></i>Crear color</button>';
                 }
@@ -260,7 +269,8 @@
                     body: JSON.stringify({
                         tipoTelaNombre: linea.tipoTela,
                         tituloValor: linea.titulo,
-                        composicionNombre: linea.composicion
+                        composicionNombre: linea.composicion,
+                        acabadoNombre: linea.acabado
                     })
                 });
                 const data = await resp.json();
@@ -278,7 +288,8 @@
                         id: nuevoId,
                         tipoTela: { nombre: linea.tipoTela },
                         titulo: { valor: linea.titulo },
-                        composicion: { nombre: linea.composicion }
+                        composicion: { nombre: linea.composicion },
+                        acabado: { nombre: linea.acabado || 'LISO' }
                     });
                 }
 
@@ -289,6 +300,7 @@
                         tipoTela: linea.tipoTela,
                         titulo: linea.titulo,
                         composicion: linea.composicion,
+                        acabado: linea.acabado,
                         colorCodigo: linea.colorCodigo,
                         colorNombre: linea.colorNombre,
                         programaTenido: linea.programaTenido,
@@ -336,7 +348,8 @@
                 id: -1,
                 tipoTela: { nombre: '(nuevo color, revisa el articulo)' },
                 titulo: { valor: '' },
-                composicion: { nombre: '' }
+                composicion: { nombre: '' },
+                acabado: { nombre: '' }
             });
 
             const linea = lineasExtraidas[idxColorPendiente];
@@ -347,6 +360,7 @@
                     tipoTela: linea.tipoTela,
                     titulo: linea.titulo,
                     composicion: linea.composicion,
+                    acabado: linea.acabado,
                     colorCodigo: linea.colorCodigo,
                     colorNombre: linea.colorNombre,
                     programaTenido: linea.programaTenido,

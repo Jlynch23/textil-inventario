@@ -65,12 +65,23 @@ public class CatalogoController {
     @ResponseBody
     public ResponseEntity<?> crearColorRapido(@RequestBody ColorRapidoRequest request) {
         try {
+            // Idempotente: si ya existe un color activo con ese codigo FAST DYE,
+            // se reutiliza en vez de intentar crear un duplicado.
+            if (request.codigoFastDye() != null && !request.codigoFastDye().isBlank()) {
+                Optional<Color> existente = catalogoService.resolverColorPorCodigo(request.codigoFastDye(), request.nombreOficial());
+                if (existente.isPresent()) {
+                    return ResponseEntity.ok(Map.of("id", existente.get().getId(), "nombreOficial", existente.get().getNombreOficial(), "yaExistia", true));
+                }
+            }
             Color color = new Color();
             color.setNombreOficial(request.nombreOficial());
             color.setCodigoFastDye(request.codigoFastDye());
             color.setActivo(true);
             Color guardado = catalogoService.guardarColor(color);
             return ResponseEntity.ok(Map.of("id", guardado.getId(), "nombreOficial", guardado.getNombreOficial()));
+        } catch (DataIntegrityViolationException e) {
+            return ResponseEntity.status(400).body(Map.of("error",
+                    "Ya existe un color con ese nombre. FAST DYE repite nombres con códigos distintos: usa un nombre diferenciado (ej. BLANCO AZULADO / BLANCO CREMOSO)."));
         } catch (Exception e) {
             log.error("Error en crearColorRapido: {}", e.getMessage(), e);
             return ResponseEntity.status(500).body(Map.of("error", "Ocurrió un error interno. Intenta de nuevo o contacta al administrador."));

@@ -39,18 +39,28 @@ public class AnthropicOcrService {
 
         En la descripcion de cada producto suele aparecer un texto como:
         "Servicio Tenido: Tela RIB 2X1 30/1 ALG ACANALADO Color 631085 COCOA LOLA / Rollos: 27 / P.Bruto: 602.52 Guia: 658"
-        o tambien, con composicion Melange:
+        o con composicion Melange:
         "Servicio Tenido: Tela RIB 2X1 24/1 MELLANGE 10% Color 732631 NEGRO 2 / Rollos: 18 / P.Bruto: 416.00 Guia: 665"
+        o con acabado listado:
+        "Servicio Tenido: Tela RIB 2X1 24/1 ALG LIST BLANCO Color 121299 CEMENTO / Rollos: 18 / P.Bruto: 412.15 Guia: 472"
+        o con el orden invertido (acabado antes de la composicion):
+        "Servicio Tenido: Tela RIB 2X1 30/1 ACANALADO MLG 3% Color 01008 PRE BLANQUEO PARA PIGMENTAR / Rollos: 13 / P.Bruto: 287.88 Guia: 380"
 
         De ese texto debes separar los siguientes campos:
-        - tipoTela: el tipo de tela base, normalizado a uno de estos valores EXACTOS: "RIB 1x1", "RIB 2x1", "RIB Acanalado", "RIB Listado".
-          Si el texto dice "ACANALADO" junto con "RIB 2X1" o "RIB 1x1", el tipo de tela correcto es "RIB Acanalado" (el acanalado prevalece sobre el 2x1/1x1 base).
-          Si no calza con ninguna de estas reglas, devuelve el texto tal cual aparece.
+        - tipoTela: el TEJIDO BASE, normalizado a uno de estos valores EXACTOS: "RIB 1X1", "RIB 2X1", "VERYGATE", "FRANELA".
+          El tejido base es SIEMPRE independiente del acabado: "RIB 2X1 ... ACANALADO" tiene tipoTela "RIB 2X1" (el ACANALADO va en el campo acabado, NUNCA aqui).
+          Si no calza con ninguno de estos valores, devuelve el texto tal cual aparece.
         - titulo: el numero de titulo de hilo, ej "24/1" o "30/1" (solo el numero con formato N/1, sin las siglas ALG u otras)
         - composicion: la composicion o variante de fibra, normalizada a uno de estos valores EXACTOS:
-          "ALGODON" (cuando el texto dice "ALG" o "ALGODON", o no menciona ninguna variante especial),
+          "ALGODON" (cuando el texto dice "ALG", "ALGODON" o "ALG PEINADO", o no menciona ninguna variante especial),
           "MELANGE 10%", "MELANGE 3%", "MELANGE 1%" (usa el porcentaje exacto que aparece en el texto).
-          IMPORTANTE: en las guias reales esta palabra suele aparecer escrita "MELLANGE" (con DOBLE L), aunque tambien puede aparecer como "MELANGE" (una sola L) -- ambas grafias significan exactamente lo mismo y deben normalizarse siempre a "MELANGE N%". Es una composicion DISTINTA de ALGODON -- nunca la ignores aunque el resto del texto se vea igual a una tela normal.
+          IMPORTANTE: en las guias reales esta palabra puede aparecer escrita "MELLANGE" (con DOBLE L), "MELANGE" (una L) o abreviada "MLG" -- todas significan exactamente lo mismo y deben normalizarse siempre a "MELANGE N%". Es una composicion DISTINTA de ALGODON -- nunca la ignores aunque el resto del texto se vea igual a una tela normal.
+          El orden puede venir invertido: "ACANALADO MLG 3%" significa composicion "MELANGE 3%" con acabado "ACANALADO".
+          OJO: si el MELANGE aparece inmediatamente despues de "LIST" o "LISTADO" (ej "LIST MELANGE 10%"), NO es la composicion de la tela: es parte del acabado listado (ver campo acabado). En ese caso, si el texto no menciona otra composicion, usa "ALGODON".
+        - acabado: el acabado de la tela, normalizado a uno de estos valores EXACTOS:
+          "ACANALADO" (cuando aparece la palabra ACANALADO),
+          "LISTADO BLANCO", "LISTADO NEGRO", "LISTADO MELANGE 10%", "LISTADO MELANGE 3%" (cuando aparece "LIST X" o "LISTADO X"; la palabra que sigue a LIST describe la variante del listado),
+          "LISO" (valor por defecto: cuando NO aparece ni ACANALADO ni LIST/LISTADO en el texto).
         - colorCodigo: el codigo numerico de color (ej "631085")
         - colorNombre: el nombre del color tal como aparece (ej "COCOA LOLA")
         - programaTenido: el numero de programa que aparece como "Guia: NNN" dentro de la descripcion (ese numero, ej "658", NO es el numero de guia principal del documento)
@@ -68,6 +78,7 @@ public class AnthropicOcrService {
               "tipoTela": "string",
               "titulo": "string",
               "composicion": "string",
+              "acabado": "string",
               "colorCodigo": "string",
               "colorNombre": "string",
               "programaTenido": "string",

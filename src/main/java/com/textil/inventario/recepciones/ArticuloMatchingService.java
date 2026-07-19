@@ -20,21 +20,21 @@ public class ArticuloMatchingService {
 
     public LineaSugerida matchLinea(ProductoExtraido p) {
         if (p.tipoTela() == null || p.titulo() == null || p.colorCodigo() == null) {
-            return new LineaSugerida(null, p.tipoTela(), p.titulo(), p.composicion(), null, p.colorCodigo(), p.colorNombre(),
+            return new LineaSugerida(null, p.tipoTela(), p.titulo(), p.composicion(), p.acabado(), null, p.colorCodigo(), p.colorNombre(),
                     p.programaTenido(), p.rollos(), p.pesoBrutoKg(), false,
                     "Faltan datos en el PDF para identificar el artículo");
         }
 
         Optional<TipoTela> tipoTela = tipoTelaRepository.findByNombreIgnoreCase(p.tipoTela().trim());
         if (tipoTela.isEmpty()) {
-            return new LineaSugerida(null, p.tipoTela(), p.titulo(), p.composicion(), null, p.colorCodigo(), p.colorNombre(),
+            return new LineaSugerida(null, p.tipoTela(), p.titulo(), p.composicion(), p.acabado(), null, p.colorCodigo(), p.colorNombre(),
                     p.programaTenido(), p.rollos(), p.pesoBrutoKg(), false,
                     "Tipo de tela '" + p.tipoTela() + "' no existe en el catálogo");
         }
 
         Optional<Titulo> titulo = tituloRepository.findByValorIgnoreCase(p.titulo().trim());
         if (titulo.isEmpty()) {
-            return new LineaSugerida(null, p.tipoTela(), p.titulo(), p.composicion(), null, p.colorCodigo(), p.colorNombre(),
+            return new LineaSugerida(null, p.tipoTela(), p.titulo(), p.composicion(), p.acabado(), null, p.colorCodigo(), p.colorNombre(),
                     p.programaTenido(), p.rollos(), p.pesoBrutoKg(), false,
                     "Título '" + p.titulo() + "' no existe en el catálogo");
         }
@@ -43,37 +43,43 @@ public class ArticuloMatchingService {
         // ya que el Articulo ya no incluye Color -- si el PDF no trajo una composicion
         // reconocible, no se puede armar el match sin adivinar.
         if (p.composicion() == null || p.composicion().isBlank()) {
-            return new LineaSugerida(null, p.tipoTela(), p.titulo(), p.composicion(), null, p.colorCodigo(), p.colorNombre(),
+            return new LineaSugerida(null, p.tipoTela(), p.titulo(), p.composicion(), p.acabado(), null, p.colorCodigo(), p.colorNombre(),
                     p.programaTenido(), p.rollos(), p.pesoBrutoKg(), false,
                     "No se pudo identificar la composición (ALGODON, MELANGE, etc.) en el PDF");
         }
         Optional<Composicion> composicion = composicionRepository.findByNombreIgnoreCase(p.composicion().trim());
         if (composicion.isEmpty()) {
-            return new LineaSugerida(null, p.tipoTela(), p.titulo(), p.composicion(), null, p.colorCodigo(), p.colorNombre(),
+            return new LineaSugerida(null, p.tipoTela(), p.titulo(), p.composicion(), p.acabado(), null, p.colorCodigo(), p.colorNombre(),
                     p.programaTenido(), p.rollos(), p.pesoBrutoKg(), false,
                     "Composición '" + p.composicion() + "' no existe en el catálogo");
         }
 
         Optional<Color> color = catalogoService.resolverColorPorCodigo(p.colorCodigo().trim(), p.colorNombre());
         if (color.isEmpty()) {
-            return new LineaSugerida(null, p.tipoTela(), p.titulo(), p.composicion(), null, p.colorCodigo(), p.colorNombre(),
+            return new LineaSugerida(null, p.tipoTela(), p.titulo(), p.composicion(), p.acabado(), null, p.colorCodigo(), p.colorNombre(),
                     p.programaTenido(), p.rollos(), p.pesoBrutoKg(), false,
                     "Color código '" + p.colorCodigo() + "' (" + p.colorNombre() + ") no existe en el catálogo");
         }
 
-        // TODO Capa 4: usar el acabado extraido del PDF por la IA. Por ahora
-        // se matchea contra el acabado LISO (defecto).
-        Acabado acabadoLiso = catalogoService.buscarAcabadoPorNombre("LISO").orElseThrow();
+        // Acabado extraido del PDF por la IA; si la guia no menciona ninguno,
+        // aplica el defecto LISO (asi funcionan las guias reales de FAST DYE).
+        String acabadoNombre = (p.acabado() == null || p.acabado().isBlank()) ? "LISO" : p.acabado().trim();
+        Optional<Acabado> acabado = catalogoService.buscarAcabadoPorNombre(acabadoNombre);
+        if (acabado.isEmpty()) {
+            return new LineaSugerida(null, p.tipoTela(), p.titulo(), p.composicion(), p.acabado(), color.get().getId(), p.colorCodigo(), p.colorNombre(),
+                    p.programaTenido(), p.rollos(), p.pesoBrutoKg(), false,
+                    "Acabado '" + acabadoNombre + "' no existe en el catálogo");
+        }
         Optional<Articulo> articulo = articuloRepository.findByTipoTelaIdAndTituloIdAndComposicionIdAndAcabadoId(
-                tipoTela.get().getId(), titulo.get().getId(), composicion.get().getId(), acabadoLiso.getId());
+                tipoTela.get().getId(), titulo.get().getId(), composicion.get().getId(), acabado.get().getId());
 
         if (articulo.isEmpty()) {
-            return new LineaSugerida(null, p.tipoTela(), p.titulo(), p.composicion(), color.get().getId(), p.colorCodigo(), p.colorNombre(),
+            return new LineaSugerida(null, p.tipoTela(), p.titulo(), p.composicion(), p.acabado(), color.get().getId(), p.colorCodigo(), p.colorNombre(),
                     p.programaTenido(), p.rollos(), p.pesoBrutoKg(), false,
-                    "Esa combinación de tela/título/composición no está registrada como artículo");
+                    "Esa combinación de tejido/título/composición/acabado no está registrada como artículo");
         }
 
-        return new LineaSugerida(articulo.get().getId(), p.tipoTela(), p.titulo(), p.composicion(), color.get().getId(), p.colorCodigo(), p.colorNombre(),
+        return new LineaSugerida(articulo.get().getId(), p.tipoTela(), p.titulo(), p.composicion(), p.acabado(), color.get().getId(), p.colorCodigo(), p.colorNombre(),
                 p.programaTenido(), p.rollos(), p.pesoBrutoKg(), true, null);
     }
 

@@ -6,6 +6,7 @@ public record ProductoExtraido(
         String tipoTela,
         String titulo,
         String composicion,
+        String acabado,
         String colorCodigo,
         String colorNombre,
         String programaTenido,
