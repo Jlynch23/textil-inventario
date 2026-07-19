@@ -15,6 +15,7 @@ public class CatalogoService {
     private final TituloRepository tituloRepository;
     private final ColorRepository colorRepository;
     private final ComposicionRepository composicionRepository;
+    private final AcabadoRepository acabadoRepository;
     private final ArticuloRepository articuloRepository;
 
     // Normaliza a mayusculas (recorta espacios) para mantener consistencia
@@ -61,6 +62,13 @@ public class CatalogoService {
         return composicionRepository.save(c);
     }
 
+    // ACABADOS
+    public List<Acabado> listarAcabados() { return acabadoRepository.findByActivoTrue(); }
+    public Acabado guardarAcabado(Acabado a) {
+        a.setNombre(normalizar(a.getNombre()));
+        return acabadoRepository.save(a);
+    }
+
     // COLORES
     public List<Color> listarColores() { return colorRepository.findByActivoTrueOrderByNombreOficialAsc(); }
     public Color guardarColor(Color c) {
@@ -80,6 +88,7 @@ public class CatalogoService {
     public Optional<TipoTela> buscarTipoTelaPorNombre(String nombre) { return tipoTelaRepository.findByNombreIgnoreCase(nombre.trim()); }
     public Optional<Titulo> buscarTituloPorValor(String valor) { return tituloRepository.findByValorIgnoreCase(valor.trim()); }
     public Optional<Composicion> buscarComposicionPorNombre(String nombre) { return composicionRepository.findByNombreIgnoreCase(nombre.trim()); }
+    public Optional<Acabado> buscarAcabadoPorNombre(String nombre) { return acabadoRepository.findByNombreIgnoreCase(nombre.trim()); }
     public Optional<Color> buscarColorPorCodigoFastDye(String codigo) { return resolverColorPorCodigo(codigo, null); }
 
     /**
@@ -103,8 +112,8 @@ public class CatalogoService {
         }
         return candidatos.stream().max(java.util.Comparator.comparing(Color::getId));
     }
-    public Optional<Articulo> buscarArticuloPorCombinacion(Long tipoTelaId, Long tituloId, Long composicionId) {
-        return articuloRepository.findByTipoTelaIdAndTituloIdAndComposicionId(tipoTelaId, tituloId, composicionId);
+    public Optional<Articulo> buscarArticuloPorCombinacion(Long tipoTelaId, Long tituloId, Long composicionId, Long acabadoId) {
+        return articuloRepository.findByTipoTelaIdAndTituloIdAndComposicionIdAndAcabadoId(tipoTelaId, tituloId, composicionId, acabadoId);
     }
 
     // GENERACIÓN DE CÓDIGO INTERNO (ARQ-02: evita colisiones entre variantes de un mismo tipo de tela,
@@ -115,10 +124,17 @@ public class CatalogoService {
     // El Articulo ya NO incluye Color (ver V26): el codigo base ahora combina
     // tela+titulo+composicion. El color se combina "al vuelo" con este codigo
     // en cada movimiento especifico -- ver codigoConColor() mas abajo.
-    public String generarCodigoInterno(TipoTela tipoTela, Titulo titulo, Composicion composicion) {
+    public String generarCodigoInterno(TipoTela tipoTela, Titulo titulo, Composicion composicion, Acabado acabado) {
         String base = abreviarTipoTela(tipoTela.getNombre())
                 + "-" + titulo.getValor().replace("/", "")
                 + "-" + abreviarPalabra(composicion.getNombre(), 4);
+
+        // LISO es el acabado por defecto y no se refleja en el codigo (los
+        // codigos existentes pre-acabado siguen siendo validos). Cualquier
+        // otro acabado se agrega como sufijo (ACAN, LISTBLA, LISTMEL10...).
+        if (acabado != null && !"LISO".equalsIgnoreCase(acabado.getNombre())) {
+            base += "-" + abreviarAcabado(acabado.getNombre());
+        }
 
         String codigo = base;
         int sufijo = 2;
@@ -142,6 +158,17 @@ public class CatalogoService {
     private String abreviarPalabra(String texto, int longitud) {
         String limpio = texto.replace(" ", "").replace("%", "");
         return limpio.substring(0, Math.min(longitud, limpio.length())).toUpperCase();
+    }
+
+    // ACANALADO -> ACAN, LISTADO BLANCO -> LISTBLA, LISTADO MELANGE 10% -> LISTMEL10
+    private String abreviarAcabado(String nombre) {
+        String[] palabras = nombre.trim().toUpperCase().split("\\s+");
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < palabras.length; i++) {
+            String limpia = palabras[i].replaceAll("[^A-Z0-9]", "");
+            sb.append(limpia.substring(0, Math.min(i == 0 ? 4 : 3, limpia.length())));
+        }
+        return sb.toString();
     }
 
     private String abreviarTipoTela(String nombre) {

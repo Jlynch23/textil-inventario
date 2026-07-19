@@ -10,7 +10,7 @@ import lombok.Setter;
 @Entity
 @Table(name = "articulos",
     uniqueConstraints = @UniqueConstraint(
-        columnNames = {"tipo_tela_id", "titulo_id", "composicion_id"}
+        columnNames = {"tipo_tela_id", "titulo_id", "composicion_id", "acabado_id"}
     )
 )
 public class Articulo extends BaseEntity {
@@ -29,6 +29,10 @@ public class Articulo extends BaseEntity {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "composicion_id", nullable = false)
     private Composicion composicion;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "acabado_id", nullable = false)
+    private Acabado acabado;
 
     @Column(nullable = false)
     private Boolean activo = true;

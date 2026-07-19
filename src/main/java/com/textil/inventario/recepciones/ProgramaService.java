@@ -87,7 +87,11 @@ public class ProgramaService {
      * (ver V26): se resuelve/asigna por separado a nivel de ProgramaDetalle.
      */
     private Articulo resolverOCrearArticulo(Long tipoTelaId, Long tituloId, Long composicionId) {
-        Optional<Articulo> existente = catalogoService.buscarArticuloPorCombinacion(tipoTelaId, tituloId, composicionId);
+        // TODO Capa 3: recibir acabadoId desde el formulario de Programas.
+        // Mientras la UI no tenga selector de Acabado, se asume LISO (defecto).
+        Acabado acabado = catalogoService.buscarAcabadoPorNombre("LISO").orElseThrow();
+
+        Optional<Articulo> existente = catalogoService.buscarArticuloPorCombinacion(tipoTelaId, tituloId, composicionId, acabado.getId());
         if (existente.isPresent()) return existente.get();
 
         TipoTela tipoTela = tipoTelaRepository.findById(tipoTelaId).orElseThrow();
@@ -98,7 +102,8 @@ public class ProgramaService {
         nuevo.setTipoTela(tipoTela);
         nuevo.setTitulo(titulo);
         nuevo.setComposicion(composicion);
-        nuevo.setCodigoInterno(catalogoService.generarCodigoInterno(tipoTela, titulo, composicion));
+        nuevo.setAcabado(acabado);
+        nuevo.setCodigoInterno(catalogoService.generarCodigoInterno(tipoTela, titulo, composicion, acabado));
         nuevo.setActivo(true);
         return catalogoService.guardarArticulo(nuevo);
     }

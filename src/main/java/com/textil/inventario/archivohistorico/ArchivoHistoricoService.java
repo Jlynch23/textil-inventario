@@ -453,8 +453,11 @@ public class ArchivoHistoricoService {
 
         int articuloCreado = 0;
         Articulo articulo;
-        Optional<Articulo> articuloOpt = articuloRepository.findByTipoTelaIdAndTituloIdAndComposicionId(
-                tipoTela.get().getId(), titulo.get().getId(), composicion.get().getId());
+        // Importacion legacy: los nombres de archivo historicos no traen acabado
+        // de forma confiable, se asume LISO (defecto).
+        Acabado acabadoLiso = catalogoService.buscarAcabadoPorNombre("LISO").orElseThrow();
+        Optional<Articulo> articuloOpt = articuloRepository.findByTipoTelaIdAndTituloIdAndComposicionIdAndAcabadoId(
+                tipoTela.get().getId(), titulo.get().getId(), composicion.get().getId(), acabadoLiso.getId());
         if (articuloOpt.isPresent()) {
             articulo = articuloOpt.get();
         } else {
@@ -463,7 +466,8 @@ public class ArchivoHistoricoService {
                 nuevo.setTipoTela(tipoTela.get());
                 nuevo.setTitulo(titulo.get());
                 nuevo.setComposicion(composicion.get());
-                nuevo.setCodigoInterno(catalogoService.generarCodigoInterno(tipoTela.get(), titulo.get(), composicion.get()));
+                nuevo.setAcabado(acabadoLiso);
+                nuevo.setCodigoInterno(catalogoService.generarCodigoInterno(tipoTela.get(), titulo.get(), composicion.get(), acabadoLiso));
                 nuevo.setActivo(true);
                 articulo = articuloRepository.save(nuevo);
                 articuloCreado = 1;

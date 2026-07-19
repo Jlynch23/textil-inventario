@@ -61,8 +61,11 @@ public class ArticuloMatchingService {
                     "Color código '" + p.colorCodigo() + "' (" + p.colorNombre() + ") no existe en el catálogo");
         }
 
-        Optional<Articulo> articulo = articuloRepository.findByTipoTelaIdAndTituloIdAndComposicionId(
-                tipoTela.get().getId(), titulo.get().getId(), composicion.get().getId());
+        // TODO Capa 4: usar el acabado extraido del PDF por la IA. Por ahora
+        // se matchea contra el acabado LISO (defecto).
+        Acabado acabadoLiso = catalogoService.buscarAcabadoPorNombre("LISO").orElseThrow();
+        Optional<Articulo> articulo = articuloRepository.findByTipoTelaIdAndTituloIdAndComposicionIdAndAcabadoId(
+                tipoTela.get().getId(), titulo.get().getId(), composicion.get().getId(), acabadoLiso.getId());
 
         if (articulo.isEmpty()) {
             return new LineaSugerida(null, p.tipoTela(), p.titulo(), p.composicion(), color.get().getId(), p.colorCodigo(), p.colorNombre(),

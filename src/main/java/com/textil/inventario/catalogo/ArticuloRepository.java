@@ -15,6 +15,6 @@ public interface ArticuloRepository extends JpaRepository<Articulo, Long> {
     @Query("SELECT a FROM Articulo a WHERE a.composicion.id = :composicionId AND a.activo = true")
     List<Articulo> findByComposicionId(Long composicionId);
 
-    @Query("SELECT a FROM Articulo a WHERE a.tipoTela.id = :tipoTelaId AND a.titulo.id = :tituloId AND a.composicion.id = :composicionId AND a.activo = true")
-    java.util.Optional<Articulo> findByTipoTelaIdAndTituloIdAndComposicionId(Long tipoTelaId, Long tituloId, Long composicionId);
+    @Query("SELECT a FROM Articulo a WHERE a.tipoTela.id = :tipoTelaId AND a.titulo.id = :tituloId AND a.composicion.id = :composicionId AND a.acabado.id = :acabadoId AND a.activo = true")
+    java.util.Optional<Articulo> findByTipoTelaIdAndTituloIdAndComposicionIdAndAcabadoId(Long tipoTelaId, Long tituloId, Long composicionId, Long acabadoId);
 }

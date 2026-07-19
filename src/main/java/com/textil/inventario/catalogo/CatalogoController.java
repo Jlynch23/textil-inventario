@@ -144,6 +144,28 @@ public class CatalogoController {
         }
     }
 
+    @PostMapping("/acabados/crear-rapido")
+    @ResponseBody
+    public ResponseEntity<?> crearAcabadoRapido(@RequestBody AcabadoRapidoRequest request) {
+        try {
+            if (request.nombre() == null || request.nombre().isBlank()) {
+                return ResponseEntity.status(400).body(Map.of("error", "El nombre es obligatorio."));
+            }
+            Optional<Acabado> existente = catalogoService.buscarAcabadoPorNombre(request.nombre());
+            if (existente.isPresent()) {
+                return ResponseEntity.ok(Map.of("id", existente.get().getId(), "nombre", existente.get().getNombre(), "yaExistia", true));
+            }
+            Acabado acabado = new Acabado();
+            acabado.setNombre(request.nombre().trim());
+            acabado.setActivo(true);
+            Acabado guardado = catalogoService.guardarAcabado(acabado);
+            return ResponseEntity.ok(Map.of("id", guardado.getId(), "nombre", guardado.getNombre(), "yaExistia", false));
+        } catch (Exception e) {
+            log.error("Error en crearAcabadoRapido: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body(Map.of("error", "Ocurrió un error interno. Intenta de nuevo o contacta al administrador."));
+        }
+    }
+
     // ─── ARTÍCULOS ─────────────────────────────────────────
     @PostMapping("/articulos/crear-rapido")
     @ResponseBody
@@ -167,8 +189,16 @@ public class CatalogoController {
                         "Composición '" + request.composicionNombre() + "' no existe en el catálogo base."));
             }
 
+            String acabadoNombre = (request.acabadoNombre() == null || request.acabadoNombre().isBlank())
+                    ? "LISO" : request.acabadoNombre();
+            Optional<Acabado> acabado = catalogoService.buscarAcabadoPorNombre(acabadoNombre);
+            if (acabado.isEmpty()) {
+                return ResponseEntity.status(400).body(Map.of("error",
+                        "Acabado '" + acabadoNombre + "' no existe en el catálogo base."));
+            }
+
             Optional<Articulo> existente = catalogoService.buscarArticuloPorCombinacion(
-                    tipoTela.get().getId(), titulo.get().getId(), composicion.get().getId());
+                    tipoTela.get().getId(), titulo.get().getId(), composicion.get().getId(), acabado.get().getId());
             if (existente.isPresent()) {
                 return ResponseEntity.ok(Map.of("id", existente.get().getId(), "yaExistia", true));
             }
@@ -177,7 +207,8 @@ public class CatalogoController {
             articulo.setTipoTela(tipoTela.get());
             articulo.setTitulo(titulo.get());
             articulo.setComposicion(composicion.get());
-            articulo.setCodigoInterno(catalogoService.generarCodigoInterno(tipoTela.get(), titulo.get(), composicion.get()));
+            articulo.setAcabado(acabado.get());
+            articulo.setCodigoInterno(catalogoService.generarCodigoInterno(tipoTela.get(), titulo.get(), composicion.get(), acabado.get()));
             articulo.setActivo(true);
 
             Articulo guardado = catalogoService.guardarArticulo(articulo);
@@ -197,6 +228,7 @@ public class CatalogoController {
         model.addAttribute("tiposTela", catalogoService.listarTiposTela());
         model.addAttribute("titulos", catalogoService.listarTitulos());
         model.addAttribute("composiciones", catalogoService.listarComposiciones());
+        model.addAttribute("acabados", catalogoService.listarAcabados());
         return "catalogo/articulos";
     }
 
@@ -205,6 +237,7 @@ public class CatalogoController {
                                    @RequestParam Long tipoTelaId,
                                    @RequestParam Long tituloId,
                                    @RequestParam Long composicionId,
+                                   @RequestParam Long acabadoId,
                                    RedirectAttributes ra) {
         articulo.setTipoTela(catalogoService.listarTiposTela().stream()
             .filter(t -> t.getId().equals(tipoTelaId)).findFirst().orElseThrow());
@@ -212,18 +245,20 @@ public class CatalogoController {
             .filter(t -> t.getId().equals(tituloId)).findFirst().orElseThrow());
         articulo.setComposicion(catalogoService.listarComposiciones().stream()
             .filter(c -> c.getId().equals(composicionId)).findFirst().orElseThrow());
+        articulo.setAcabado(catalogoService.listarAcabados().stream()
+            .filter(a -> a.getId().equals(acabadoId)).findFirst().orElseThrow());
 
         // Generar código interno automático
         if (articulo.getCodigoInterno() == null || articulo.getCodigoInterno().isBlank()) {
             articulo.setCodigoInterno(catalogoService.generarCodigoInterno(
-                    articulo.getTipoTela(), articulo.getTitulo(), articulo.getComposicion()));
+                    articulo.getTipoTela(), articulo.getTitulo(), articulo.getComposicion(), articulo.getAcabado()));
         }
 
         try {
             catalogoService.guardarArticulo(articulo);
             ra.addFlashAttribute("mensaje", "Artículo guardado correctamente.");
         } catch (DataIntegrityViolationException e) {
-            ra.addFlashAttribute("error", "Ya existe un artículo con esa combinación de tipo de tela, título y composición.");
+            ra.addFlashAttribute("error", "Ya existe un artículo con esa combinación de tejido, título, composición y acabado.");
         }
         return "redirect:/catalogo/articulos";
     }
