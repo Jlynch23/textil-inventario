@@ -54,7 +54,7 @@
             <td th:text="${m.ubicacionDestino != null ? m.ubicacionDestino.nombre : '-'}"></td>
             <td th:text="${m.rollos}"></td>
             <td th:text="${m.pesoKg}"></td>
-            <td th:text="${m.usuario.nombre}"></td>
+            <td th:text="${m.usuario.nombreMostrar}"></td>
             <td th:text="${m.observaciones}"></td>
         </tr>
         <tr th:if="${#lists.isEmpty(movimientos)}">

@@ -19,7 +19,7 @@
                 <div class="card-body">
                     <p class="mb-1"><strong>Rollos:</strong> <span th:text="${e.totalRollos}"></span></p>
                     <p class="mb-1 text-muted small">
-                        Por: <span th:text="${e.usuario.nombre}"></span>
+                        Por: <span th:text="${e.usuario.nombreMostrar}"></span>
                         - <span th:text="${#temporals.format(e.createdAt, 'dd/MM HH:mm')}"></span>
                     </p>
 
@@ -57,7 +57,7 @@
                 <div class="card-body">
                     <p class="mb-1"><strong>Cantidad:</strong> <span th:text="${s.cantidad}"></span></p>
                     <p class="mb-1 text-muted small">
-                        Por: <span th:text="${s.usuario.nombre}"></span>
+                        Por: <span th:text="${s.usuario.nombreMostrar}"></span>
                         - <span th:text="${#temporals.format(s.createdAt, 'dd/MM HH:mm')}"></span>
                     </p>
 

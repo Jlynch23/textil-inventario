@@ -28,7 +28,7 @@
         <th:block th:each="e, iter : ${errores}">
             <tr>
                 <td class="text-nowrap" th:text="${#temporals.format(e.createdAt, 'dd/MM/yyyy HH:mm')}"></td>
-                <td th:text="${e.usuario != null ? e.usuario.nombre : 'Sesión no identificada'}"></td>
+                <td th:text="${e.usuario != null ? e.usuario.nombreMostrar : 'Sesión no identificada'}"></td>
                 <td><code th:text="${e.entidad}"></code></td>
                 <td th:text="${#strings.substringBefore(e.descripcion, ':')}"></td>
                 <td>

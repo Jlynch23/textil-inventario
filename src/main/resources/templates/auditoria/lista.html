@@ -66,7 +66,7 @@
                         </tr>
                         <tr th:each="ev : ${eventos}">
                             <td th:text="${#temporals.format(ev.createdAt, 'dd/MM/yyyy HH:mm:ss')}"></td>
-                            <td th:text="${ev.usuario != null ? ev.usuario.nombre : 'Sistema'}"></td>
+                            <td th:text="${ev.usuario != null ? ev.usuario.nombreMostrar : 'Sistema'}"></td>
                             <td>
                                 <span class="badge bg-secondary" th:text="${ev.accion}"></span>
                             </td>
