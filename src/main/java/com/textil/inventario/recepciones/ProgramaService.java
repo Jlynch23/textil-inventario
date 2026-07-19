@@ -22,6 +22,7 @@ public class ProgramaService {
     private final TituloRepository tituloRepository;
     private final ColorRepository colorRepository;
     private final ComposicionRepository composicionRepository;
+    private final AcabadoRepository acabadoRepository;
     private final CatalogoService catalogoService;
 
     // Normaliza a mayusculas (recorta espacios), igual que en Catalogo y
@@ -43,7 +44,7 @@ public class ProgramaService {
     public Programa crearPrograma(String numero, Long empresaId, LocalDate fecha, String observaciones,
                                    Integer totalRollos,
                                    List<Long> tipoTelaIds, List<Long> tituloIds, List<Long> composicionIds,
-                                   List<Long> colorIds, List<Integer> cantidades) {
+                                   List<Long> acabadoIds, List<Long> colorIds, List<Integer> cantidades) {
         int suma = cantidades.stream().mapToInt(c -> c != null ? c : 0).sum();
         if (totalRollos == null || !totalRollos.equals(suma)) {
             throw new IllegalArgumentException(
@@ -61,9 +62,10 @@ public class ProgramaService {
 
         for (int i = 0; i < cantidades.size(); i++) {
             if (tipoTelaIds.get(i) == null || tituloIds.get(i) == null
-                    || composicionIds.get(i) == null || colorIds.get(i) == null) continue;
+                    || composicionIds.get(i) == null || acabadoIds.get(i) == null
+                    || colorIds.get(i) == null) continue;
 
-            Articulo articulo = resolverOCrearArticulo(tipoTelaIds.get(i), tituloIds.get(i), composicionIds.get(i));
+            Articulo articulo = resolverOCrearArticulo(tipoTelaIds.get(i), tituloIds.get(i), composicionIds.get(i), acabadoIds.get(i));
             Color color = colorRepository.findById(colorIds.get(i)).orElseThrow();
 
             ProgramaDetalle pd = new ProgramaDetalle();
@@ -86,10 +88,8 @@ public class ProgramaService {
      * en vez de duplicarla aqui. El Color ya no forma parte del Articulo
      * (ver V26): se resuelve/asigna por separado a nivel de ProgramaDetalle.
      */
-    private Articulo resolverOCrearArticulo(Long tipoTelaId, Long tituloId, Long composicionId) {
-        // TODO Capa 3: recibir acabadoId desde el formulario de Programas.
-        // Mientras la UI no tenga selector de Acabado, se asume LISO (defecto).
-        Acabado acabado = catalogoService.buscarAcabadoPorNombre("LISO").orElseThrow();
+    private Articulo resolverOCrearArticulo(Long tipoTelaId, Long tituloId, Long composicionId, Long acabadoId) {
+        Acabado acabado = acabadoRepository.findById(acabadoId).orElseThrow();
 
         Optional<Articulo> existente = catalogoService.buscarArticuloPorCombinacion(tipoTelaId, tituloId, composicionId, acabado.getId());
         if (existente.isPresent()) return existente.get();
@@ -127,8 +127,8 @@ public class ProgramaService {
                                     List<Long> detalleIdsExistentes, List<Integer> cantidadesExistentes,
                                     List<Long> detalleIdsAEliminar,
                                     List<Long> nuevosTipoTelaIds, List<Long> nuevosTituloIds,
-                                    List<Long> nuevosComposicionIds, List<Long> nuevosColorIds,
-                                    List<Integer> nuevasCantidades) {
+                                    List<Long> nuevosComposicionIds, List<Long> nuevosAcabadoIds,
+                                    List<Long> nuevosColorIds, List<Integer> nuevasCantidades) {
 
         Programa p = programaRepository.findById(programaId).orElseThrow();
         if (p.isCompleto()) {
@@ -163,8 +163,9 @@ public class ProgramaService {
 
         for (int i = 0; i < nuevasCantidades.size(); i++) {
             if (nuevosTipoTelaIds.get(i) == null || nuevosTituloIds.get(i) == null
-                    || nuevosComposicionIds.get(i) == null || nuevosColorIds.get(i) == null) continue;
-            Articulo articulo = resolverOCrearArticulo(nuevosTipoTelaIds.get(i), nuevosTituloIds.get(i), nuevosComposicionIds.get(i));
+                    || nuevosComposicionIds.get(i) == null || nuevosAcabadoIds.get(i) == null
+                    || nuevosColorIds.get(i) == null) continue;
+            Articulo articulo = resolverOCrearArticulo(nuevosTipoTelaIds.get(i), nuevosTituloIds.get(i), nuevosComposicionIds.get(i), nuevosAcabadoIds.get(i));
             Color color = colorRepository.findById(nuevosColorIds.get(i)).orElseThrow();
 
             ProgramaDetalle pd = new ProgramaDetalle();

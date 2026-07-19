@@ -1,6 +1,7 @@
 package com.textil.inventario.recepciones;
 
 import com.textil.inventario.catalogo.ColorRepository;
+import com.textil.inventario.catalogo.AcabadoRepository;
 import com.textil.inventario.catalogo.ComposicionRepository;
 import com.textil.inventario.catalogo.EmpresaRepository;
 import com.textil.inventario.catalogo.TipoTelaRepository;
@@ -29,6 +30,7 @@ public class ProgramaController {
     private final ComposicionRepository composicionRepository;
     private final TipoTelaRepository tipoTelaRepository;
     private final TituloRepository tituloRepository;
+    private final AcabadoRepository acabadoRepository;
 
     @GetMapping
     public String listar(Model model) {
@@ -43,6 +45,7 @@ public class ProgramaController {
         model.addAttribute("composiciones", composicionRepository.findByActivoTrue());
         model.addAttribute("tiposTela", tipoTelaRepository.findByActivoTrue());
         model.addAttribute("titulos", tituloRepository.findByActivoTrue());
+        model.addAttribute("acabados", acabadoRepository.findByActivoTrue());
         return "programas/nuevo";
     }
 
@@ -55,12 +58,13 @@ public class ProgramaController {
                          @RequestParam("tipoTelaId") List<Long> tipoTelaIds,
                          @RequestParam("tituloId") List<Long> tituloIds,
                          @RequestParam("composicionId") List<Long> composicionIds,
+                         @RequestParam("acabadoId") List<Long> acabadoIds,
                          @RequestParam("colorId") List<Long> colorIds,
                          @RequestParam("cantidad") List<Integer> cantidades,
                          RedirectAttributes ra) {
         try {
             Programa p = programaService.crearPrograma(numero, empresaId, fecha, observaciones, totalRollos,
-                    tipoTelaIds, tituloIds, composicionIds, colorIds, cantidades);
+                    tipoTelaIds, tituloIds, composicionIds, acabadoIds, colorIds, cantidades);
             ra.addFlashAttribute("mensaje", "Programa creado correctamente.");
             return "redirect:/programas/" + p.getId();
         } catch (IllegalArgumentException e) {
@@ -98,6 +102,7 @@ public class ProgramaController {
         model.addAttribute("composiciones", composicionRepository.findByActivoTrue());
         model.addAttribute("tiposTela", tipoTelaRepository.findByActivoTrue());
         model.addAttribute("titulos", tituloRepository.findByActivoTrue());
+        model.addAttribute("acabados", acabadoRepository.findByActivoTrue());
         return "programas/editar";
     }
 
@@ -114,6 +119,7 @@ public class ProgramaController {
                               @RequestParam(value = "nuevoTipoTelaId", required = false) List<Long> nuevosTipoTelaIds,
                               @RequestParam(value = "nuevoTituloId", required = false) List<Long> nuevosTituloIds,
                               @RequestParam(value = "nuevoComposicionId", required = false) List<Long> nuevosComposicionIds,
+                              @RequestParam(value = "nuevoAcabadoId", required = false) List<Long> nuevosAcabadoIds,
                               @RequestParam(value = "nuevoColorId", required = false) List<Long> nuevosColorIds,
                               @RequestParam(value = "nuevaCantidad", required = false) List<Integer> nuevasCantidades,
                               RedirectAttributes ra) {
@@ -122,7 +128,8 @@ public class ProgramaController {
                     listaOVacia(detalleIdsExistentes), listaOVacia(cantidadesExistentes),
                     listaOVacia(detalleIdsAEliminar),
                     listaOVacia(nuevosTipoTelaIds), listaOVacia(nuevosTituloIds),
-                    listaOVacia(nuevosComposicionIds), listaOVacia(nuevosColorIds), listaOVacia(nuevasCantidades));
+                    listaOVacia(nuevosComposicionIds), listaOVacia(nuevosAcabadoIds),
+                    listaOVacia(nuevosColorIds), listaOVacia(nuevasCantidades));
             ra.addFlashAttribute("mensaje", "Programa actualizado correctamente.");
             return "redirect:/programas/" + id;
         } catch (DataIntegrityViolationException e) {

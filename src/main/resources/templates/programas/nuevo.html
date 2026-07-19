@@ -46,10 +46,11 @@
                         <h6 class="fw-bold mb-3">Artículos Solicitados</h6>
                         <div class="row g-2 mb-1 d-none d-md-flex">
                             <div class="col-md-2"><small class="text-muted fw-semibold">Tipo de Tela</small></div>
-                            <div class="col-md-2"><small class="text-muted fw-semibold">Título</small></div>
+                            <div class="col-md-1"><small class="text-muted fw-semibold">Título</small></div>
                             <div class="col-md-2"><small class="text-muted fw-semibold">Composición</small></div>
+                            <div class="col-md-2"><small class="text-muted fw-semibold">Acabado</small></div>
                             <div class="col-md-2"><small class="text-muted fw-semibold">Color</small></div>
-                            <div class="col-md-2"><small class="text-muted fw-semibold">Cantidad</small></div>
+                            <div class="col-md-1"><small class="text-muted fw-semibold">Cantidad</small></div>
                         </div>
                         <div id="lineasContainer">
                             <div class="row g-2 mb-2 linea-color">
@@ -62,7 +63,7 @@
                                         <button type="button" class="btn btn-outline-primary btn-tipotela-nuevo" title="Crear tipo de tela nuevo"><i class="bi bi-plus-lg"></i></button>
                                     </div>
                                 </div>
-                                <div class="col-md-2">
+                                <div class="col-md-1">
                                     <div class="input-group">
                                         <select class="form-select select-titulo" name="tituloId">
                                             <option value="">Título...</option>
@@ -81,6 +82,12 @@
                                     </div>
                                 </div>
                                 <div class="col-md-2">
+                                    <select class="form-select select-acabado" name="acabadoId">
+                                        <option th:each="ab : ${acabados}" th:value="${ab.id}"
+                                                th:text="${ab.nombre}" th:selected="${ab.nombre == 'LISO'}"></option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
                                     <div class="input-group">
                                         <select class="form-select select-color" name="colorId">
                                             <option value="">Color...</option>
@@ -90,8 +97,8 @@
                                         <button type="button" class="btn btn-outline-primary btn-color-nuevo" title="Crear color nuevo"><i class="bi bi-plus-lg"></i></button>
                                     </div>
                                 </div>
-                                <div class="col-md-2">
-                                    <input type="number" class="form-control input-cantidad" name="cantidad" placeholder="Cantidad" min="1">
+                                <div class="col-md-1">
+                                    <input type="number" class="form-control input-cantidad" name="cantidad" placeholder="Cant." min="1">
                                 </div>
                                 <div class="col-md-2">
                                     <button type="button" class="btn btn-outline-danger w-100 btn-quitar-linea">✕ Quitar</button>
@@ -205,6 +212,7 @@
         const titulosData = /*[[${titulos}]]*/ [];
         let coloresData = /*[[${colores}]]*/ [];
         let composicionesData = /*[[${composiciones}]]*/ [];
+        const acabadosData = /*[[${acabados}]]*/ [];
 
         // Auto-relleno de Titulo segun el Tipo de Tela elegido: en la
         // practica, RIB 2x1 casi siempre va con 24/1 y RIB Acanalado casi
@@ -230,6 +238,17 @@
             const regla = AUTO_TITULO_POR_TIPO.find(r => r.patron.test(nombreTipo));
             if (!regla) return;
             const idTitulo = tituloIdPorValor(regla.tituloValor);
+            if (idTitulo) selectTitulo.value = idTitulo;
+        });
+        // El acabado ACANALADO en la practica siempre va con titulo 30/1
+        document.getElementById('lineasContainer').addEventListener('change', function (e) {
+            if (!e.target.classList.contains('select-acabado')) return;
+            const texto = (e.target.options[e.target.selectedIndex] || {}).text || '';
+            if (!/ACANALADO/.test(texto.toUpperCase())) return;
+            const fila = e.target.closest('.linea-color');
+            const selectTitulo = fila ? fila.querySelector('.select-titulo') : null;
+            if (!selectTitulo || selectTitulo.value) return;
+            const idTitulo = tituloIdPorValor('30/1');
             if (idTitulo) selectTitulo.value = idTitulo;
         });
         let selectColorActual = null;
@@ -270,17 +289,28 @@
             return options;
         }
 
+        function opcionesAcabado(seleccionarId) {
+            let options = '';
+            acabadosData.forEach(a => {
+                const sel = seleccionarId ? (a.id === seleccionarId ? ' selected' : '')
+                                          : (a.nombre === 'LISO' ? ' selected' : '');
+                options += '<option value="' + a.id + '"' + sel + '>' + a.nombre + '</option>';
+            });
+            return options;
+        }
+
         function buildLineaHtml() {
             return '<div class="row g-2 mb-2 linea-color">' +
                    '<div class="col-md-2"><div class="input-group"><select class="form-select select-tipo-tela" name="tipoTelaId">' + opcionesTipoTela() + '</select>' +
                    '<button type="button" class="btn btn-outline-primary btn-tipotela-nuevo" title="Crear tipo de tela nuevo"><i class="bi bi-plus-lg"></i></button></div></div>' +
-                   '<div class="col-md-2"><div class="input-group"><select class="form-select select-titulo" name="tituloId">' + opcionesTitulos() + '</select>' +
+                   '<div class="col-md-1"><div class="input-group"><select class="form-select select-titulo" name="tituloId">' + opcionesTitulos() + '</select>' +
                    '<button type="button" class="btn btn-outline-primary btn-titulo-nuevo" title="Crear título nuevo"><i class="bi bi-plus-lg"></i></button></div></div>' +
                    '<div class="col-md-2"><div class="input-group"><select class="form-select select-composicion" name="composicionId">' + opcionesComposicion() + '</select>' +
                    '<button type="button" class="btn btn-outline-primary btn-composicion-nuevo" title="Crear composición nueva"><i class="bi bi-plus-lg"></i></button></div></div>' +
+                   '<div class="col-md-2"><select class="form-select select-acabado" name="acabadoId">' + opcionesAcabado() + '</select></div>' +
                    '<div class="col-md-2"><div class="input-group"><select class="form-select select-color" name="colorId">' + opcionesColores() + '</select>' +
                    '<button type="button" class="btn btn-outline-primary btn-color-nuevo" title="Crear color nuevo"><i class="bi bi-plus-lg"></i></button></div></div>' +
-                   '<div class="col-md-2"><input type="number" class="form-control input-cantidad" name="cantidad" placeholder="Cantidad" min="1"></div>' +
+                   '<div class="col-md-1"><input type="number" class="form-control input-cantidad" name="cantidad" placeholder="Cant." min="1"></div>' +
                    '<div class="col-md-2"><button type="button" class="btn btn-outline-danger w-100 btn-quitar-linea">✕ Quitar</button></div>' +
                    '</div>';
         }
@@ -331,6 +361,20 @@
                 btn.onclick = () => {
                     if (document.querySelectorAll('.linea-color').length > 1) {
                         btn.closest('.linea-color').remove();
+                        actualizarSuma();
+                    } else {
+                        // Es la unica linea: en vez de quitarla, se limpian sus campos
+                        const fila = btn.closest('.linea-color');
+                        fila.querySelectorAll('select').forEach(s => {
+                            if (s.classList.contains('select-acabado')) {
+                                const liso = Array.from(s.options).find(o => o.text === 'LISO');
+                                s.value = liso ? liso.value : '';
+                            } else {
+                                s.value = '';
+                            }
+                        });
+                        const cant = fila.querySelector('.input-cantidad');
+                        if (cant) cant.value = '';
                         actualizarSuma();
                     }
                 };

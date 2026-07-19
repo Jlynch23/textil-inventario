@@ -54,7 +54,7 @@
                                     <span class="fw-semibold" th:text="${d.articulo.tipoTela.nombre}"></span>
                                 </div>
                                 <div class="col-md-2" th:text="${d.articulo.titulo.valor}"></div>
-                                <div class="col-md-2" th:text="${d.articulo.composicion.nombre}"></div>
+                                <div class="col-md-2" th:text="${d.articulo.composicion.nombre + ' · ' + d.articulo.acabado.nombre}"></div>
                                 <div class="col-md-2">
                                     <span th:text="${d.color.nombreMostrar}"></span>
                                     <span class="badge bg-light text-dark" th:text="${d.color.codigoFastDye}"></span>
@@ -188,6 +188,7 @@
         const titulosData = /*[[${titulos}]]*/ [];
         let coloresData = /*[[${colores}]]*/ [];
         let composicionesData = /*[[${composiciones}]]*/ [];
+        const acabadosData = /*[[${acabados}]]*/ [];
         let selectColorActual = null;
         let selectComposicionActual = null;
         let selectTipoTelaActual = null;
@@ -226,17 +227,28 @@
             return options;
         }
 
+        function opcionesAcabado(seleccionarId) {
+            let options = '';
+            acabadosData.forEach(a => {
+                const sel = seleccionarId ? (a.id === seleccionarId ? ' selected' : '')
+                                          : (a.nombre === 'LISO' ? ' selected' : '');
+                options += '<option value="' + a.id + '"' + sel + '>' + a.nombre + '</option>';
+            });
+            return options;
+        }
+
         function buildLineaNuevaHtml() {
             return '<div class="row g-2 mb-2 linea-nueva">' +
                    '<div class="col-md-2"><div class="input-group"><select class="form-select select-tipo-tela" name="nuevoTipoTelaId">' + opcionesTipoTela() + '</select>' +
                    '<button type="button" class="btn btn-outline-primary btn-tipotela-nuevo" title="Crear tipo de tela nuevo"><i class="bi bi-plus-lg"></i></button></div></div>' +
-                   '<div class="col-md-2"><div class="input-group"><select class="form-select select-titulo" name="nuevoTituloId">' + opcionesTitulos() + '</select>' +
+                   '<div class="col-md-1"><div class="input-group"><select class="form-select select-titulo" name="nuevoTituloId">' + opcionesTitulos() + '</select>' +
                    '<button type="button" class="btn btn-outline-primary btn-titulo-nuevo" title="Crear título nuevo"><i class="bi bi-plus-lg"></i></button></div></div>' +
                    '<div class="col-md-2"><div class="input-group"><select class="form-select select-composicion" name="nuevoComposicionId">' + opcionesComposicion() + '</select>' +
                    '<button type="button" class="btn btn-outline-primary btn-composicion-nuevo" title="Crear composición nueva"><i class="bi bi-plus-lg"></i></button></div></div>' +
+                   '<div class="col-md-2"><select class="form-select select-acabado" name="nuevoAcabadoId">' + opcionesAcabado() + '</select></div>' +
                    '<div class="col-md-2"><div class="input-group"><select class="form-select select-color" name="nuevoColorId">' + opcionesColores() + '</select>' +
                    '<button type="button" class="btn btn-outline-primary btn-color-nuevo" title="Crear color nuevo"><i class="bi bi-plus-lg"></i></button></div></div>' +
-                   '<div class="col-md-2"><input type="number" class="form-control input-cantidad-nueva" name="nuevaCantidad" placeholder="Cantidad" min="1"></div>' +
+                   '<div class="col-md-1"><input type="number" class="form-control input-cantidad-nueva" name="nuevaCantidad" placeholder="Cant." min="1"></div>' +
                    '<div class="col-md-2"><button type="button" class="btn btn-outline-danger w-100 btn-quitar-nueva">✕ Quitar</button></div>' +
                    '</div>';
         }
