@@ -65,6 +65,9 @@ public class CatalogoController {
     @ResponseBody
     public ResponseEntity<?> crearColorRapido(@RequestBody ColorRapidoRequest request) {
         try {
+            if (request.nombreOficial() == null || request.nombreOficial().isBlank()) {
+                return ResponseEntity.status(400).body(Map.of("error", "El nombre oficial es obligatorio."));
+            }
             // Idempotente: si ya existe un color activo con ese codigo FAST DYE,
             // se reutiliza en vez de intentar crear un duplicado.
             if (request.codigoFastDye() != null && !request.codigoFastDye().isBlank()) {
@@ -105,6 +108,9 @@ public class CatalogoController {
             tipoTela.setActivo(true);
             TipoTela guardado = catalogoService.guardarTipoTela(tipoTela);
             return ResponseEntity.ok(Map.of("id", guardado.getId(), "nombre", guardado.getNombre(), "yaExistia", false));
+        } catch (DataIntegrityViolationException e) {
+            return ResponseEntity.status(400).body(Map.of("error",
+                    "Ya existe un tipo de tela con ese nombre. Puede que otro usuario lo haya creado justo ahora — recarga e intenta de nuevo."));
         } catch (Exception e) {
             log.error("Error en crearTipoTelaRapido: {}", e.getMessage(), e);
             return ResponseEntity.status(500).body(Map.of("error", "Ocurrió un error interno. Intenta de nuevo o contacta al administrador."));
@@ -127,6 +133,9 @@ public class CatalogoController {
             titulo.setActivo(true);
             Titulo guardado = catalogoService.guardarTitulo(titulo);
             return ResponseEntity.ok(Map.of("id", guardado.getId(), "valor", guardado.getValor(), "yaExistia", false));
+        } catch (DataIntegrityViolationException e) {
+            return ResponseEntity.status(400).body(Map.of("error",
+                    "Ya existe un título con ese valor. Puede que otro usuario lo haya creado justo ahora — recarga e intenta de nuevo."));
         } catch (Exception e) {
             log.error("Error en crearTituloRapido: {}", e.getMessage(), e);
             return ResponseEntity.status(500).body(Map.of("error", "Ocurrió un error interno. Intenta de nuevo o contacta al administrador."));
@@ -149,6 +158,9 @@ public class CatalogoController {
             composicion.setActivo(true);
             Composicion guardado = catalogoService.guardarComposicion(composicion);
             return ResponseEntity.ok(Map.of("id", guardado.getId(), "nombre", guardado.getNombre(), "yaExistia", false));
+        } catch (DataIntegrityViolationException e) {
+            return ResponseEntity.status(400).body(Map.of("error",
+                    "Ya existe una composición con ese nombre. Puede que otro usuario la haya creado justo ahora — recarga e intenta de nuevo."));
         } catch (Exception e) {
             log.error("Error en crearComposicionRapido: {}", e.getMessage(), e);
             return ResponseEntity.status(500).body(Map.of("error", "Ocurrió un error interno. Intenta de nuevo o contacta al administrador."));
@@ -171,6 +183,9 @@ public class CatalogoController {
             acabado.setActivo(true);
             Acabado guardado = catalogoService.guardarAcabado(acabado);
             return ResponseEntity.ok(Map.of("id", guardado.getId(), "nombre", guardado.getNombre(), "yaExistia", false));
+        } catch (DataIntegrityViolationException e) {
+            return ResponseEntity.status(400).body(Map.of("error",
+                    "Ya existe un acabado con ese nombre. Puede que otro usuario lo haya creado justo ahora — recarga e intenta de nuevo."));
         } catch (Exception e) {
             log.error("Error en crearAcabadoRapido: {}", e.getMessage(), e);
             return ResponseEntity.status(500).body(Map.of("error", "Ocurrió un error interno. Intenta de nuevo o contacta al administrador."));
@@ -307,6 +322,8 @@ public class CatalogoController {
             ra.addFlashAttribute("mensaje", "Ubicación eliminada correctamente.");
         } catch (DataIntegrityViolationException e) {
             ra.addFlashAttribute("error", "No se puede eliminar: esta ubicación tiene stock o transferencias asociadas.");
+        } catch (IllegalStateException e) {
+            ra.addFlashAttribute("error", e.getMessage());
         }
         return "redirect:/catalogo/ubicaciones";
     }

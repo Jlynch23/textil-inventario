@@ -21,8 +21,8 @@ if [ ! -f "$ARCHIVO" ]; then
     exit 1
 fi
 
-if [ -z "${DB_PASSWORD:-}" ]; then
-    echo "ERROR: la variable DB_PASSWORD no esta definida." >&2
+if [ -z "${MYSQL_ROOT_PASSWORD:-}" ]; then
+    echo "ERROR: la variable MYSQL_ROOT_PASSWORD no esta definida." >&2
     exit 1
 fi
 
@@ -33,5 +33,6 @@ if [ "$CONFIRMACION" != "si" ]; then
 fi
 
 echo "Restaurando desde $ARCHIVO..."
-gunzip -c "$ARCHIVO" | docker exec -i "$CONTENEDOR" mysql -u root -p"$DB_PASSWORD" "$BASE_DATOS"
+# Password por MYSQL_PWD, no por -p"...", por la misma razon que en backup-db.sh.
+gunzip -c "$ARCHIVO" | docker exec -i -e MYSQL_PWD="$MYSQL_ROOT_PASSWORD" "$CONTENEDOR" mysql -u root "$BASE_DATOS"
 echo "Restauracion completada."

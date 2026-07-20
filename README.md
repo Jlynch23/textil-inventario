@@ -116,23 +116,26 @@ git clone https://github.com/Jlynch23/textil-inventario.git
 cd textil-inventario/inventario
 ```
 
-### 2. Levantar la base de datos
+### 2. Variables de entorno
+
+El proyecto **no guarda credenciales en el código**. Antes de levantar la base de datos, define:
+
+```bash
+export DB_USERNAME=textil_user
+export DB_PASSWORD=<contraseña del usuario de la app>
+export MYSQL_ROOT_PASSWORD=<contraseña de root de MySQL, DISTINTA de DB_PASSWORD>
+export ANTHROPIC_API_KEY=<tu API key de Anthropic>
+```
+
+`docker-compose.yml` usa `DB_PASSWORD` para el usuario `textil_user` y `MYSQL_ROOT_PASSWORD` para root — deben ser valores distintos, así una fuga de la credencial de la app no da acceso root a la base de datos.
+
+### 3. Levantar la base de datos
 
 ```bash
 docker compose up -d
 ```
 
 MySQL queda en el puerto `3307`, Adminer en el `8081`.
-
-### 3. Variables de entorno
-
-El proyecto **no guarda credenciales en el código**. Antes de arrancar, define:
-
-```bash
-export DB_USERNAME=textil_user
-export DB_PASSWORD=<tu contraseña de MySQL>
-export ANTHROPIC_API_KEY=<tu API key de Anthropic>
-```
 
 ### 4. Ejecutar
 
@@ -171,6 +174,7 @@ El proyecto usa variables de entorno para credenciales y configuración (nunca h
 ```bash
 DB_USERNAME=textil_user
 DB_PASSWORD=          # obligatoria, sin valor por defecto
+MYSQL_ROOT_PASSWORD=  # obligatoria, distinta de DB_PASSWORD -- solo para docker-compose y backups
 ANTHROPIC_API_KEY=    # para el OCR de guías/facturas
 DOCUMENTOS_PATH=./documentos
 MAX_UPLOAD_SIZE=25MB

@@ -189,5 +189,13 @@ public class CatalogoService {
     @org.springframework.security.access.prepost.PreAuthorize("hasRole('SUPERADMIN')")
     public void eliminarArticulo(Long id) { articuloRepository.deleteById(id); }
     @org.springframework.security.access.prepost.PreAuthorize("hasRole('SUPERADMIN')")
-    public void eliminarUbicacion(Long id) { ubicacionRepository.deleteById(id); }
+    public void eliminarUbicacion(Long id) {
+        Ubicacion u = ubicacionRepository.findById(id).orElseThrow();
+        if (Boolean.TRUE.equals(u.getEsPrincipal())) {
+            throw new IllegalStateException(
+                "No se puede eliminar \"" + u.getNombre() + "\": es la ubicación principal del sistema. " +
+                "Toda confirmación de recepción depende de que exista una ubicación marcada como principal.");
+        }
+        ubicacionRepository.deleteById(id);
+    }
 }

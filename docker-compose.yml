@@ -4,7 +4,9 @@ services:
     container_name: textil_mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      # Contraseña de root separada de la del usuario de la app: si se filtra
+      # la credencial de la app (DB_PASSWORD), no debe dar acceso root a MySQL.
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: textil_inventario
       MYSQL_USER: textil_user
       MYSQL_PASSWORD: ${DB_PASSWORD}

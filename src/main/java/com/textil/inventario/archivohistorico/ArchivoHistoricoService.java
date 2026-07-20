@@ -317,7 +317,14 @@ public class ArchivoHistoricoService {
             throw new IllegalStateException("No se registro que usuario subio este documento; no se puede crear la Recepcion.");
         }
         Usuario usuario = usuarioRepository.findById(usuarioId).orElseThrow();
-        var auth = new UsernamePasswordAuthenticationToken(usuario.getUsername(), null, java.util.List.of());
+        // Se replica el rol real del usuario (no una lista vacia de authorities):
+        // si algun dia se agrega un @PreAuthorize en la cadena que este hilo
+        // atraviesa (ej. RecepcionService), un usuario sin su rol real fallaria
+        // esa verificacion en silencio en vez de comportarse como en la peticion
+        // HTTP original donde si tenia el rol.
+        var authority = new org.springframework.security.core.authority.SimpleGrantedAuthority(
+                "ROLE_" + usuario.getRol().getNombre());
+        var auth = new UsernamePasswordAuthenticationToken(usuario.getUsername(), null, java.util.List.of(authority));
         SecurityContextHolder.getContext().setAuthentication(auth);
     }
 

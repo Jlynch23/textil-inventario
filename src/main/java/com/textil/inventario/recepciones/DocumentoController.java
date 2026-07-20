@@ -57,6 +57,9 @@ public class DocumentoController {
     public ResponseEntity<Resource> descargar(@PathVariable Long id) throws MalformedURLException {
         RecepcionDocumento doc = documentoRepository.findById(id).orElseThrow();
         Path ruta = Paths.get(doc.getRutaArchivo());
+        if (!Files.exists(ruta)) {
+            return ResponseEntity.notFound().build();
+        }
         Resource resource = new UrlResource(ruta.toUri());
 
         return ResponseEntity.ok()
@@ -69,6 +72,9 @@ public class DocumentoController {
     public ResponseEntity<Resource> ver(@PathVariable Long id) throws MalformedURLException {
         RecepcionDocumento doc = documentoRepository.findById(id).orElseThrow();
         Path ruta = Paths.get(doc.getRutaArchivo());
+        if (!Files.exists(ruta)) {
+            return ResponseEntity.notFound().build();
+        }
         Resource resource = new UrlResource(ruta.toUri());
 
         return ResponseEntity.ok()

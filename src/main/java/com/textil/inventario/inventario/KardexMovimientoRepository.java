@@ -9,6 +9,11 @@ public interface KardexMovimientoRepository extends JpaRepository<KardexMovimien
     List<KardexMovimiento> findAllByOrderByFechaDesc();
     List<KardexMovimiento> findByEmpresaIdOrderByFechaDesc(Long empresaId);
 
+    // El kardex crece sin limite (un registro por cada linea de recepcion y
+    // transferencia, para siempre). Sin filtro por articulo no tiene sentido
+    // cargar la tabla completa en memoria; se acota a los mas recientes.
+    List<KardexMovimiento> findTop500ByOrderByFechaDesc();
+
     Optional<KardexMovimiento> findFirstByTransferenciaIdAndArticuloIdAndTipoMovimiento(
             Long transferenciaId, Long articuloId, KardexMovimiento.TipoMovimiento tipoMovimiento);
 }

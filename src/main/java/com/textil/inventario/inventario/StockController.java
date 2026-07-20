@@ -79,7 +79,7 @@ public class StockController {
                     kardexMovimientoRepository.findByArticuloIdOrderByFechaDesc(articuloId));
         } else {
             model.addAttribute("articulo", null);
-            model.addAttribute("movimientos", kardexMovimientoRepository.findAllByOrderByFechaDesc());
+            model.addAttribute("movimientos", kardexMovimientoRepository.findTop500ByOrderByFechaDesc());
         }
         model.addAttribute("articulos", articuloRepository.findByActivoTrue());
         model.addAttribute("filtroArticuloId", articuloId);

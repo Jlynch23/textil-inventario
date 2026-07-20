@@ -31,6 +31,10 @@
 
     <a th:href="@{/inventario/stock}" class="btn btn-sm btn-secondary mb-3">&larr; Volver a Stock</a>
 
+    <p class="text-muted small" th:if="${filtroArticuloId == null}">
+        Mostrando los 500 movimientos más recientes de todos los artículos. Filtra por artículo arriba para ver su historial completo.
+    </p>
+
     <table class="table table-striped table-hover">
         <thead>
         <tr>

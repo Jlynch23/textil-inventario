@@ -58,6 +58,13 @@ public class SecurityConfig {
                         "/inventario/**", "/catalogo/**", "/programas/**",
                         "/documentos/**", "/recepciones/**", "/transferencias/**"
                 ).hasAnyRole("GERENTE", "SUPERADMIN")
+                // Descarga de documentos en zip: es solo lectura (igual que ver/descargar
+                // individual, ya permitido arriba a GERENTE), aunque tecnicamente sea POST
+                // porque manda una lista de ids en el body. Sin esta regla quedaria
+                // silenciosamente bloqueada para GERENTE por el anyRequest() de abajo.
+                .requestMatchers(org.springframework.http.HttpMethod.POST,
+                        "/documentos/descargar-zip"
+                ).hasAnyRole("GERENTE", "SUPERADMIN")
                 .anyRequest().hasRole("SUPERADMIN")
             )
             .formLogin(form -> form

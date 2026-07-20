@@ -4,7 +4,6 @@ import org.springframework.data.jpa.repository.Query;
 import java.util.List;
 import java.util.Optional;
 public interface StockActualRepository extends JpaRepository<StockActual, Long> {
-    Optional<StockActual> findByArticuloIdAndUbicacionId(Long articuloId, Long ubicacionId);
     Optional<StockActual> findByArticuloIdAndUbicacionIdAndColorId(Long articuloId, Long ubicacionId, Long colorId);
     List<StockActual> findByUbicacionId(Long ubicacionId);
     @Query("SELECT s FROM StockActual s WHERE s.rollos > 0 ORDER BY s.ubicacion.nombre, s.articulo.tipoTela.nombre")

@@ -1,5 +1,6 @@
 package com.textil.inventario.seguridad;
 
+import com.textil.inventario.auditoria.AuditLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -18,6 +19,7 @@ public class UsuarioController {
     private final UsuarioRepository usuarioRepository;
     private final RolRepository rolRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AuditLogService auditLogService;
 
     @GetMapping
     public String listar(Model model) {
@@ -57,7 +59,9 @@ public class UsuarioController {
         u.setPasswordHash(passwordEncoder.encode(password));
         u.setRol(rolRepository.findById(rolId).orElseThrow());
         u.setActivo(true);
-        usuarioRepository.save(u);
+        Usuario guardado = usuarioRepository.save(u);
+        auditLogService.registrar("CREAR", "Usuario", guardado.getId(),
+                "Creo el usuario " + guardado.getUsername() + " con rol " + guardado.getRol().getNombre());
 
         ra.addFlashAttribute("mensaje", "Usuario creado correctamente.");
         return "redirect:/usuarios";
@@ -80,6 +84,8 @@ public class UsuarioController {
         Usuario u = usuarioRepository.findById(id).orElseThrow();
         u.setPasswordHash(passwordEncoder.encode(password));
         usuarioRepository.save(u);
+        auditLogService.registrar("RESETEAR_PASSWORD", "Usuario", u.getId(),
+                "Reseteo la contraseña de " + u.getUsername());
 
         ra.addFlashAttribute("mensaje", "Contraseña de " + u.getNombre() + " actualizada correctamente.");
         return "redirect:/usuarios";
@@ -91,6 +97,7 @@ public class UsuarioController {
         Usuario u = usuarioRepository.findById(id).orElseThrow();
         u.setActivo(false);
         usuarioRepository.save(u);
+        auditLogService.registrar("INACTIVAR", "Usuario", u.getId(), "Inactivo el usuario " + u.getUsername());
         ra.addFlashAttribute("mensaje", "Usuario inactivado.");
         return "redirect:/usuarios";
     }
@@ -101,6 +108,7 @@ public class UsuarioController {
         Usuario u = usuarioRepository.findById(id).orElseThrow();
         u.setActivo(true);
         usuarioRepository.save(u);
+        auditLogService.registrar("REACTIVAR", "Usuario", u.getId(), "Reactivo el usuario " + u.getUsername());
         ra.addFlashAttribute("mensaje", "Usuario reactivado.");
         return "redirect:/usuarios";
     }
@@ -130,6 +138,7 @@ public class UsuarioController {
 
         try {
             usuarioRepository.deleteById(id);
+            auditLogService.registrar("ELIMINAR", "Usuario", id, "Elimino el usuario " + u.getUsername());
             ra.addFlashAttribute("mensaje", "Usuario eliminado correctamente.");
         } catch (DataIntegrityViolationException e) {
             ra.addFlashAttribute("error",

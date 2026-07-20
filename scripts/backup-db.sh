@@ -5,11 +5,11 @@
 #   ./scripts/backup-db.sh
 #
 # Uso automatico (cron diario a las 2am, ejemplo -- ajustar la ruta):
-#   0 2 * * * cd /home/textil_laura/textil-inventario && DB_PASSWORD=xxx ./scripts/backup-db.sh >> ~/backups/textil-inventario/backup.log 2>&1
+#   0 2 * * * cd /home/textil_laura/textil-inventario && MYSQL_ROOT_PASSWORD=xxx ./scripts/backup-db.sh >> ~/backups/textil-inventario/backup.log 2>&1
 #
-# Requiere que DB_PASSWORD este definida en el entorno (ya vive en ~/.bashrc
-# en las maquinas de desarrollo; en cron hay que pasarla explicitamente
-# porque cron no carga ~/.bashrc por defecto).
+# Requiere que MYSQL_ROOT_PASSWORD este definida en el entorno (ya vive en
+# ~/.bashrc en las maquinas de desarrollo; en cron hay que pasarla
+# explicitamente porque cron no carga ~/.bashrc por defecto).
 set -euo pipefail
 
 CONTENEDOR="textil_mysql"
@@ -19,8 +19,8 @@ RETENCION_DIAS=30
 
 mkdir -p "$CARPETA_BACKUPS"
 
-if [ -z "${DB_PASSWORD:-}" ]; then
-    echo "ERROR: la variable DB_PASSWORD no esta definida." >&2
+if [ -z "${MYSQL_ROOT_PASSWORD:-}" ]; then
+    echo "ERROR: la variable MYSQL_ROOT_PASSWORD no esta definida." >&2
     exit 1
 fi
 
@@ -28,7 +28,10 @@ FECHA=$(date +%Y-%m-%d_%H%M%S)
 ARCHIVO="${CARPETA_BACKUPS}/textil_inventario_${FECHA}.sql.gz"
 
 echo "Generando backup: $ARCHIVO"
-docker exec "$CONTENEDOR" mysqldump -u root -p"$DB_PASSWORD" \
+# La password se pasa por MYSQL_PWD (variable de entorno dentro del
+# contenedor), no como argumento -p"...", para que no quede visible en la
+# lista de procesos (ps aux / /proc/<pid>/cmdline) mientras corre mysqldump.
+docker exec -e MYSQL_PWD="$MYSQL_ROOT_PASSWORD" "$CONTENEDOR" mysqldump -u root \
     --single-transaction --routines --triggers "$BASE_DATOS" | gzip > "$ARCHIVO"
 
 echo "Backup completado: $(du -h "$ARCHIVO" | cut -f1)"
