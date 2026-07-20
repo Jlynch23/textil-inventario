@@ -1,0 +1,49 @@
+# Override de produccion: se usa JUNTO con docker-compose.yml (que ya trae
+# mysql + adminer), agregando la app y el reverse proxy.
+#
+# Uso:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+# docker-compose.yml se deja intacto para que el flujo de desarrollo local
+# (solo levantar mysql + adminer y correr la app con "mvn spring-boot:run")
+# siga funcionando exactamente igual que antes.
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: textil_app
+    restart: unless-stopped
+    environment:
+      # DB_URL apunta al hostname del servicio "mysql" dentro de la red
+      # interna de Docker (puerto 3306), NO a localhost:3307 -- ese puerto
+      # mapeado solo es alcanzable desde el host, no entre contenedores.
+      DB_URL: jdbc:mysql://mysql:3306/textil_inventario?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Lima
+      DB_USERNAME: textil_user
+      DB_PASSWORD: ${DB_PASSWORD}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      DOCUMENTOS_PATH: /app/documentos
+      MAX_UPLOAD_SIZE: ${MAX_UPLOAD_SIZE:-25MB}
+      SPRING_PROFILES_ACTIVE: prod
+    volumes:
+      # Bind mount (no volumen nombrado) para que los PDFs queden en una
+      # carpeta real del servidor, facil de incluir en un backup con
+      # rsync/tar junto con scripts/backup-db.sh.
+      - ./documentos:/app/documentos
+    depends_on:
+      mysql:
+        condition: service_healthy
+    # Sin "ports": la app no se expone directo al host, solo nginx le llega
+    # via la red interna de Docker (servicio "app", puerto 8080).
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: textil_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - app

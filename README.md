@@ -158,6 +158,7 @@ Las migraciones de Flyway se aplican automáticamente. Disponible en `http://loc
 - ✅ Reportes exportables a Excel
 - ✅ Archivo histórico de documentos con enriquecimiento de catálogo
 - ✅ Auditoría y gestión de usuarios
+- ✅ Despliegue en producción (VPS) — ver [`DEPLOY.md`](DEPLOY.md)
 
 ### Próximas versiones
 
@@ -165,7 +166,7 @@ Las migraciones de Flyway se aplican automáticamente. Disponible en `http://loc
 - 🚧 Módulo de Créditos
 - 🚧 Códigos de barras / QR para trazabilidad individual por rollo
 - 🚧 API REST
-- 🚧 Despliegue en producción (VPS)
+- 🚧 HTTPS con dominio propio (pasos ya documentados en `DEPLOY.md`, falta el dominio)
 
 ## 🔐 Variables de entorno
 
