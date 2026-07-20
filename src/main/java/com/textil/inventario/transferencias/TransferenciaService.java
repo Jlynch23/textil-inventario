@@ -71,12 +71,12 @@ public class TransferenciaService {
     }
 
     @Transactional
-    public void confirmarSalida(Long transferenciaId, List<Integer> cantidadesConfirmadas, List<String> observaciones) {
+    public void confirmarSalida(Long transferenciaId, List<Long> detalleIds,
+                                 List<Integer> cantidadesConfirmadas, List<String> observaciones) {
         Transferencia t = transferenciaRepository.findById(transferenciaId).orElseThrow();
-        List<TransferenciaDetalle> detalles = detalleRepository.findByTransferenciaId(transferenciaId);
 
-        for (int i = 0; i < detalles.size(); i++) {
-            TransferenciaDetalle d = detalles.get(i);
+        for (int i = 0; i < detalleIds.size(); i++) {
+            TransferenciaDetalle d = detalleRepository.findById(detalleIds.get(i)).orElseThrow();
             Integer cantidad = i < cantidadesConfirmadas.size() ? cantidadesConfirmadas.get(i) : d.getCantidadSolicitada();
             d.setCantidadConfirmadaSalida(cantidad);
             d.setObservaciones(i < observaciones.size() ? observaciones.get(i) : d.getObservaciones());

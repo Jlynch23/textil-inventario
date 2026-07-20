@@ -41,7 +41,7 @@ public class ExcelExportService {
                     } else if (valor instanceof Number n) {
                         celda.setCellValue(n.doubleValue());
                     } else {
-                        celda.setCellValue(valor.toString());
+                        celda.setCellValue(sanitizarCeldaTexto(valor.toString()));
                     }
                 }
             }
@@ -54,5 +54,21 @@ public class ExcelExportService {
             workbook.write(out);
             return out.toByteArray();
         }
+    }
+
+    private static final java.util.Set<Character> CARACTERES_FORMULA = java.util.Set.of('=', '+', '-', '@', '\t', '\r');
+
+    /**
+     * Neutraliza inyección de fórmulas (CWE-1236): varios strings exportados
+     * (numeroGuia, numeroFactura, razonSocialDetectada) provienen del OCR de
+     * PDFs de terceros, no de datos tecleados internamente. Si el valor
+     * empieza con un caracter que Excel interpreta como inicio de fórmula, se
+     * le antepone un apóstrofe para forzar que se trate como texto literal.
+     */
+    private String sanitizarCeldaTexto(String valor) {
+        if (valor.isEmpty() || !CARACTERES_FORMULA.contains(valor.charAt(0))) {
+            return valor;
+        }
+        return "'" + valor;
     }
 }
