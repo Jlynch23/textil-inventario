@@ -80,10 +80,11 @@ public class TransferenciaController {
 
     @PostMapping("/{id}/confirmar-salida")
     public String confirmarSalida(@PathVariable Long id,
+                                   @RequestParam(value = "detalleIds") java.util.List<Long> detalleIds,
                                    @RequestParam(value = "cantidades") java.util.List<Integer> cantidades,
                                    @RequestParam(value = "observacionesDetalle") java.util.List<String> observacionesDetalle,
                                    RedirectAttributes ra) {
-        transferenciaService.confirmarSalida(id, cantidades, observacionesDetalle);
+        transferenciaService.confirmarSalida(id, detalleIds, cantidades, observacionesDetalle);
         ra.addFlashAttribute("mensaje", "Salida confirmada. Stock descontado de Praderas.");
         return "redirect:/transferencias";
     }

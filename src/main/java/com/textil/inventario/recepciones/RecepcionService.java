@@ -229,10 +229,8 @@ public class RecepcionService {
 
         Ubicacion praderas = ubicacionRepository.findByEsPrincipalTrue().orElseThrow();
 
-        List<RecepcionDetalle> detalles = detalleRepository.findByRecepcionId(recepcionId);
-
-        for (int i = 0; i < detalles.size(); i++) {
-            RecepcionDetalle d = detalles.get(i);
+        for (int i = 0; i < detalleIds.size(); i++) {
+            RecepcionDetalle d = detalleRepository.findById(detalleIds.get(i)).orElseThrow();
             d.setRollosRecibidos(i < rollosRecibidos.size() ? rollosRecibidos.get(i) : d.getRollosGuia());
             d.setObservacion(i < observaciones.size() ? observaciones.get(i) : "");
             detalleRepository.save(d);

@@ -38,6 +38,7 @@
                         </thead>
                         <tbody>
                             <tr th:each="d : ${transferencia.detalles}">
+                                <input type="hidden" name="detalleIds" th:value="${d.id}">
                                 <td th:text="${d.articulo.tipoTela.nombre + ' ' + d.articulo.titulo.valor + ' / ' + d.articulo.composicion.nombre + (d.articulo.acabado.nombre != 'LISO' ? ' · ' + d.articulo.acabado.nombre : '') + ' / ' + d.color.nombreMostrar}"></td>
                                 <td th:text="${d.cantidadSolicitada}"></td>
                                 <td>
