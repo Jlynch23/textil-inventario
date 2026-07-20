@@ -3,7 +3,7 @@ spring:
     name: textil-inventario
 
   datasource:
-    url: jdbc:mysql://localhost:3307/textil_inventario?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Lima
+    url: ${DB_URL:jdbc:mysql://localhost:3307/textil_inventario?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Lima}
     username: ${DB_USERNAME:textil_user}
     password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
