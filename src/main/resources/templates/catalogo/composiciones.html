@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/base :: layout(~{::title/text()}, ~{::section})}">
+<head><title>Composiciones</title></head>
+<body>
+<section>
+    <div th:if="${mensaje}" class="alert alert-success alert-dismissible fade show">
+        <span th:text="${mensaje}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show">
+        <span th:text="${error}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <div class="row g-4">
+        <!-- FORMULARIO -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold mb-3"
+                        th:text="${composicion.id != null} ? 'Editar Composición' : 'Nueva Composición'">Nueva Composición</h6>
+                    <form th:action="@{/catalogo/composiciones/guardar}" th:object="${composicion}" method="post">
+                        <input type="hidden" th:field="*{id}">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Nombre</label>
+                            <input type="text" class="form-control" th:field="*{nombre}"
+                                   placeholder="Ej: MELANGE 10%" required>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Descripción</label>
+                            <input type="text" class="form-control" th:field="*{descripcion}" placeholder="Opcional">
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-save me-2"></i>Guardar
+                        </button>
+                        <a th:href="@{/catalogo/composiciones}" class="btn btn-light w-100 mt-2">Cancelar</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- TABLA -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body p-0">
+                    <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                        <span class="fw-bold">Composiciones Registradas</span>
+                        <span class="badge bg-secondary" th:text="${composiciones.size()} + ' composiciones'"></span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Descripción</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="c : ${composiciones}">
+                                    <td th:text="${c.nombre}"></td>
+                                    <td th:text="${c.descripcion}"></td>
+                                    <td>
+                                        <a th:href="@{/catalogo/composiciones/editar/{id}(id=${c.id})}"
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <form th:action="@{/catalogo/composiciones/inactivar/{id}(id=${c.id})}" method="post" style="display:inline">
+                                            <button type="submit" class="btn btn-sm btn-outline-warning" title="Inactivar (reversible)"
+                                                    onclick="return confirm('¿Inactivar esta composición?')">
+                                                <i class="bi bi-eye-slash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+</body>
+</html>

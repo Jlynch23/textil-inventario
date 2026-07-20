@@ -91,6 +91,181 @@ public class CatalogoController {
         }
     }
 
+    // ─── TIPOS DE TELA ───────────────────────────────────────
+    @GetMapping("/tipos-tela")
+    public String listarTiposTela(Model model) {
+        model.addAttribute("tiposTela", catalogoService.listarTiposTela());
+        model.addAttribute("tipoTela", new TipoTela());
+        return "catalogo/tipos-tela";
+    }
+
+    @PostMapping("/tipos-tela/guardar")
+    public String guardarTipoTela(@ModelAttribute TipoTela tipoTela, RedirectAttributes ra) {
+        try {
+            catalogoService.guardarTipoTela(tipoTela);
+            ra.addFlashAttribute("mensaje", "Tipo de tela guardado correctamente.");
+        } catch (DataIntegrityViolationException e) {
+            ra.addFlashAttribute("error", "Ya existe un tipo de tela con ese nombre.");
+        }
+        return "redirect:/catalogo/tipos-tela";
+    }
+
+    @GetMapping("/tipos-tela/editar/{id}")
+    public String editarTipoTela(@PathVariable Long id, Model model) {
+        model.addAttribute("tiposTela", catalogoService.listarTiposTela());
+        model.addAttribute("tipoTela", catalogoService.buscarTipoTela(id));
+        return "catalogo/tipos-tela";
+    }
+
+    @PostMapping("/tipos-tela/inactivar/{id}")
+    public String inactivarTipoTela(@PathVariable Long id, RedirectAttributes ra) {
+        TipoTela t = catalogoService.buscarTipoTela(id);
+        t.setActivo(false);
+        catalogoService.guardarTipoTela(t);
+        ra.addFlashAttribute("mensaje", "Tipo de tela inactivado.");
+        return "redirect:/catalogo/tipos-tela";
+    }
+
+    // ─── TITULOS ─────────────────────────────────────────────
+    @GetMapping("/titulos")
+    public String listarTitulos(Model model) {
+        model.addAttribute("titulos", catalogoService.listarTitulos());
+        model.addAttribute("titulo", new Titulo());
+        return "catalogo/titulos";
+    }
+
+    @PostMapping("/titulos/guardar")
+    public String guardarTituloForm(@ModelAttribute Titulo titulo, RedirectAttributes ra) {
+        try {
+            catalogoService.guardarTitulo(titulo);
+            ra.addFlashAttribute("mensaje", "Título guardado correctamente.");
+        } catch (DataIntegrityViolationException e) {
+            ra.addFlashAttribute("error", "Ya existe un título con ese valor.");
+        }
+        return "redirect:/catalogo/titulos";
+    }
+
+    @GetMapping("/titulos/editar/{id}")
+    public String editarTitulo(@PathVariable Long id, Model model) {
+        model.addAttribute("titulos", catalogoService.listarTitulos());
+        model.addAttribute("titulo", catalogoService.buscarTitulo(id));
+        return "catalogo/titulos";
+    }
+
+    @PostMapping("/titulos/inactivar/{id}")
+    public String inactivarTitulo(@PathVariable Long id, RedirectAttributes ra) {
+        Titulo t = catalogoService.buscarTitulo(id);
+        t.setActivo(false);
+        catalogoService.guardarTitulo(t);
+        ra.addFlashAttribute("mensaje", "Título inactivado.");
+        return "redirect:/catalogo/titulos";
+    }
+
+    // ─── COMPOSICIONES ───────────────────────────────────────
+    @GetMapping("/composiciones")
+    public String listarComposiciones(Model model) {
+        model.addAttribute("composiciones", catalogoService.listarComposiciones());
+        model.addAttribute("composicion", new Composicion());
+        return "catalogo/composiciones";
+    }
+
+    @PostMapping("/composiciones/guardar")
+    public String guardarComposicionForm(@ModelAttribute Composicion composicion, RedirectAttributes ra) {
+        try {
+            catalogoService.guardarComposicion(composicion);
+            ra.addFlashAttribute("mensaje", "Composición guardada correctamente.");
+        } catch (DataIntegrityViolationException e) {
+            ra.addFlashAttribute("error", "Ya existe una composición con ese nombre.");
+        }
+        return "redirect:/catalogo/composiciones";
+    }
+
+    @GetMapping("/composiciones/editar/{id}")
+    public String editarComposicion(@PathVariable Long id, Model model) {
+        model.addAttribute("composiciones", catalogoService.listarComposiciones());
+        model.addAttribute("composicion", catalogoService.buscarComposicion(id));
+        return "catalogo/composiciones";
+    }
+
+    @PostMapping("/composiciones/inactivar/{id}")
+    public String inactivarComposicion(@PathVariable Long id, RedirectAttributes ra) {
+        Composicion c = catalogoService.buscarComposicion(id);
+        c.setActivo(false);
+        catalogoService.guardarComposicion(c);
+        ra.addFlashAttribute("mensaje", "Composición inactivada.");
+        return "redirect:/catalogo/composiciones";
+    }
+
+    // ─── ACABADOS ────────────────────────────────────────────
+    @GetMapping("/acabados")
+    public String listarAcabados(Model model) {
+        model.addAttribute("acabados", catalogoService.listarAcabados());
+        model.addAttribute("acabado", new Acabado());
+        return "catalogo/acabados";
+    }
+
+    @PostMapping("/acabados/guardar")
+    public String guardarAcabadoForm(@ModelAttribute Acabado acabado, RedirectAttributes ra) {
+        try {
+            catalogoService.guardarAcabado(acabado);
+            ra.addFlashAttribute("mensaje", "Acabado guardado correctamente.");
+        } catch (DataIntegrityViolationException e) {
+            ra.addFlashAttribute("error", "Ya existe un acabado con ese nombre.");
+        }
+        return "redirect:/catalogo/acabados";
+    }
+
+    @GetMapping("/acabados/editar/{id}")
+    public String editarAcabado(@PathVariable Long id, Model model) {
+        model.addAttribute("acabados", catalogoService.listarAcabados());
+        model.addAttribute("acabado", catalogoService.buscarAcabado(id));
+        return "catalogo/acabados";
+    }
+
+    @PostMapping("/acabados/inactivar/{id}")
+    public String inactivarAcabado(@PathVariable Long id, RedirectAttributes ra) {
+        Acabado a = catalogoService.buscarAcabado(id);
+        a.setActivo(false);
+        catalogoService.guardarAcabado(a);
+        ra.addFlashAttribute("mensaje", "Acabado inactivado.");
+        return "redirect:/catalogo/acabados";
+    }
+
+    // ─── EMPRESAS ────────────────────────────────────────────
+    @GetMapping("/empresas")
+    public String listarEmpresas(Model model) {
+        model.addAttribute("empresas", catalogoService.listarEmpresas());
+        model.addAttribute("empresa", new Empresa());
+        return "catalogo/empresas";
+    }
+
+    @PostMapping("/empresas/guardar")
+    public String guardarEmpresaForm(@ModelAttribute Empresa empresa, RedirectAttributes ra) {
+        try {
+            catalogoService.guardarEmpresa(empresa);
+            ra.addFlashAttribute("mensaje", "Empresa guardada correctamente.");
+        } catch (DataIntegrityViolationException e) {
+            ra.addFlashAttribute("error", "Ya existe una empresa con ese RUC.");
+        }
+        return "redirect:/catalogo/empresas";
+    }
+
+    @GetMapping("/empresas/editar/{id}")
+    public String editarEmpresa(@PathVariable Long id, Model model) {
+        model.addAttribute("empresas", catalogoService.listarEmpresas());
+        model.addAttribute("empresa", catalogoService.buscarEmpresa(id));
+        return "catalogo/empresas";
+    }
+
+    @PostMapping("/empresas/inactivar/{id}")
+    public String inactivarEmpresa(@PathVariable Long id, RedirectAttributes ra) {
+        Empresa e = catalogoService.buscarEmpresa(id);
+        e.setActivo(false);
+        catalogoService.guardarEmpresa(e);
+        ra.addFlashAttribute("mensaje", "Empresa inactivada.");
+        return "redirect:/catalogo/empresas";
+    }
+
     // ─── TIPOS DE TELA / TITULOS (creacion rapida) ──────────
     @PostMapping("/tipos-tela/crear-rapido")
     @ResponseBody

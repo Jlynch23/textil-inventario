@@ -29,6 +29,7 @@ public class CatalogoService {
     public List<Empresa> listarEmpresas() { return empresaRepository.findByActivoTrue(); }
     public Empresa guardarEmpresa(Empresa e) {
         e.setNombre(normalizar(e.getNombre()));
+        e.setRuc(normalizar(e.getRuc()));
         return empresaRepository.save(e);
     }
     public Empresa buscarEmpresa(Long id) { return empresaRepository.findById(id).orElseThrow(); }
@@ -47,6 +48,7 @@ public class CatalogoService {
         t.setNombre(normalizar(t.getNombre()));
         return tipoTelaRepository.save(t);
     }
+    public TipoTela buscarTipoTela(Long id) { return tipoTelaRepository.findById(id).orElseThrow(); }
 
     // TÍTULOS
     public List<Titulo> listarTitulos() { return tituloRepository.findByActivoTrue(); }
@@ -54,6 +56,7 @@ public class CatalogoService {
         t.setValor(normalizar(t.getValor()));
         return tituloRepository.save(t);
     }
+    public Titulo buscarTitulo(Long id) { return tituloRepository.findById(id).orElseThrow(); }
 
     // COMPOSICIONES
     public List<Composicion> listarComposiciones() { return composicionRepository.findByActivoTrue(); }
@@ -61,6 +64,7 @@ public class CatalogoService {
         c.setNombre(normalizar(c.getNombre()));
         return composicionRepository.save(c);
     }
+    public Composicion buscarComposicion(Long id) { return composicionRepository.findById(id).orElseThrow(); }
 
     // ACABADOS
     public List<Acabado> listarAcabados() { return acabadoRepository.findByActivoTrue(); }
@@ -68,6 +72,7 @@ public class CatalogoService {
         a.setNombre(normalizar(a.getNombre()));
         return acabadoRepository.save(a);
     }
+    public Acabado buscarAcabado(Long id) { return acabadoRepository.findById(id).orElseThrow(); }
 
     // COLORES
     public List<Color> listarColores() { return colorRepository.findByActivoTrueOrderByNombreOficialAsc(); }

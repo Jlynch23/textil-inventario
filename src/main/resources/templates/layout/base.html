@@ -132,6 +132,11 @@
             <a th:href="@{/catalogo/colores}" class="nav-link"><i class="bi bi-palette me-2"></i>Colores</a>
             <a th:href="@{/catalogo/articulos}" class="nav-link"><i class="bi bi-tags me-2"></i>Artículos</a>
             <a th:href="@{/catalogo/ubicaciones}" sec:authorize="hasRole('SUPERADMIN')" class="nav-link"><i class="bi bi-geo-alt me-2"></i>Ubicaciones</a>
+            <a th:href="@{/catalogo/empresas}" sec:authorize="hasRole('SUPERADMIN')" class="nav-link"><i class="bi bi-building me-2"></i>Empresas</a>
+            <a th:href="@{/catalogo/tipos-tela}" sec:authorize="hasRole('SUPERADMIN')" class="nav-link"><i class="bi bi-grid-3x3 me-2"></i>Tipos de Tela</a>
+            <a th:href="@{/catalogo/titulos}" sec:authorize="hasRole('SUPERADMIN')" class="nav-link"><i class="bi bi-123 me-2"></i>Títulos</a>
+            <a th:href="@{/catalogo/composiciones}" sec:authorize="hasRole('SUPERADMIN')" class="nav-link"><i class="bi bi-droplet me-2"></i>Composiciones</a>
+            <a th:href="@{/catalogo/acabados}" sec:authorize="hasRole('SUPERADMIN')" class="nav-link"><i class="bi bi-brush me-2"></i>Acabados</a>
         </nav>
         <div class="logout-box">
             <a th:href="@{/logout}" class="nav-link text-center"><i class="bi bi-box-arrow-left me-2"></i>Cerrar Sesión</a>

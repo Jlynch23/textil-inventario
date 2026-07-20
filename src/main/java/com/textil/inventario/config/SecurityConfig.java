@@ -47,7 +47,9 @@ public class SecurityConfig {
                         "/recepciones/nueva", "/recepciones/facturar", "/recepciones/*/confirmar",
                         "/programas/nuevo", "/programas/*/editar",
                         "/transferencias/nueva", "/transferencias/*/confirmar-salida", "/transferencias/*/confirmar-llegada",
-                        "/catalogo/ubicaciones"
+                        "/catalogo/ubicaciones",
+                        "/catalogo/empresas", "/catalogo/tipos-tela", "/catalogo/titulos",
+                        "/catalogo/composiciones", "/catalogo/acabados"
                 ).hasRole("SUPERADMIN")
                 // NUNCA se le da acceso a /log/** ni /reportes/** (ni siquiera de
                 // lectura), y cualquier accion de escritura (POST/PUT/DELETE) a

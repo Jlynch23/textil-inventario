@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/base :: layout(~{::title/text()}, ~{::section})}">
+<head><title>Tipos de Tela</title></head>
+<body>
+<section>
+    <div th:if="${mensaje}" class="alert alert-success alert-dismissible fade show">
+        <span th:text="${mensaje}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show">
+        <span th:text="${error}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <div class="row g-4">
+        <!-- FORMULARIO -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold mb-3"
+                        th:text="${tipoTela.id != null} ? 'Editar Tipo de Tela' : 'Nuevo Tipo de Tela'">Nuevo Tipo de Tela</h6>
+                    <form th:action="@{/catalogo/tipos-tela/guardar}" th:object="${tipoTela}" method="post">
+                        <input type="hidden" th:field="*{id}">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Nombre</label>
+                            <input type="text" class="form-control" th:field="*{nombre}"
+                                   placeholder="Ej: RIB 2X1" required>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Descripción</label>
+                            <input type="text" class="form-control" th:field="*{descripcion}" placeholder="Opcional">
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-save me-2"></i>Guardar
+                        </button>
+                        <a th:href="@{/catalogo/tipos-tela}" class="btn btn-light w-100 mt-2">Cancelar</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- TABLA -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body p-0">
+                    <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                        <span class="fw-bold">Tipos de Tela Registrados</span>
+                        <span class="badge bg-secondary" th:text="${tiposTela.size()} + ' tipos'"></span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Descripción</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="t : ${tiposTela}">
+                                    <td th:text="${t.nombre}"></td>
+                                    <td th:text="${t.descripcion}"></td>
+                                    <td>
+                                        <a th:href="@{/catalogo/tipos-tela/editar/{id}(id=${t.id})}"
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <form th:action="@{/catalogo/tipos-tela/inactivar/{id}(id=${t.id})}" method="post" style="display:inline">
+                                            <button type="submit" class="btn btn-sm btn-outline-warning" title="Inactivar (reversible)"
+                                                    onclick="return confirm('¿Inactivar este tipo de tela?')">
+                                                <i class="bi bi-eye-slash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+</body>
+</html>
