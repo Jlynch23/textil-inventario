@@ -150,7 +150,7 @@ class RecepcionServiceTest {
 
         when(recepcionRepository.findById(1L)).thenReturn(Optional.of(recepcion));
         when(ubicacionRepository.findByEsPrincipalTrue()).thenReturn(Optional.of(praderas));
-        when(detalleRepository.findByRecepcionId(1L)).thenReturn(List.of(detalle));
+        when(detalleRepository.findById(100L)).thenReturn(Optional.of(detalle));
         when(stockActualRepository.findByArticuloIdAndUbicacionIdAndColorId(10L, 1L, 20L)).thenReturn(Optional.empty());
 
         service.confirmarRecepcion(1L, List.of(100L), List.of(14), List.of(""));
@@ -187,7 +187,7 @@ class RecepcionServiceTest {
 
         when(recepcionRepository.findById(1L)).thenReturn(Optional.of(recepcion));
         when(ubicacionRepository.findByEsPrincipalTrue()).thenReturn(Optional.of(praderas));
-        when(detalleRepository.findByRecepcionId(1L)).thenReturn(List.of(detalle));
+        when(detalleRepository.findById(100L)).thenReturn(Optional.of(detalle));
         when(stockActualRepository.findByArticuloIdAndUbicacionIdAndColorId(10L, 1L, 20L)).thenReturn(Optional.empty());
 
         service.confirmarRecepcion(1L, List.of(100L), List.of(13), List.of("Falto 1 rollo"));
@@ -217,7 +217,7 @@ class RecepcionServiceTest {
 
         when(recepcionRepository.findById(1L)).thenReturn(Optional.of(recepcion));
         when(ubicacionRepository.findByEsPrincipalTrue()).thenReturn(Optional.of(praderas));
-        when(detalleRepository.findByRecepcionId(1L)).thenReturn(List.of(detalle));
+        when(detalleRepository.findById(100L)).thenReturn(Optional.of(detalle));
         when(stockActualRepository.findByArticuloIdAndUbicacionIdAndColorId(10L, 1L, 20L)).thenReturn(Optional.empty());
 
         assertThatCode(() ->
