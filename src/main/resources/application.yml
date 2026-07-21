@@ -55,6 +55,9 @@ anthropic:
 
 documentos:
   ruta-base: ${DOCUMENTOS_PATH:./documentos}
+
+app:
+  nombre-empresa: ${NOMBRE_EMPRESA:Laura & Clemente}
 ---
 spring:
   config:

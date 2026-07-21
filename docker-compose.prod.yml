@@ -25,6 +25,7 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       DOCUMENTOS_PATH: /app/documentos
       MAX_UPLOAD_SIZE: ${MAX_UPLOAD_SIZE:-25MB}
+      NOMBRE_EMPRESA: ${NOMBRE_EMPRESA:-Laura & Clemente}
       SPRING_PROFILES_ACTIVE: prod
     volumes:
       # Bind mount (no volumen nombrado) para que los PDFs queden en una

@@ -3,6 +3,7 @@ package com.textil.inventario.config;
 import com.textil.inventario.seguridad.Usuario;
 import com.textil.inventario.seguridad.UsuarioActualService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
 
@@ -21,6 +22,14 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 public class GlobalModelAttributes {
 
     private final UsuarioActualService usuarioActualService;
+
+    // Subtitulo del sidebar (bajo el logo TEXCONTROL). TEXCONTROL es el
+    // nombre del producto y queda fijo; esto es el nombre del NEGOCIO que
+    // lo usa, que cambia por cada cliente/instalacion -- se configura por
+    // variable de entorno (NOMBRE_EMPRESA) en vez de quedar hardcodeado,
+    // para poder desplegar el mismo codigo a un cliente nuevo sin fork.
+    @Value("${app.nombre-empresa:Laura & Clemente}")
+    private String nombreEmpresa;
 
     @ModelAttribute("nombreUsuarioActual")
     public String nombreUsuarioActual() {
@@ -53,5 +62,10 @@ public class GlobalModelAttributes {
         Usuario usuario = usuarioActualService.obtenerUsuarioActualOrNull();
         return usuario != null && usuario.getRol() != null
                 && "SUPERADMIN".equalsIgnoreCase(usuario.getRol().getNombre());
+    }
+
+    @ModelAttribute("nombreEmpresa")
+    public String nombreEmpresa() {
+        return nombreEmpresa;
     }
 }
