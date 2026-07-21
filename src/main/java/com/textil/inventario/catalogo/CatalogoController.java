@@ -130,14 +130,19 @@ public class CatalogoController {
     @GetMapping("/titulos")
     public String listarTitulos(Model model) {
         model.addAttribute("titulos", catalogoService.listarTitulos());
-        model.addAttribute("titulo", new Titulo());
+        // Nombre "tituloForm" (no "titulo") a proposito: el fragmento del layout
+        // (layout/base.html) declara un parametro llamado "titulo" para el texto
+        // de la pestana del navegador -- si el atributo del modelo se llamara
+        // igual, ese parametro lo tapa y Thymeleaf falla al resolver "titulo.id"
+        // dentro de esta pantalla (EL1008E: Fragment has no field 'id').
+        model.addAttribute("tituloForm", new Titulo());
         return "catalogo/titulos";
     }
 
     @PostMapping("/titulos/guardar")
-    public String guardarTituloForm(@ModelAttribute Titulo titulo, RedirectAttributes ra) {
+    public String guardarTituloForm(@ModelAttribute("tituloForm") Titulo tituloForm, RedirectAttributes ra) {
         try {
-            catalogoService.guardarTitulo(titulo);
+            catalogoService.guardarTitulo(tituloForm);
             ra.addFlashAttribute("mensaje", "Título guardado correctamente.");
         } catch (DataIntegrityViolationException e) {
             ra.addFlashAttribute("error", "Ya existe un título con ese valor.");
@@ -148,7 +153,7 @@ public class CatalogoController {
     @GetMapping("/titulos/editar/{id}")
     public String editarTitulo(@PathVariable Long id, Model model) {
         model.addAttribute("titulos", catalogoService.listarTitulos());
-        model.addAttribute("titulo", catalogoService.buscarTitulo(id));
+        model.addAttribute("tituloForm", catalogoService.buscarTitulo(id));
         return "catalogo/titulos";
     }
 

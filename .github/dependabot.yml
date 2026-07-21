@@ -1,0 +1,27 @@
+version: 2
+updates:
+  # Dependencias de Maven (pom.xml) -- abre PRs automaticos cuando una
+  # libreria tiene una version con vulnerabilidad conocida (o simplemente
+  # una actualizacion disponible). No modifica el pipeline de CI: cada PR
+  # que abra pasa por el mismo workflow de siempre (mvn compile + test)
+  # antes de poder mergearse.
+  - package-ecosystem: "maven"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+
+  # Imagenes base del Dockerfile (maven:3.9-eclipse-temurin-21,
+  # eclipse-temurin:21-jre-jammy).
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3
+
+  # Acciones usadas en .github/workflows/ci.yml (actions/checkout, etc.)
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3
