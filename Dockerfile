@@ -1,5 +1,5 @@
 # --- Etapa de build: compila el jar con Maven ---
-FROM maven:3.9-eclipse-temurin-21 AS build
+FROM maven:3-eclipse-temurin-26 AS build
 WORKDIR /build
 
 # Copiar solo el pom primero para cachear las dependencias en una capa
