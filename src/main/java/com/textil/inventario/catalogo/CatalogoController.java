@@ -1,15 +1,18 @@
 package com.textil.inventario.catalogo;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.http.ResponseEntity;
 import org.springframework.dao.DataIntegrityViolationException;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/catalogo")
@@ -18,6 +21,13 @@ import java.util.Optional;
 public class CatalogoController {
 
     private final CatalogoService catalogoService;
+
+    private String primerError(BindingResult bindingResult) {
+        return bindingResult.getFieldErrors().stream()
+                .map(fe -> fe.getDefaultMessage())
+                .distinct()
+                .collect(Collectors.joining(" "));
+    }
 
     // ─── COLORES ───────────────────────────────────────────
     @GetMapping("/colores")
@@ -28,7 +38,11 @@ public class CatalogoController {
     }
 
     @PostMapping("/colores/guardar")
-    public String guardarColor(@ModelAttribute Color color, RedirectAttributes ra) {
+    public String guardarColor(@Valid @ModelAttribute Color color, BindingResult bindingResult, RedirectAttributes ra) {
+        if (bindingResult.hasErrors()) {
+            ra.addFlashAttribute("error", primerError(bindingResult));
+            return "redirect:/catalogo/colores";
+        }
         catalogoService.guardarColor(color);
         ra.addFlashAttribute("mensaje", "Color guardado correctamente.");
         return "redirect:/catalogo/colores";
@@ -100,7 +114,11 @@ public class CatalogoController {
     }
 
     @PostMapping("/tipos-tela/guardar")
-    public String guardarTipoTela(@ModelAttribute TipoTela tipoTela, RedirectAttributes ra) {
+    public String guardarTipoTela(@Valid @ModelAttribute TipoTela tipoTela, BindingResult bindingResult, RedirectAttributes ra) {
+        if (bindingResult.hasErrors()) {
+            ra.addFlashAttribute("error", primerError(bindingResult));
+            return "redirect:/catalogo/tipos-tela";
+        }
         try {
             catalogoService.guardarTipoTela(tipoTela);
             ra.addFlashAttribute("mensaje", "Tipo de tela guardado correctamente.");
@@ -140,7 +158,11 @@ public class CatalogoController {
     }
 
     @PostMapping("/titulos/guardar")
-    public String guardarTituloForm(@ModelAttribute("tituloForm") Titulo tituloForm, RedirectAttributes ra) {
+    public String guardarTituloForm(@Valid @ModelAttribute("tituloForm") Titulo tituloForm, BindingResult bindingResult, RedirectAttributes ra) {
+        if (bindingResult.hasErrors()) {
+            ra.addFlashAttribute("error", primerError(bindingResult));
+            return "redirect:/catalogo/titulos";
+        }
         try {
             catalogoService.guardarTitulo(tituloForm);
             ra.addFlashAttribute("mensaje", "Título guardado correctamente.");
@@ -175,7 +197,11 @@ public class CatalogoController {
     }
 
     @PostMapping("/composiciones/guardar")
-    public String guardarComposicionForm(@ModelAttribute Composicion composicion, RedirectAttributes ra) {
+    public String guardarComposicionForm(@Valid @ModelAttribute Composicion composicion, BindingResult bindingResult, RedirectAttributes ra) {
+        if (bindingResult.hasErrors()) {
+            ra.addFlashAttribute("error", primerError(bindingResult));
+            return "redirect:/catalogo/composiciones";
+        }
         try {
             catalogoService.guardarComposicion(composicion);
             ra.addFlashAttribute("mensaje", "Composición guardada correctamente.");
@@ -210,7 +236,11 @@ public class CatalogoController {
     }
 
     @PostMapping("/acabados/guardar")
-    public String guardarAcabadoForm(@ModelAttribute Acabado acabado, RedirectAttributes ra) {
+    public String guardarAcabadoForm(@Valid @ModelAttribute Acabado acabado, BindingResult bindingResult, RedirectAttributes ra) {
+        if (bindingResult.hasErrors()) {
+            ra.addFlashAttribute("error", primerError(bindingResult));
+            return "redirect:/catalogo/acabados";
+        }
         try {
             catalogoService.guardarAcabado(acabado);
             ra.addFlashAttribute("mensaje", "Acabado guardado correctamente.");
@@ -245,7 +275,11 @@ public class CatalogoController {
     }
 
     @PostMapping("/empresas/guardar")
-    public String guardarEmpresaForm(@ModelAttribute Empresa empresa, RedirectAttributes ra) {
+    public String guardarEmpresaForm(@Valid @ModelAttribute Empresa empresa, BindingResult bindingResult, RedirectAttributes ra) {
+        if (bindingResult.hasErrors()) {
+            ra.addFlashAttribute("error", primerError(bindingResult));
+            return "redirect:/catalogo/empresas";
+        }
         try {
             catalogoService.guardarEmpresa(empresa);
             ra.addFlashAttribute("mensaje", "Empresa guardada correctamente.");
@@ -489,7 +523,11 @@ public class CatalogoController {
     }
 
     @PostMapping("/ubicaciones/guardar")
-    public String guardarUbicacion(@ModelAttribute Ubicacion ubicacion, RedirectAttributes ra) {
+    public String guardarUbicacion(@Valid @ModelAttribute Ubicacion ubicacion, BindingResult bindingResult, RedirectAttributes ra) {
+        if (bindingResult.hasErrors()) {
+            ra.addFlashAttribute("error", primerError(bindingResult));
+            return "redirect:/catalogo/ubicaciones";
+        }
         catalogoService.guardarUbicacion(ubicacion);
         ra.addFlashAttribute("mensaje", "Ubicación guardada correctamente.");
         return "redirect:/catalogo/ubicaciones";

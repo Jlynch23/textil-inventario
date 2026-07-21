@@ -78,6 +78,14 @@ public class TransferenciaService {
         for (int i = 0; i < detalleIds.size(); i++) {
             TransferenciaDetalle d = detalleRepository.findById(detalleIds.get(i)).orElseThrow();
             Integer cantidad = i < cantidadesConfirmadas.size() ? cantidadesConfirmadas.get(i) : d.getCantidadSolicitada();
+            // Auditoria (rigurosidad, jul-2026): sin este guardado, una cantidad
+            // negativa pasa la comprobacion de stock insuficiente de abajo
+            // (rollos < cantidad es falso si cantidad es negativa) y termina
+            // SUMANDO stock en una SALIDA -- crea rollos de la nada sin error.
+            if (cantidad == null || cantidad < 0) {
+                throw new IllegalArgumentException(
+                        "La cantidad confirmada de salida no puede ser negativa (línea de detalle " + detalleIds.get(i) + ").");
+            }
             d.setCantidadConfirmadaSalida(cantidad);
             d.setObservaciones(i < observaciones.size() ? observaciones.get(i) : d.getObservaciones());
             detalleRepository.save(d);

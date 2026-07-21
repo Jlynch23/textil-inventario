@@ -4,6 +4,11 @@
 <head><title>Confirmar Recepción</title></head>
 <body>
 <section>
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show">
+        <span th:text="${error}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
     <div class="alert alert-info">
         <i class="bi bi-info-circle me-2"></i>
         Ingresa los rollos <strong>físicamente recibidos</strong> para cada línea.

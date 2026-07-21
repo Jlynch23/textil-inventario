@@ -114,7 +114,12 @@ public class RecepcionController {
                              @RequestParam(value="rollosRecibidos") List<Integer> rollosRecibidos,
                              @RequestParam(value="observacionesDetalle") List<String> observacionesDetalle,
                              RedirectAttributes ra) {
-        recepcionService.confirmarRecepcion(id, detalleIds, rollosRecibidos, observacionesDetalle);
+        try {
+            recepcionService.confirmarRecepcion(id, detalleIds, rollosRecibidos, observacionesDetalle);
+        } catch (IllegalArgumentException e) {
+            ra.addFlashAttribute("error", e.getMessage());
+            return "redirect:/recepciones/" + id + "/confirmar";
+        }
         ra.addFlashAttribute("mensaje", "Recepción confirmada. Stock actualizado.");
         return "redirect:/recepciones";
     }

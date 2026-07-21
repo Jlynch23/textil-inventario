@@ -1,6 +1,8 @@
 package com.textil.inventario.catalogo;
 import com.textil.inventario.common.BaseEntity;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 @Getter
@@ -8,6 +10,8 @@ import lombok.Setter;
 @Entity
 @Table(name = "colores")
 public class Color extends BaseEntity {
+    @NotBlank(message = "El nombre oficial es obligatorio.")
+    @Size(max = 100, message = "El nombre oficial no puede superar los 100 caracteres.")
     @Column(name = "nombre_oficial", nullable = false, unique = true, length = 100)
     private String nombreOficial;
     @Column(name = "codigo_fast_dye", length = 20)

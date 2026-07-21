@@ -231,7 +231,16 @@ public class RecepcionService {
 
         for (int i = 0; i < detalleIds.size(); i++) {
             RecepcionDetalle d = detalleRepository.findById(detalleIds.get(i)).orElseThrow();
-            d.setRollosRecibidos(i < rollosRecibidos.size() ? rollosRecibidos.get(i) : d.getRollosGuia());
+            Integer rollosRecibidosLinea = i < rollosRecibidos.size() ? rollosRecibidos.get(i) : d.getRollosGuia();
+            // Auditoria (rigurosidad, jul-2026): un valor negativo aca nunca es
+            // legitimo -- "rollos recibidos" es una cantidad fisica contada, y
+            // sin este guardado bajaria el stock en vez de subirlo durante una
+            // RECEPCION (entrada), silenciosamente y sin ningun error.
+            if (rollosRecibidosLinea == null || rollosRecibidosLinea < 0) {
+                throw new IllegalArgumentException(
+                        "La cantidad de rollos recibidos no puede ser negativa (línea de detalle " + detalleIds.get(i) + ").");
+            }
+            d.setRollosRecibidos(rollosRecibidosLinea);
             d.setObservacion(i < observaciones.size() ? observaciones.get(i) : "");
             detalleRepository.save(d);
 

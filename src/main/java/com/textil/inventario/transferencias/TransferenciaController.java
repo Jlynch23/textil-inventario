@@ -84,7 +84,12 @@ public class TransferenciaController {
                                    @RequestParam(value = "cantidades") java.util.List<Integer> cantidades,
                                    @RequestParam(value = "observacionesDetalle") java.util.List<String> observacionesDetalle,
                                    RedirectAttributes ra) {
-        transferenciaService.confirmarSalida(id, detalleIds, cantidades, observacionesDetalle);
+        try {
+            transferenciaService.confirmarSalida(id, detalleIds, cantidades, observacionesDetalle);
+        } catch (IllegalArgumentException e) {
+            ra.addFlashAttribute("error", e.getMessage());
+            return "redirect:/transferencias/" + id + "/confirmar-salida";
+        }
         ra.addFlashAttribute("mensaje", "Salida confirmada. Stock descontado de Praderas.");
         return "redirect:/transferencias";
     }

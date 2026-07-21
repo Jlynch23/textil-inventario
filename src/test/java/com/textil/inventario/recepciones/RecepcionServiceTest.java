@@ -229,4 +229,29 @@ class RecepcionServiceTest {
         verify(stockActualRepository).save(stockCap.capture());
         assertThat(stockCap.getValue().getPesoKg()).isEqualByComparingTo(BigDecimal.ZERO);
     }
+
+    @Test
+    void confirmarRecepcion_rollosNegativos_lanzaExcepcionYNoTocaStock() {
+        Recepcion recepcion = recepcionDePrueba();
+        Ubicacion praderas = praderasDePrueba();
+        Articulo articulo = articuloDePrueba();
+        Color color = colorDePrueba();
+
+        RecepcionDetalle detalle = new RecepcionDetalle();
+        detalle.setId(100L);
+        detalle.setArticulo(articulo);
+        detalle.setColor(color);
+        detalle.setRollosGuia(14);
+        detalle.setPesoBrutoKg(new BigDecimal("300"));
+
+        when(recepcionRepository.findById(1L)).thenReturn(Optional.of(recepcion));
+        when(ubicacionRepository.findByEsPrincipalTrue()).thenReturn(Optional.of(praderas));
+        when(detalleRepository.findById(100L)).thenReturn(Optional.of(detalle));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                service.confirmarRecepcion(1L, List.of(100L), List.of(-3), List.of(""))
+        ).isInstanceOf(IllegalArgumentException.class);
+
+        verify(stockActualRepository, never()).save(any());
+    }
 }
