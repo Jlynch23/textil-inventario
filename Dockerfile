@@ -13,7 +13,7 @@ COPY src ./src
 RUN mvn -B -q -DskipTests package
 
 # --- Etapa final: solo el JRE + el jar, sin Maven ni el codigo fuente ---
-FROM eclipse-temurin:21-jre-jammy
+FROM eclipse-temurin:25-jre-jammy
 WORKDIR /app
 
 # Correr como usuario sin privilegios, no como root dentro del contenedor.
