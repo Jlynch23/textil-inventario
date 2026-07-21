@@ -15,6 +15,36 @@ git fetch origin main
 git checkout main
 git reset --hard origin/main
 
+echo "Levantando MySQL primero, para sincronizar credenciales antes de la app..."
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d mysql
+
+echo "Esperando a que MySQL este healthy..."
+mysql_healthy=""
+for i in $(seq 1 30); do
+    estado=$(docker inspect --format='{{.State.Health.Status}}' textil_mysql 2>/dev/null || echo "")
+    if [ "$estado" = "healthy" ]; then
+        mysql_healthy="1"
+        break
+    fi
+    sleep 3
+done
+if [ -z "$mysql_healthy" ]; then
+    echo "MySQL no llego a estar healthy a tiempo. Revisa: docker logs textil_mysql"
+    exit 1
+fi
+
+# Re-aplica el password de textil_user segun el DB_PASSWORD actual del .env
+# en CADA despliegue. Es idempotente (si ya coincide, no cambia nada) y
+# evita que la app quede en "Access denied" si por cualquier motivo la
+# contrasena de MySQL y la del .env quedaron desincronizadas entre un
+# despliegue y el siguiente.
+echo "Sincronizando password de textil_user con el .env..."
+set -a
+source .env
+set +a
+docker exec -e MYSQL_PWD="$MYSQL_ROOT_PASSWORD" textil_mysql \
+    mysql -uroot -e "ALTER USER 'textil_user'@'%' IDENTIFIED BY '$DB_PASSWORD'; FLUSH PRIVILEGES;"
+
 echo "Reconstruyendo y reiniciando contenedores..."
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 

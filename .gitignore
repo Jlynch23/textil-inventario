@@ -5,3 +5,4 @@ target/
 .DS_Store
 application-local.yml
 /documentos/
+.env
