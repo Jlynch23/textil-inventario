@@ -11,7 +11,9 @@ sudo usermod -aG docker $USER
 # cerrar sesión y volver a entrar para que el grupo tome efecto
 ```
 
-Abrí el puerto **80/tcp** en el firewall de la instancia (en Lightsail: pestaña *Networking* → *IPv4 Firewall* → agregar regla HTTP). Los puertos 3307 (MySQL) y 8081 (Adminer) **no hace falta abrirlos** — `docker-compose.yml` ya los deja bindeados solo a `127.0.0.1`, así que ni siquiera están expuestos fuera del servidor.
+**No abras el puerto 80 al público en el firewall de la instancia.** El acceso está pensado para ser solo por Tailscale (o la VPN que uses) — `docker-compose.prod.yml` publica nginx únicamente en la IP que definas como `BIND_IP` en el `.env` (ej. tu IP de Tailscale), nunca en `0.0.0.0`. Si `BIND_IP` no se define, cae por defecto en `0.0.0.0` (todas las interfaces, incluida la pública) — definila siempre en producción. Ver sección 6 para el día que agregues un dominio público de verdad, que es el único caso en el que sí correspondería abrir el 80/443 públicamente (con HTTPS).
+
+Los puertos 3307 (MySQL) y 8081 (Adminer) **no hace falta abrirlos** — `docker-compose.yml` ya los deja bindeados solo a `127.0.0.1`, así que ni siquiera están expuestos fuera del servidor. El puerto 22 (SSH) sí necesita estar abierto para poder conectarte; restringirlo a tu rango de Tailscale (en vez de "Anywhere") es una mejora recomendada pero no forma parte de este documento.
 
 ## 2. Primera vez
 
@@ -36,6 +38,8 @@ MYSQL_ROOT_PASSWORD=<otra contraseña fuerte, DISTINTA de DB_PASSWORD>
 ANTHROPIC_API_KEY=<tu API key de Anthropic, si vas a usar el OCR>
 DOCUMENTOS_PATH=./documentos
 MAX_UPLOAD_SIZE=25MB
+NOMBRE_EMPRESA=<nombre del negocio que va bajo el logo TEXCONTROL>
+BIND_IP=<tu IP de Tailscale, ej. 100.x.x.x -- sin esto, nginx queda expuesto a 0.0.0.0>
 ```
 
 Levantá todo (la primera vez construye la imagen de la app, tarda unos minutos):
@@ -60,7 +64,7 @@ Cada vez que haya cambios nuevos en `main`:
 ./scripts/deploy.sh
 ```
 
-Esto trae el código nuevo, reconstruye solo la imagen de la app y reinicia los contenedores — MySQL y sus datos no se tocan. **No edites archivos a mano en el servidor**: `deploy.sh` hace `git reset --hard origin/main`, así que cualquier cambio local se pierde en el próximo redeploy.
+Esto trae el código nuevo, levanta MySQL primero y sincroniza el password de `textil_user` con el `DB_PASSWORD` actual del `.env` (por si quedó desincronizado por cualquier motivo), reconstruye la imagen de la app y reinicia los contenedores — los datos de MySQL no se tocan. **No edites archivos a mano en el servidor** (salvo el `.env`, que no está versionado): `deploy.sh` hace `git reset --hard origin/main`, así que cualquier cambio local a un archivo del repo se pierde en el próximo redeploy.
 
 ## 4. Logs y diagnóstico
 
@@ -81,8 +85,9 @@ Los backups de base de datos ya están cubiertos por `scripts/backup-db.sh` (ver
 
 ## 6. Agregar dominio + HTTPS más adelante
 
-Cuando tengas un dominio apuntando a la IP del servidor (registro A):
+Cuando tengas un dominio apuntando a la IP **pública** del servidor (registro A):
 
+0. Cambiá `BIND_IP` en el `.env` a `0.0.0.0` (o eliminá la línea, que es el default) y abrí el puerto 80/443 en el firewall de la instancia recién en este punto — antes de esto, el acceso debía seguir siendo solo por Tailscale.
 1. Instalá certbot en el host (no en un contenedor, para simplificar): `sudo apt install certbot`.
 2. Pará nginx un momento, generá el certificado en modo standalone, y volvé a levantarlo:
    ```bash

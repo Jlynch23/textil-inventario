@@ -85,7 +85,7 @@ Stock por ubicación, kardex por rango de fechas, recepciones, transferencias y 
 Importación masiva de guías y facturas antiguas vía ZIP (con subcarpetas por empresa/año), leídas por IA en segundo plano. Enriquece el catálogo de colores y artículos sin afectar el stock actual — borrado individual y masivo incluido.
 
 ### 🔐 Seguridad y Usuarios
-Roles SUPERADMIN / ALMACENERO con Spring Security, gestión completa de usuarios (alta, inactivación, baja protegida) y registro de auditoría de cada acción relevante.
+Roles SUPERADMIN, GERENTE (solo lectura) y SUPERVISOR (almacén) con Spring Security, gestión completa de usuarios (alta, inactivación, baja protegida) y registro de auditoría de cada acción relevante. Existe además el rol VENDEDOR, reservado para el futuro módulo de Ventas — hoy no tiene permisos asignados en `SecurityConfig`.
 
 ---
 
@@ -113,7 +113,7 @@ Organización por dominio de negocio, un paquete por módulo, cada uno con el pa
 
 ```bash
 git clone https://github.com/Jlynch23/textil-inventario.git
-cd textil-inventario/inventario
+cd textil-inventario
 ```
 
 ### 2. Variables de entorno
@@ -179,6 +179,8 @@ MYSQL_ROOT_PASSWORD=  # obligatoria, distinta de DB_PASSWORD -- solo para docker
 ANTHROPIC_API_KEY=    # para el OCR de guías/facturas
 DOCUMENTOS_PATH=./documentos
 MAX_UPLOAD_SIZE=25MB
+NOMBRE_EMPRESA=Laura & Clemente  # nombre del negocio, bajo el logo TEXCONTROL (personalizable por cliente)
+BIND_IP=              # solo produccion (docker-compose.prod.yml): IP a la que se publica nginx -- ver DEPLOY.md
 ```
 
 ## 💾 Backup y restauración de la base de datos
