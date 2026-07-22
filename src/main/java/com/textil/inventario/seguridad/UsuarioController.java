@@ -25,12 +25,12 @@ public class UsuarioController {
     private final PasswordEncoder passwordEncoder;
     private final AuditLogService auditLogService;
     private final UsuarioActualService usuarioActualService;
+    private final GeneradorUsername generadorUsername;
 
     /**
      * ¿El usuario autenticado es el proveedor (SUPERADMIN)? Se resuelve de las
      * authorities de la sesion (sin ir a base de datos). Es la clave de toda la
-     * ocultacion: SUPERADMIN es una cuenta oculta de soporte del proveedor, y
-     * el ADMIN (dueño-cliente) no debe verla ni tocarla.
+     * ocultacion.
      */
     private boolean esSuperadmin(Authentication auth) {
         return auth != null && auth.getAuthorities().stream()
@@ -41,14 +41,22 @@ public class UsuarioController {
         return u.getRol() != null && ROL_SUPERADMIN.equalsIgnoreCase(u.getRol().getNombre());
     }
 
+    /**
+     * Cuentas OCULTAS para el ADMIN: las SUPERADMIN (proveedor) y las de PRUEBA.
+     * El ADMIN ni las ve ni las puede tocar; solo el SUPERADMIN.
+     */
+    private boolean esOculto(Usuario u) {
+        return esUsuarioSuperadmin(u) || Boolean.TRUE.equals(u.getEsPrueba());
+    }
+
     @GetMapping
     public String listar(Model model, Authentication authentication) {
         boolean superadmin = esSuperadmin(authentication);
 
-        // El ADMIN no ve las cuentas SUPERADMIN (proveedor) ni puede asignar ese
-        // rol: se filtran tanto la lista de usuarios como el selector de roles.
+        // El ADMIN no ve las cuentas ocultas (SUPERADMIN + prueba) ni puede
+        // asignar el rol SUPERADMIN: se filtran lista y selector de roles.
         List<Usuario> usuarios = usuarioRepository.findAll().stream()
-                .filter(u -> superadmin || !esUsuarioSuperadmin(u))
+                .filter(u -> superadmin || !esOculto(u))
                 .toList();
         List<Rol> roles = rolRepository.findAll().stream()
                 .filter(r -> superadmin || !ROL_SUPERADMIN.equalsIgnoreCase(r.getNombre()))
@@ -62,46 +70,90 @@ public class UsuarioController {
     @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     @PostMapping("/guardar")
     public String guardar(@RequestParam String nombre,
-                           @RequestParam String username,
                            @RequestParam String password,
                            @RequestParam Long rolId,
                            RedirectAttributes ra,
                            Authentication authentication) {
-        if (usuarioRepository.existsByUsername(username)) {
-            ra.addFlashAttribute("error", "Ya existe un usuario registrado con ese nombre de usuario.");
-            return "redirect:/usuarios";
-        }
         Rol rol = rolRepository.findById(rolId).orElseThrow();
         // Solo el proveedor (SUPERADMIN) puede crear otra cuenta SUPERADMIN.
         if (ROL_SUPERADMIN.equalsIgnoreCase(rol.getNombre()) && !esSuperadmin(authentication)) {
             ra.addFlashAttribute("error", "No tienes permiso para asignar ese rol.");
             return "redirect:/usuarios";
         }
-        if (password == null || password.length() < 6) {
-            ra.addFlashAttribute("error", "La contraseña debe tener al menos 6 caracteres.");
+        String errorPassword = validarPassword(password);
+        if (errorPassword != null) {
+            ra.addFlashAttribute("error", errorPassword);
             return "redirect:/usuarios";
         }
-        // SEC-04 (auditoria 17-jul-2026): BCrypt trunca silenciosamente cualquier
-        // entrada mayor a 72 bytes -- sin este chequeo, un usuario podria creer que
-        // esta usando una passphrase larga y segura cuando en realidad solo los
-        // primeros 72 bytes importan para el login. Se valida en bytes (no
-        // caracteres) porque BCrypt trunca por bytes UTF-8, no por longitud de String.
-        if (password.getBytes(java.nio.charset.StandardCharsets.UTF_8).length > 72) {
-            ra.addFlashAttribute("error", "La contraseña no puede superar los 72 caracteres (limite tecnico de BCrypt).");
+        if (nombre == null || nombre.isBlank()) {
+            ra.addFlashAttribute("error", "El nombre es obligatorio.");
             return "redirect:/usuarios";
         }
 
+        // El username se genera del nombre (ej. "Oscar Clemente" -> "oclemente").
+        String username = generadorUsername.generar(nombre);
+
         Usuario u = new Usuario();
-        u.setNombre(nombre);
+        u.setNombre(nombre.trim());
         u.setUsername(username);
         u.setPasswordHash(passwordEncoder.encode(password));
         u.setRol(rol);
         u.setActivo(true);
+        u.setEsPrueba(false);
         Usuario guardado = usuarioRepository.save(u);
         auditLogService.registrar("CREAR", "Usuario", guardado.getId(),
                 "Creo el usuario " + guardado.getUsername() + " con rol " + guardado.getRol().getNombre());
 
-        ra.addFlashAttribute("mensaje", "Usuario creado correctamente.");
+        ra.addFlashAttribute("mensaje", "Usuario creado: " + guardado.getUsername());
+        return "redirect:/usuarios";
+    }
+
+    /**
+     * Edita nombre, rol y (opcionalmente) contraseña. Al cambiar el nombre se
+     * REGENERA el username. Pensado para dar de alta un empleado sobre una
+     * cuenta existente sin borrar/recrear.
+     */
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
+    @PostMapping("/editar/{id}")
+    public String editar(@PathVariable Long id,
+                          @RequestParam String nombre,
+                          @RequestParam Long rolId,
+                          @RequestParam(required = false) String password,
+                          RedirectAttributes ra,
+                          Authentication authentication) {
+        Usuario u = usuarioRepository.findById(id).orElseThrow();
+        if (bloqueadoPorOculto(u, authentication, ra)) {
+            return "redirect:/usuarios";
+        }
+        if (nombre == null || nombre.isBlank()) {
+            ra.addFlashAttribute("error", "El nombre es obligatorio.");
+            return "redirect:/usuarios";
+        }
+        Rol rol = rolRepository.findById(rolId).orElseThrow();
+        // El ADMIN no puede asignar (ni quitar) el rol SUPERADMIN.
+        if (ROL_SUPERADMIN.equalsIgnoreCase(rol.getNombre()) && !esSuperadmin(authentication)) {
+            ra.addFlashAttribute("error", "No tienes permiso para asignar ese rol.");
+            return "redirect:/usuarios";
+        }
+        // Contraseña opcional: si viene en blanco, no se cambia.
+        if (password != null && !password.isBlank()) {
+            String errorPassword = validarPassword(password);
+            if (errorPassword != null) {
+                ra.addFlashAttribute("error", errorPassword);
+                return "redirect:/usuarios";
+            }
+            u.setPasswordHash(passwordEncoder.encode(password));
+        }
+
+        u.setNombre(nombre.trim());
+        u.setRol(rol);
+        // Regenera el username del nuevo nombre, excluyendo al propio usuario.
+        u.setUsername(generadorUsername.generar(nombre, u.getId()));
+        usuarioRepository.save(u);
+        auditLogService.registrar("EDITAR", "Usuario", u.getId(),
+                "Edito el usuario: ahora " + u.getUsername() + " (" + u.getRol().getNombre() + ")");
+
+        ra.addFlashAttribute("mensaje", "Usuario actualizado: " + u.getUsername());
         return "redirect:/usuarios";
     }
 
@@ -112,15 +164,12 @@ public class UsuarioController {
                                     RedirectAttributes ra,
                                     Authentication authentication) {
         Usuario u = usuarioRepository.findById(id).orElseThrow();
-        if (bloqueadoPorSerSuperadmin(u, authentication, ra)) {
+        if (bloqueadoPorOculto(u, authentication, ra)) {
             return "redirect:/usuarios";
         }
-        if (password == null || password.length() < 6) {
-            ra.addFlashAttribute("error", "La contraseña debe tener al menos 6 caracteres.");
-            return "redirect:/usuarios";
-        }
-        if (password.getBytes(java.nio.charset.StandardCharsets.UTF_8).length > 72) {
-            ra.addFlashAttribute("error", "La contraseña no puede superar los 72 caracteres (limite tecnico de BCrypt).");
+        String errorPassword = validarPassword(password);
+        if (errorPassword != null) {
+            ra.addFlashAttribute("error", errorPassword);
             return "redirect:/usuarios";
         }
 
@@ -137,7 +186,7 @@ public class UsuarioController {
     @PostMapping("/inactivar/{id}")
     public String inactivar(@PathVariable Long id, RedirectAttributes ra, Authentication authentication) {
         Usuario u = usuarioRepository.findById(id).orElseThrow();
-        if (bloqueadoPorSerSuperadmin(u, authentication, ra)) {
+        if (bloqueadoPorOculto(u, authentication, ra)) {
             return "redirect:/usuarios";
         }
         u.setActivo(false);
@@ -151,7 +200,7 @@ public class UsuarioController {
     @PostMapping("/reactivar/{id}")
     public String reactivar(@PathVariable Long id, RedirectAttributes ra, Authentication authentication) {
         Usuario u = usuarioRepository.findById(id).orElseThrow();
-        if (bloqueadoPorSerSuperadmin(u, authentication, ra)) {
+        if (bloqueadoPorOculto(u, authentication, ra)) {
             return "redirect:/usuarios";
         }
         u.setActivo(true);
@@ -166,7 +215,7 @@ public class UsuarioController {
     public String eliminar(@PathVariable Long id, RedirectAttributes ra, Authentication authentication) {
         Usuario u = usuarioRepository.findById(id).orElseThrow();
 
-        if (bloqueadoPorSerSuperadmin(u, authentication, ra)) {
+        if (bloqueadoPorOculto(u, authentication, ra)) {
             return "redirect:/usuarios";
         }
 
@@ -197,13 +246,25 @@ public class UsuarioController {
         return "redirect:/usuarios";
     }
 
+    // Valida una contraseña nueva. Devuelve el mensaje de error, o null si es válida.
+    // SEC-04: BCrypt trunca en 72 bytes UTF-8, por eso se valida en bytes.
+    private String validarPassword(String password) {
+        if (password == null || password.length() < 6) {
+            return "La contraseña debe tener al menos 6 caracteres.";
+        }
+        if (password.getBytes(java.nio.charset.StandardCharsets.UTF_8).length > 72) {
+            return "La contraseña no puede superar los 72 caracteres (limite tecnico de BCrypt).";
+        }
+        return null;
+    }
+
     /**
-     * Un ADMIN (dueño-cliente) no puede tocar cuentas SUPERADMIN (proveedor):
-     * ni las ve en la lista, asi que si llega un id de una por URL directa se
-     * responde como si no existiera. Solo el propio SUPERADMIN puede operarlas.
+     * El ADMIN no puede tocar cuentas ocultas (SUPERADMIN o de prueba): ni las ve
+     * en la lista, asi que si llega un id de una por URL directa se responde como
+     * si no existiera. Solo el SUPERADMIN las opera.
      */
-    private boolean bloqueadoPorSerSuperadmin(Usuario u, Authentication authentication, RedirectAttributes ra) {
-        if (esUsuarioSuperadmin(u) && !esSuperadmin(authentication)) {
+    private boolean bloqueadoPorOculto(Usuario u, Authentication authentication, RedirectAttributes ra) {
+        if (esOculto(u) && !esSuperadmin(authentication)) {
             ra.addFlashAttribute("error", "Usuario no encontrado.");
             return true;
         }
@@ -212,8 +273,8 @@ public class UsuarioController {
 
     // ---------- AUTOSERVICIO: MI CUENTA ----------
     // Disponible para CUALQUIER usuario autenticado (ver SecurityConfig): permite
-    // que el dueño (ADMIN) rote su propia contraseña al recibir la copia, sin
-    // depender del proveedor. Rutas /usuarios/mi-cuenta y /usuarios/cambiar-mi-password.
+    // que cada quien rote su propia contraseña. Rutas /usuarios/mi-cuenta y
+    // /usuarios/cambiar-mi-password.
 
     @GetMapping("/mi-cuenta")
     public String miCuenta(Model model) {
@@ -232,12 +293,9 @@ public class UsuarioController {
             ra.addFlashAttribute("error", "La contraseña actual no es correcta.");
             return "redirect:/usuarios/mi-cuenta";
         }
-        if (passwordNueva == null || passwordNueva.length() < 6) {
-            ra.addFlashAttribute("error", "La nueva contraseña debe tener al menos 6 caracteres.");
-            return "redirect:/usuarios/mi-cuenta";
-        }
-        if (passwordNueva.getBytes(java.nio.charset.StandardCharsets.UTF_8).length > 72) {
-            ra.addFlashAttribute("error", "La contraseña no puede superar los 72 caracteres (limite tecnico de BCrypt).");
+        String errorPassword = validarPassword(passwordNueva);
+        if (errorPassword != null) {
+            ra.addFlashAttribute("error", errorPassword.replace("La contraseña", "La nueva contraseña"));
             return "redirect:/usuarios/mi-cuenta";
         }
         if (!passwordNueva.equals(passwordConfirmacion)) {

@@ -45,9 +45,12 @@ public class LogEventoController {
 
         List<LogEvento> eventos = logEventoRepository.buscarConFiltros(usuarioId, accionLimpia, desdeDateTime, hastaDateTime, ocultarSuperadmin);
 
-        // El selector de "usuario" tampoco expone cuentas SUPERADMIN al ADMIN.
+        // El selector de "usuario" tampoco expone al ADMIN las cuentas ocultas
+        // (SUPERADMIN del proveedor ni las de prueba).
         List<Usuario> usuarios = usuarioRepository.findAll().stream()
-                .filter(u -> esSuperadmin || u.getRol() == null || !"SUPERADMIN".equalsIgnoreCase(u.getRol().getNombre()))
+                .filter(u -> esSuperadmin
+                        || (!Boolean.TRUE.equals(u.getEsPrueba())
+                            && (u.getRol() == null || !"SUPERADMIN".equalsIgnoreCase(u.getRol().getNombre()))))
                 .toList();
 
         model.addAttribute("eventos", eventos);

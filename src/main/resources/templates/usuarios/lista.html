@@ -21,18 +21,14 @@
                     <h6 class="fw-bold mb-3">Nuevo Usuario</h6>
                     <form th:action="@{/usuarios/guardar}" method="post">
                         <div class="mb-3">
-                            <label class="form-label fw-semibold">Nombre</label>
-                            <input type="text" class="form-control" name="nombre" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Usuario</label>
-                            <input type="text" class="form-control" name="username" placeholder="jlynch" required>
-                            <small class="text-muted">Primera letra del nombre + apellido completo, sin espacios.</small>
+                            <label class="form-label fw-semibold">Nombre y apellido</label>
+                            <input type="text" class="form-control" name="nombre" placeholder="Oscar Clemente" required>
+                            <small class="text-muted">El usuario se genera solo (ej. "Oscar Clemente" → <code>oclemente</code>).</small>
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Contraseña</label>
                             <input type="password" class="form-control" name="password" minlength="6" required>
-                            <small class="text-muted">Mínimo 6 caracteres.</small>
+                            <small class="text-muted">Mínimo 6 caracteres (ej. el DNI).</small>
                         </div>
                         <div class="mb-4">
                             <label class="form-label fw-semibold">Rol</label>
@@ -78,8 +74,13 @@
                                     <td>
                                         <span th:if="${u.activo}" class="badge bg-success">Activo</span>
                                         <span th:unless="${u.activo}" class="badge bg-secondary">Inactivo</span>
+                                        <span th:if="${u.esPrueba}" class="badge bg-info text-dark" title="Cuenta de prueba: oculta para el ADMIN">Prueba</span>
                                     </td>
                                     <td>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" title="Editar (nombre, rol, contraseña)"
+                                                data-bs-toggle="modal" th:data-bs-target="'#modalEditar' + ${u.id}">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
                                         <button type="button" class="btn btn-sm btn-outline-primary" title="Resetear contraseña"
                                                 data-bs-toggle="modal" th:data-bs-target="'#modalReset' + ${u.id}">
                                             <i class="bi bi-key"></i>
@@ -101,6 +102,43 @@
                                                 <i class="bi bi-trash"></i>
                                             </button>
                                         </form>
+
+                                        <!-- Modal de edición (nombre, rol, contraseña) -->
+                                        <div class="modal fade" th:id="'modalEditar' + ${u.id}" tabindex="-1">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <form th:action="@{/usuarios/editar/{id}(id=${u.id})}" method="post">
+                                                        <div class="modal-header">
+                                                            <h6 class="modal-title">Editar usuario</h6>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <div class="mb-3">
+                                                                <label class="form-label fw-semibold">Nombre y apellido</label>
+                                                                <input type="text" class="form-control" name="nombre" th:value="${u.nombre}" required>
+                                                                <small class="text-muted">Al guardar, el usuario se regenera del nombre.</small>
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label class="form-label fw-semibold">Rol</label>
+                                                                <select class="form-select" name="rolId" required>
+                                                                    <option th:each="r : ${roles}" th:value="${r.id}" th:text="${r.nombre}"
+                                                                            th:selected="${r.id == u.rol.id}"></option>
+                                                                </select>
+                                                            </div>
+                                                            <div class="mb-2">
+                                                                <label class="form-label fw-semibold">Nueva contraseña <span class="text-muted fw-normal">(opcional)</span></label>
+                                                                <input type="password" class="form-control" name="password" minlength="6">
+                                                                <small class="text-muted">Dejar en blanco para no cambiarla. Ej: el DNI.</small>
+                                                            </div>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                            <button type="submit" class="btn btn-primary">Guardar cambios</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
 
                                         <!-- Modal de reset de contraseña -->
                                         <div class="modal fade" th:id="'modalReset' + ${u.id}" tabindex="-1">

@@ -13,9 +13,9 @@ public interface LogEventoRepository extends JpaRepository<LogEvento, Long> {
     // vean duplicadas entre las dos pantallas.
     //
     // ocultarSuperadmin: cuando lo consulta un ADMIN (dueño-cliente), se ocultan
-    // las acciones del proveedor (rol SUPERADMIN) para que su log muestre solo la
-    // actividad de su propio equipo, sin ver el mantenimiento del proveedor. Se
-    // usa LEFT JOIN para no descartar eventos de sistema con usuario nulo.
+    // las acciones de las cuentas OCULTAS -- el proveedor (rol SUPERADMIN) y las
+    // cuentas de PRUEBA -- para que su log muestre solo la actividad de su propio
+    // equipo. Se usa LEFT JOIN para no descartar eventos de sistema con usuario nulo.
     @Query("""
         SELECT l FROM LogEvento l
         LEFT JOIN l.usuario u
@@ -25,7 +25,8 @@ public interface LogEventoRepository extends JpaRepository<LogEvento, Long> {
           AND (:accion IS NULL OR l.accion = :accion)
           AND (:desde IS NULL OR l.createdAt >= :desde)
           AND (:hasta IS NULL OR l.createdAt <= :hasta)
-          AND (:ocultarSuperadmin = FALSE OR r IS NULL OR r.nombre <> 'SUPERADMIN')
+          AND (:ocultarSuperadmin = FALSE
+               OR (u IS NULL OR (r.nombre <> 'SUPERADMIN' AND u.esPrueba = FALSE)))
         ORDER BY l.createdAt DESC
         """)
     List<LogEvento> buscarConFiltros(@Param("usuarioId") Long usuarioId,
