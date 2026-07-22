@@ -128,6 +128,18 @@ parsing de guías, ese prompt es la fuente de verdad.
 `CatalogoServiceTest`, `ArchivoHistoricoServiceTest`. CI (`.github/workflows/ci.yml`) corre
 `mvn -B clean compile` + `mvn -B test` en cada push/PR a `main`.
 
+## Flujo de trabajo (ramas)
+
+Dos ramas de larga vida:
+- **`develop`**: rama de **trabajo y pruebas**. Acá se commitea y se prueba **en local**
+  (`mvn spring-boot:run` + MySQL en Docker). Todo lo nuevo pasa primero por acá.
+- **`main`**: **producción**. El VPS despliega de esta rama (`scripts/deploy.sh` hace
+  `git reset --hard origin/main`). **Solo** se mergea `develop → main` cuando está probado y estable.
+
+Regla: nunca pushear features a medio hacer a `main`; probar en `develop`, y recién cuando anda,
+promover a `main` (que dispara el redeploy del cliente). CI (`.github/workflows/ci.yml`) corre en
+push/PR a **ambas** ramas.
+
 ## Convenciones
 
 - Código, nombres de paquete, comentarios y textos de UI están **en español** — mantener ese idioma.
