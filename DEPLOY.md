@@ -83,20 +83,71 @@ docker compose ps mysql
 
 Los backups de base de datos ya están cubiertos por `scripts/backup-db.sh` (ver README). Sumá la carpeta `./documentos/` (los PDFs de guías/facturas) a lo que sea que uses para respaldar el servidor — es una carpeta real en disco, no un volumen Docker aislado, así que un `rsync` o `tar` normal la cubre.
 
-## 6. Agregar dominio + HTTPS más adelante
+## 6. Dominio + HTTPS (Cloudflare + Let's Encrypt wildcard)
 
-Cuando tengas un dominio apuntando a la IP **pública** del servidor (registro A):
+El dominio es **`texcontrol.pe`** y cada cliente entra por un **subdominio**
+(`textillaura.texcontrol.pe`, etc.). El DNS lo maneja **Cloudflare en modo
+DNS-only** (nube gris): dos registros `A` — `texcontrol.pe` y `*.texcontrol.pe`
+— apuntando a la IP pública del VPS. El HTTPS lo damos nosotros con un
+**certificado wildcard** de Let's Encrypt (validación DNS-01 vía API de Cloudflare).
 
-0. Cambiá `BIND_IP` en el `.env` a `0.0.0.0` (o eliminá la línea, que es el default) y abrí el puerto 80/443 en el firewall de la instancia recién en este punto — antes de esto, el acceso debía seguir siendo solo por Tailscale.
-1. Instalá certbot en el host (no en un contenedor, para simplificar): `sudo apt install certbot`.
-2. Pará nginx un momento, generá el certificado en modo standalone, y volvé a levantarlo:
+**Requisito previo:** dominio en estado **Active** en Cloudflare y los dos
+registros `A` creados (en gris / DNS-only).
+
+### 6.1 Abrir el firewall del VPS (Vultr)
+Abrir **80 y 443** al público (antes solo se accedía por Tailscale). En el panel
+de Vultr (Firewall) o con `ufw`: permitir 80 y 443 desde `0.0.0.0/0`. Dejar 22
+(SSH) como estaba.
+
+### 6.2 Poner la app en modo público
+En el `.env`, fijar `BIND_IP=0.0.0.0` para que nginx escuche en la interfaz
+pública (no solo en Tailscale).
+
+### 6.3 Emitir el certificado wildcard (una sola vez)
+1. En Cloudflare crear un **API token** (My Profile → API Tokens → Create Token →
+   plantilla **Edit zone DNS**), con permiso *Zone : DNS : Edit* sobre la zona
+   `texcontrol.pe`. Copiar el token.
+2. En el VPS:
    ```bash
-   docker compose -f docker-compose.yml -f docker-compose.prod.yml stop nginx
-   sudo certbot certonly --standalone -d tu-dominio.com
-   docker compose -f docker-compose.yml -f docker-compose.prod.yml start nginx
+   sudo apt update && sudo apt install -y certbot python3-certbot-dns-cloudflare
+   sudo mkdir -p /root/.secrets
+   echo "dns_cloudflare_api_token = <TU_TOKEN>" | sudo tee /root/.secrets/cloudflare.ini
+   sudo chmod 600 /root/.secrets/cloudflare.ini
+   sudo certbot certonly \
+     --dns-cloudflare \
+     --dns-cloudflare-credentials /root/.secrets/cloudflare.ini \
+     -d texcontrol.pe -d '*.texcontrol.pe' \
+     --agree-tos -m <tu-email> --non-interactive
    ```
-3. Editá `nginx/nginx.conf`: cambiá `server_name _;` por `server_name tu-dominio.com;`, agregá un `server` block en el puerto 443 con `ssl_certificate`/`ssl_certificate_key` apuntando a `/etc/letsencrypt/live/tu-dominio.com/`, y montá `/etc/letsencrypt` como volumen de solo lectura en el servicio `nginx` de `docker-compose.prod.yml`.
-4. Agregá una tarea de renovación automática (`sudo certbot renew` vía cron, con un `docker compose restart nginx` después).
+   El certificado queda en `/etc/letsencrypt/live/texcontrol.pe/`.
+
+### 6.4 Desplegar la config con HTTPS
+**Recién con el certificado emitido**, promover `develop → main` (trae el
+`nginx.conf` con TLS, el mapeo del 443 y `forward-headers-strategy`) y desplegar:
+```bash
+./scripts/deploy.sh
+```
+El `nginx.conf` ya monta `/etc/letsencrypt` y apunta a
+`/etc/letsencrypt/live/texcontrol.pe/`. Probar en `https://texcontrol.pe`.
+> ⚠️ No promover el `nginx.conf` con TLS a `main` **antes** de emitir el
+> certificado, o nginx no arranca (no encuentra el `.pem`).
+
+### 6.5 Renovación automática
+certbot deja un timer que renueva solo. Para que nginx tome el cert renovado,
+agregar un hook que lo reinicie tras la renovación:
+```bash
+sudo tee /etc/letsencrypt/renewal-hooks/deploy/restart-nginx.sh > /dev/null <<'EOF'
+#!/bin/sh
+cd /home/linuxuser/textil-inventario && docker compose -f docker-compose.yml -f docker-compose.prod.yml restart nginx
+EOF
+sudo chmod +x /etc/letsencrypt/renewal-hooks/deploy/restart-nginx.sh
+```
+
+### 6.6 Multi-cliente (siguiente etapa)
+Con el wildcard, sumar un cliente **no** requiere tocar el certificado. Falta
+parametrizar los stacks (un `docker-compose` por cliente, con su BD/puerto/nombres
+de contenedor) y darle a nginx un `server` block por subdominio que apunte al
+`app` de ese cliente. Es la próxima iteración del deploy.
 
 ## 7. Rollback
 

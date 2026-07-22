@@ -33,6 +33,11 @@ spring:
 
 server:
   port: 8080
+  # Detras de nginx (que termina el TLS), la app recibe las requests por HTTP
+  # interno. Sin esto, Spring genera redirects a http:// y cookies sin Secure
+  # cuando el usuario entro por https -> loops de login. 'framework' hace que
+  # honre X-Forwarded-Proto/For que nginx ya envia.
+  forward-headers-strategy: framework
   error:
     include-message: never
     include-stacktrace: never
