@@ -43,6 +43,11 @@ public class SecurityConfig {
                 // confirmacion de recepcion, edicion de programa) -- aunque sean
                 // GET (muestran un formulario), son puntos de entrada a una accion
                 // de escritura y no deben ser accesibles de solo-lectura.
+                // DEFENSA EN PROFUNDIDAD: estos mismos metodos llevan ademas
+                // @PreAuthorize("hasRole('SUPERADMIN')") en el controlador, asi que
+                // su proteccion NO depende de que estas lineas queden antes de la
+                // regla amplia de abajo -- si alguien reordena las reglas por error,
+                // el guard a nivel de metodo sigue bloqueando a GERENTE.
                 .requestMatchers(org.springframework.http.HttpMethod.GET,
                         "/recepciones/nueva", "/recepciones/facturar", "/recepciones/*/confirmar",
                         "/programas/nuevo", "/programas/*/editar",

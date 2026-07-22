@@ -9,6 +9,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.dao.DataIntegrityViolationException;
 import java.util.Map;
 import java.util.Optional;
@@ -107,6 +108,7 @@ public class CatalogoController {
 
     // ─── TIPOS DE TELA ───────────────────────────────────────
     @GetMapping("/tipos-tela")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public String listarTiposTela(Model model) {
         model.addAttribute("tiposTela", catalogoService.listarTiposTela());
         model.addAttribute("tipoTela", new TipoTela());
@@ -146,6 +148,7 @@ public class CatalogoController {
 
     // ─── TITULOS ─────────────────────────────────────────────
     @GetMapping("/titulos")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public String listarTitulos(Model model) {
         model.addAttribute("titulos", catalogoService.listarTitulos());
         // Nombre "tituloForm" (no "titulo") a proposito: el fragmento del layout
@@ -190,6 +193,7 @@ public class CatalogoController {
 
     // ─── COMPOSICIONES ───────────────────────────────────────
     @GetMapping("/composiciones")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public String listarComposiciones(Model model) {
         model.addAttribute("composiciones", catalogoService.listarComposiciones());
         model.addAttribute("composicion", new Composicion());
@@ -229,6 +233,7 @@ public class CatalogoController {
 
     // ─── ACABADOS ────────────────────────────────────────────
     @GetMapping("/acabados")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public String listarAcabados(Model model) {
         model.addAttribute("acabados", catalogoService.listarAcabados());
         model.addAttribute("acabado", new Acabado());
@@ -268,6 +273,7 @@ public class CatalogoController {
 
     // ─── EMPRESAS ────────────────────────────────────────────
     @GetMapping("/empresas")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public String listarEmpresas(Model model) {
         model.addAttribute("empresas", catalogoService.listarEmpresas());
         model.addAttribute("empresa", new Empresa());
@@ -516,6 +522,7 @@ public class CatalogoController {
 
     // ─── UBICACIONES ───────────────────────────────────────
     @GetMapping("/ubicaciones")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public String listarUbicaciones(Model model) {
         model.addAttribute("ubicaciones", catalogoService.listarUbicaciones());
         model.addAttribute("ubicacion", new Ubicacion());
