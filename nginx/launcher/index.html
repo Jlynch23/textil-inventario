@@ -5,37 +5,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TexControl — Ingreso</title>
     <style>
-        :root { --rojo:#c0392b; --oscuro:#1f2937; --gris:#6b7280; }
+        :root { --azul:#1a82f0; --azul-oscuro:#1568c8; --oscuro:#1f2937; --gris:#6b7280; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
             min-height: 100vh; display: flex; align-items: center; justify-content: center;
-            background: linear-gradient(135deg, #111827 0%, #1f2937 100%); color: #111827; padding: 20px;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #111827; padding: 20px;
         }
         .card {
-            background: #fff; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,.35);
-            width: 100%; max-width: 420px; padding: 40px 36px; text-align: center;
+            background: #fff; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,.4);
+            width: 100%; max-width: 430px; padding: 38px 36px; text-align: center;
         }
-        .brand { font-size: 30px; font-weight: 800; letter-spacing: 1px; color: var(--oscuro); }
-        .brand span { color: var(--rojo); }
-        .sub { color: var(--gris); font-size: 14px; margin-top: 6px; margin-bottom: 28px; }
+        .logo { width: 100%; max-width: 260px; height: auto; margin: 4px auto 4px; display: block; }
+        .sub { color: var(--gris); font-size: 14px; margin-top: 2px; margin-bottom: 26px; }
         label { display:block; text-align:left; font-weight:600; font-size:14px; margin-bottom:8px; color:var(--oscuro); }
         .campo { display: flex; align-items: stretch; border: 1px solid #d1d5db; border-radius: 10px; overflow: hidden; }
-        .campo:focus-within { border-color: var(--rojo); box-shadow: 0 0 0 3px rgba(192,57,43,.15); }
+        .campo:focus-within { border-color: var(--azul); box-shadow: 0 0 0 3px rgba(26,130,240,.15); }
         .campo input { flex: 1; border: none; outline: none; padding: 12px 14px; font-size: 16px; min-width: 0; }
         .campo .suf { display:flex; align-items:center; padding: 0 12px; background:#f3f4f6; color:var(--gris); font-size:14px; white-space:nowrap; }
         button {
-            margin-top: 20px; width: 100%; background: var(--rojo); color: #fff; border: none;
+            margin-top: 20px; width: 100%; background: var(--azul); color: #fff; border: none;
             padding: 13px; border-radius: 10px; font-size: 16px; font-weight: 700; cursor: pointer;
+            transition: background .15s;
         }
-        button:hover { background: #a93226; }
+        button:hover { background: var(--azul-oscuro); }
         .ayuda { margin-top: 18px; font-size: 12.5px; color: var(--gris); }
-        .error { color: var(--rojo); font-size: 13px; margin-top: 10px; min-height: 18px; text-align:left; }
+        .error { color: #c0392b; font-size: 13px; margin-top: 10px; min-height: 18px; text-align:left; }
     </style>
 </head>
 <body>
     <div class="card">
-        <div class="brand">TEX<span>CONTROL</span></div>
+        <img class="logo" src="logo.png" alt="TexControl ERP">
         <div class="sub">Control total para la industria textil</div>
 
         <form id="form" onsubmit="return ir(event)">
