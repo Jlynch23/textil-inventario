@@ -43,12 +43,16 @@ services:
     container_name: textil_nginx
     restart: unless-stopped
     ports:
-      # BIND_IP restringe el puerto 80 a una sola interfaz (ej. la IP de
-      # Tailscale del servidor). Sin definir en .env, cae en 0.0.0.0 y
-      # queda expuesto a toda la red -- por eso el .env de produccion debe
-      # fijar BIND_IP explicitamente.
+      # BIND_IP restringe los puertos a una sola interfaz. Para acceso por
+      # dominio publico (Cloudflare DNS-only), BIND_IP debe ser 0.0.0.0 en el
+      # .env. Para acceso solo por Tailscale, se fija la IP de Tailscale.
       - "${BIND_IP:-0.0.0.0}:80:80"
+      - "${BIND_IP:-0.0.0.0}:443:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      # Certificados de Let's Encrypt emitidos en el host (ver DEPLOY.md). Es
+      # bind mount de solo lectura; si la carpeta no existe todavia, Docker la
+      # crea vacia (inofensivo mientras nginx siga en modo HTTP sin TLS).
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       - app
