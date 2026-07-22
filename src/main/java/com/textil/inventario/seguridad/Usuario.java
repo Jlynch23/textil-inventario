@@ -28,6 +28,14 @@ public class Usuario extends BaseEntity {
     @Column(nullable = false)
     private Boolean activo = true;
 
+    /**
+     * Cuenta de prueba del proveedor: oculta para el ADMIN (igual que las
+     * cuentas SUPERADMIN) y sembrada inactiva. Solo el SUPERADMIN la ve y puede
+     * activarla para probar un rol. Ver V35 y la seguridad en UsuarioController.
+     */
+    @Column(name = "es_prueba", nullable = false)
+    private Boolean esPrueba = false;
+
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 

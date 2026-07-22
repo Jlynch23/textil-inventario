@@ -38,12 +38,19 @@ mvn -B test
 
 ### Login por defecto (multi-tenant por instancia)
 Cada copia se alquila como **instancia propia** (BD + despliegue por cliente; el nombre del
-negocio se personaliza con `NOMBRE_EMPRESA`). Dos cuentas semilla:
-- **`admin`** (rol **SUPERADMIN**, seed V2): cuenta **oculta del proveedor** (soporte). Invisible
-  e intocable para el cliente. Hash bcrypt en `V2__seed_data.sql`.
-- **`dueno`** (rol **ADMIN**, seed V31): cuenta del **dueño del cliente**, a entregar y rotar.
-El propio ADMIN rota su contraseña en **Mi cuenta** (`/usuarios/mi-cuenta`). Ambas credenciales
-de arranque deben rotarse.
+negocio se personaliza con `NOMBRE_EMPRESA`). Cuentas semilla (estado tras V35):
+- **`jlynch`** (Joseph Lynch, rol **SUPERADMIN**): la **única cuenta usable** de arranque, es el
+  **proveedor** (soporte, oculta para el cliente). Contraseña de arranque `superadmin`, a rotar.
+- **Cuentas de prueba** (una por rol): `adminprueba`, `gerenteprueba`, `supervisorprueba`,
+  `vendedorprueba` (contraseña = nombre del rol). Van **`es_prueba = true`** e **inactivas**:
+  ocultas para el ADMIN y sin login posible hasta que el SUPERADMIN las active para probar.
+- **No hay cuenta del dueño pre-armada**: al entregar una copia, el SUPERADMIN crea la cuenta
+  ADMIN del dueño (su nombre → username autogenerado).
+
+**Username autogenerado** (`GeneradorUsername`): inicial del primer nombre + primer apellido, sin
+tildes, único ("Oscar Clemente" → `oclemente`). Alta y **edición** de usuarios (nombre → regenera
+username, + rol + contraseña) en `UsuarioController`. Cada quien rota su clave en **Mi cuenta**
+(`/usuarios/mi-cuenta`).
 
 ## Arquitectura
 
@@ -110,7 +117,7 @@ parsing de guías, ese prompt es la fuente de verdad.
 
 - Todo cambio de esquema es una migración Flyway nueva en
   `src/main/resources/db/migration/V<n>__descripcion.sql`. **Nunca** editar una migración ya
-  aplicada; sumar una nueva con el siguiente número (actualmente van hasta **V31**).
+  aplicada; sumar una nueva con el siguiente número (actualmente van hasta **V35**).
 - `ddl-auto: validate`: si una entidad no calza con el esquema migrado, la app no arranca.
 - `baseline-on-migrate: true`.
 
