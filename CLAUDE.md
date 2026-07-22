@@ -145,6 +145,9 @@ push/PR a **ambas** ramas.
 - Código, nombres de paquete, comentarios y textos de UI están **en español** — mantener ese idioma.
 - Los **textos de UI** (labels, botones, mensajes al usuario) van en **español neutro/peruano (tuteo)**,
   NO en voseo argentino: "Ingresa"/"Escribe"/"Selecciona", nunca "Ingresá"/"Escribí"/"Seleccioná".
+- **NO usar `placeholder` (marca de agua) en los campos de formulario** — preferencia explícita del
+  cliente. Nada de texto de ejemplo gris dentro de los `<input>`; alcanza con el `<label>` (y un
+  `<small>` de ayuda debajo si de verdad hace falta), pero el campo va vacío.
 - Credenciales **nunca** hardcodeadas: siempre variables de entorno (ver `application.yml`).
 - Despliegue en VPS documentado en `DEPLOY.md` (Docker: MySQL + app + Nginx, acceso por Tailscale,
   `docker-compose.prod.yml`).
