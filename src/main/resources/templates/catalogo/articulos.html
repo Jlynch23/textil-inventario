@@ -15,7 +15,7 @@
 
     <div class="row g-4">
         <!-- FORMULARIO (solo SUPERADMIN puede crear) -->
-        <div class="col-md-4" sec:authorize="hasRole('SUPERADMIN')">
+        <div class="col-md-4" sec:authorize="hasAnyRole('ADMIN','SUPERADMIN')">
             <div class="card">
                 <div class="card-body p-4">
                     <h6 class="fw-bold mb-3">Nuevo Artículo</h6>
@@ -77,7 +77,7 @@
         </div>
 
         <!-- TABLA -->
-        <div th:class="${esSuperadmin} ? 'col-md-8' : 'col-md-8 offset-md-2'">
+        <div th:class="${esAdmin} ? 'col-md-8' : 'col-md-8 offset-md-2'">
             <div class="card">
                 <div class="card-body p-0">
                     <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
@@ -93,7 +93,7 @@
                                     <th>Título</th>
                                     <th>Composición</th>
                                     <th>Acabado</th>
-                                    <th sec:authorize="hasRole('SUPERADMIN')">Acciones</th>
+                                    <th sec:authorize="hasAnyRole('ADMIN','SUPERADMIN')">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -103,7 +103,7 @@
                                     <td th:text="${a.titulo.valor}"></td>
                                     <td th:text="${a.composicion.nombre}"></td>
                                     <td th:text="${a.acabado.nombre}"></td>
-                                    <td sec:authorize="hasRole('SUPERADMIN')">
+                                    <td sec:authorize="hasAnyRole('ADMIN','SUPERADMIN')">
                                         <form th:action="@{/catalogo/articulos/eliminar/{id}(id=${a.id})}" method="post" style="display:inline">
                                             <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar definitivamente"
                                                     onclick="return confirm('¿ELIMINAR este artículo de forma permanente? Esta acción no se puede deshacer. Si tiene stock o movimientos, el sistema lo bloqueará.')">

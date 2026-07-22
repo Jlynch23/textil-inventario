@@ -4,6 +4,7 @@ import com.textil.inventario.catalogo.ArticuloRepository;
 import com.textil.inventario.catalogo.ColorRepository;
 import com.textil.inventario.catalogo.UbicacionRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -40,6 +41,7 @@ public class TransferenciaController {
     }
 
     @GetMapping("/nueva")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public String nueva(Model model) {
         return "transferencias/nueva";
     }
@@ -73,6 +75,7 @@ public class TransferenciaController {
     }
 
     @GetMapping("/{id}/confirmar-salida")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public String confirmarSalidaForm(@PathVariable Long id, Model model) {
         model.addAttribute("transferencia", transferenciaService.buscarTransferencia(id));
         return "transferencias/confirmar-salida";
@@ -95,6 +98,7 @@ public class TransferenciaController {
     }
 
     @GetMapping("/{id}/confirmar-llegada")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public String confirmarLlegadaForm(@PathVariable Long id, Model model) {
         model.addAttribute("transferencia", transferenciaService.buscarTransferencia(id));
         model.addAttribute("ubicacionesDestino",

@@ -29,7 +29,7 @@
     </div>
 
     <div class="row g-4">
-        <div class="col-md-4" th:if="${transferencia.estado.name() == 'BORRADOR'}" sec:authorize="hasRole('SUPERADMIN')">
+        <div class="col-md-4" th:if="${transferencia.estado.name() == 'BORRADOR'}" sec:authorize="hasAnyRole('ADMIN','SUPERADMIN')">
             <div class="card">
                 <div class="card-body p-4">
                     <h6 class="fw-bold mb-3">Agregar Artículo</h6>
@@ -70,14 +70,14 @@
             </div>
         </div>
 
-        <div th:class="${transferencia.estado.name() == 'BORRADOR' and esSuperadmin} ? 'col-md-8' : 'col-md-12'">
+        <div th:class="${transferencia.estado.name() == 'BORRADOR' and esAdmin} ? 'col-md-8' : 'col-md-12'">
             <div class="card">
                 <div class="card-body p-0">
                     <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
                         <span class="fw-bold">Líneas de Transferencia</span>
                         <a th:if="${transferencia.estado.name() == 'BORRADOR' and !transferencia.detalles.empty}"
                            th:href="@{/transferencias/{id}/confirmar-salida(id=${transferencia.id})}"
-                           sec:authorize="hasRole('SUPERADMIN')"
+                           sec:authorize="hasAnyRole('ADMIN','SUPERADMIN')"
                            class="btn btn-success btn-sm">
                             <i class="bi bi-check-lg me-1"></i>Confirmar Salida
                         </a>

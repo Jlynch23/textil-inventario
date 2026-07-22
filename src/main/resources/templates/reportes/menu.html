@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       th:replace="~{layout/base :: layout(~{::title/text()}, ~{::section})}">
 <head><title>Reportes</title></head>
 <body>
@@ -57,7 +57,7 @@
                 </div>
             </a>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-4" sec:authorize="hasRole('SUPERADMIN')">
             <a th:href="@{/reportes/errores}" class="text-decoration-none">
                 <div class="card h-100">
                     <div class="card-body">

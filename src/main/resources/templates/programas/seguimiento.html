@@ -87,7 +87,7 @@
     </div>
     <a th:href="@{/programas}" class="btn btn-light mt-3">← Volver a Programas</a>
     <a th:unless="${programa.completo}" th:href="@{/programas/{id}/editar(id=${programa.id})}"
-       sec:authorize="hasRole('SUPERADMIN')" class="btn btn-primary mt-3"><i class="bi bi-pencil"></i> Editar Programa</a>
+       sec:authorize="hasAnyRole('ADMIN','SUPERADMIN')" class="btn btn-primary mt-3"><i class="bi bi-pencil"></i> Editar Programa</a>
 </section>
 </body>
 </html>

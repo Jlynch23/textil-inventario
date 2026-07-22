@@ -45,7 +45,7 @@
 
     <div class="row g-4">
         <!-- FORMULARIO AGREGAR LÍNEA -->
-        <div class="col-md-4" th:if="${recepcion.estado.name() == 'PENDIENTE'}" sec:authorize="hasRole('SUPERADMIN')">
+        <div class="col-md-4" th:if="${recepcion.estado.name() == 'PENDIENTE'}" sec:authorize="hasAnyRole('ADMIN','SUPERADMIN')">
             <div class="card">
                 <div class="card-body p-4">
                     <h6 class="fw-bold mb-3">Agregar Producto</h6>
@@ -94,14 +94,14 @@
         </div>
 
         <!-- TABLA DE LÍNEAS -->
-        <div th:class="${recepcion.estado.name() == 'PENDIENTE' and esSuperadmin} ? 'col-md-8' : 'col-md-12'">
+        <div th:class="${recepcion.estado.name() == 'PENDIENTE' and esAdmin} ? 'col-md-8' : 'col-md-12'">
             <div class="card">
                 <div class="card-body p-0">
                     <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
                         <span class="fw-bold">Líneas de Recepción</span>
                         <a th:if="${recepcion.estado.name() == 'PENDIENTE' and !recepcion.detalles.empty}"
                            th:href="@{/recepciones/{id}/confirmar(id=${recepcion.id})}"
-                           sec:authorize="hasRole('SUPERADMIN')"
+                           sec:authorize="hasAnyRole('ADMIN','SUPERADMIN')"
                            class="btn btn-success btn-sm">
                             <i class="bi bi-check-lg me-1"></i>Confirmar Recepción
                         </a>

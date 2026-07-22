@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -62,6 +63,7 @@ public class RecepcionController {
     }
 
     @GetMapping("/nueva")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public String nueva(Model model) {
         model.addAttribute("empresas", empresaRepository.findByActivoTrue());
         model.addAttribute("articulos", articuloRepository.findByActivoTrue());
@@ -103,6 +105,7 @@ public class RecepcionController {
     }
 
     @GetMapping("/{id}/confirmar")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public String confirmarForm(@PathVariable Long id, Model model) {
         model.addAttribute("recepcion", recepcionService.buscarRecepcion(id));
         return "recepciones/confirmar";
@@ -125,6 +128,7 @@ public class RecepcionController {
     }
 
     @GetMapping("/facturar")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public String facturarForm(Model model) {
         model.addAttribute("recepciones", recepcionService.listarRecepcionesSinFactura());
         return "recepciones/facturar";

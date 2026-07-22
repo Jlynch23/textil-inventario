@@ -51,7 +51,7 @@
         <div class="card-body p-0">
             <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
                 <span class="fw-bold" th:text="${documentos.size()} + ' documento(s)'"></span>
-                <button type="button" class="btn btn-success btn-sm" id="btnDescargarZip" sec:authorize="hasRole('SUPERADMIN')" disabled>
+                <button type="button" class="btn btn-success btn-sm" id="btnDescargarZip" sec:authorize="hasAnyRole('ADMIN','SUPERADMIN')" disabled>
                     <i class="bi bi-file-earmark-zip me-1"></i>Descargar seleccionados (.zip)
                 </button>
             </div>

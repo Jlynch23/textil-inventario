@@ -9,6 +9,7 @@ import com.textil.inventario.catalogo.TituloRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -39,6 +40,7 @@ public class ProgramaController {
     }
 
     @GetMapping("/nuevo")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public String nuevo(Model model) {
         model.addAttribute("empresas", empresaRepository.findByActivoTrue());
         model.addAttribute("colores", colorRepository.findByActivoTrue());
@@ -90,6 +92,7 @@ public class ProgramaController {
     }
 
     @GetMapping("/{id}/editar")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public String editar(@PathVariable Long id, Model model, RedirectAttributes ra) {
         Programa programa = programaService.buscarPrograma(id);
         if (programa.isCompleto()) {
