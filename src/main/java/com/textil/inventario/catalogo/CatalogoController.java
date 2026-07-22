@@ -50,6 +50,7 @@ public class CatalogoController {
     }
 
     @GetMapping("/colores/editar/{id}")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public String editarColor(@PathVariable Long id, Model model) {
         model.addAttribute("colores", catalogoService.listarColores());
         model.addAttribute("color", catalogoService.buscarColor(id));
@@ -131,6 +132,7 @@ public class CatalogoController {
     }
 
     @GetMapping("/tipos-tela/editar/{id}")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public String editarTipoTela(@PathVariable Long id, Model model) {
         model.addAttribute("tiposTela", catalogoService.listarTiposTela());
         model.addAttribute("tipoTela", catalogoService.buscarTipoTela(id));
@@ -176,6 +178,7 @@ public class CatalogoController {
     }
 
     @GetMapping("/titulos/editar/{id}")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public String editarTitulo(@PathVariable Long id, Model model) {
         model.addAttribute("titulos", catalogoService.listarTitulos());
         model.addAttribute("tituloForm", catalogoService.buscarTitulo(id));
@@ -216,6 +219,7 @@ public class CatalogoController {
     }
 
     @GetMapping("/composiciones/editar/{id}")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public String editarComposicion(@PathVariable Long id, Model model) {
         model.addAttribute("composiciones", catalogoService.listarComposiciones());
         model.addAttribute("composicion", catalogoService.buscarComposicion(id));
@@ -256,6 +260,7 @@ public class CatalogoController {
     }
 
     @GetMapping("/acabados/editar/{id}")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public String editarAcabado(@PathVariable Long id, Model model) {
         model.addAttribute("acabados", catalogoService.listarAcabados());
         model.addAttribute("acabado", catalogoService.buscarAcabado(id));
@@ -296,6 +301,7 @@ public class CatalogoController {
     }
 
     @GetMapping("/empresas/editar/{id}")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public String editarEmpresa(@PathVariable Long id, Model model) {
         model.addAttribute("empresas", catalogoService.listarEmpresas());
         model.addAttribute("empresa", catalogoService.buscarEmpresa(id));
