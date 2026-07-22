@@ -5,32 +5,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TexControl — Ingreso</title>
     <style>
-        :root { --azul:#1a82f0; --azul-oscuro:#1568c8; --oscuro:#1f2937; --gris:#6b7280; }
+        :root { --azul:#1a82f0; --azul-oscuro:#1568c8; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
             min-height: 100vh; display: flex; align-items: center; justify-content: center;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #111827; padding: 20px;
+            background: radial-gradient(1200px 600px at 50% -10%, #16233b 0%, #0b1220 60%, #070c16 100%);
+            padding: 20px;
         }
         .card {
-            background: #fff; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,.4);
-            width: 100%; max-width: 430px; padding: 38px 36px; text-align: center;
+            background: #0f1a2e;
+            border: 1px solid rgba(148,163,184,.14);
+            border-radius: 18px; box-shadow: 0 24px 70px rgba(0,0,0,.55);
+            width: 100%; max-width: 440px; padding: 40px 38px; text-align: center;
         }
-        .logo { width: 100%; max-width: 260px; height: auto; margin: 4px auto 4px; display: block; }
-        .sub { color: var(--gris); font-size: 14px; margin-top: 2px; margin-bottom: 26px; }
-        label { display:block; text-align:left; font-weight:600; font-size:14px; margin-bottom:8px; color:var(--oscuro); }
-        .campo { display: flex; align-items: stretch; border: 1px solid #d1d5db; border-radius: 10px; overflow: hidden; }
-        .campo:focus-within { border-color: var(--azul); box-shadow: 0 0 0 3px rgba(26,130,240,.15); }
-        .campo input { flex: 1; border: none; outline: none; padding: 12px 14px; font-size: 16px; min-width: 0; }
-        .campo .suf { display:flex; align-items:center; padding: 0 12px; background:#f3f4f6; color:var(--gris); font-size:14px; white-space:nowrap; }
+        .logo { width: 100%; max-width: 270px; height: auto; margin: 0 auto 10px; display: block; }
+        .sub { color: #93a4bd; font-size: 14px; margin-top: 2px; margin-bottom: 28px; }
+        label { display:block; text-align:left; font-weight:600; font-size:14px; margin-bottom:8px; color:#dbe4f0; }
+        .campo { display: flex; align-items: stretch; border: 1px solid #2b3a53; border-radius: 10px; overflow: hidden; background:#0b1424; }
+        .campo:focus-within { border-color: var(--azul); box-shadow: 0 0 0 3px rgba(26,130,240,.20); }
+        .campo input { flex: 1; border: none; outline: none; padding: 12px 14px; font-size: 16px; min-width: 0; background: transparent; color: #f1f5f9; }
+        .campo input::placeholder { color:#5b6b85; }
+        .campo .suf { display:flex; align-items:center; padding: 0 12px; background:#132038; color:#8ea3c2; font-size:14px; white-space:nowrap; border-left:1px solid #2b3a53; }
         button {
-            margin-top: 20px; width: 100%; background: var(--azul); color: #fff; border: none;
+            margin-top: 22px; width: 100%; background: var(--azul); color: #fff; border: none;
             padding: 13px; border-radius: 10px; font-size: 16px; font-weight: 700; cursor: pointer;
             transition: background .15s;
         }
         button:hover { background: var(--azul-oscuro); }
-        .ayuda { margin-top: 18px; font-size: 12.5px; color: var(--gris); }
-        .error { color: #c0392b; font-size: 13px; margin-top: 10px; min-height: 18px; text-align:left; }
+        .ayuda { margin-top: 18px; font-size: 12.5px; color: #7c8ba6; }
+        .error { color: #f87171; font-size: 13px; margin-top: 10px; min-height: 18px; text-align:left; }
     </style>
 </head>
 <body>
