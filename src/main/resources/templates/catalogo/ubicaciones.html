@@ -15,7 +15,7 @@
 
     <div class="row g-4">
         <!-- FORMULARIO (solo SUPERADMIN puede crear) -->
-        <div class="col-md-4" sec:authorize="hasRole('SUPERADMIN')">
+        <div class="col-md-4" sec:authorize="hasAnyRole('ADMIN','SUPERADMIN')">
             <div class="card">
                 <div class="card-body p-4">
                     <h6 class="fw-bold mb-3">Nueva Ubicación</h6>
@@ -52,7 +52,7 @@
         </div>
 
         <!-- TABLA -->
-        <div th:class="${esSuperadmin} ? 'col-md-8' : 'col-md-8 offset-md-2'">
+        <div th:class="${esAdmin} ? 'col-md-8' : 'col-md-8 offset-md-2'">
             <div class="card">
                 <div class="card-body p-0">
                     <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
@@ -67,7 +67,7 @@
                                     <th>Nombre</th>
                                     <th>Tipo</th>
                                     <th>Principal</th>
-                                    <th sec:authorize="hasRole('SUPERADMIN')">Acciones</th>
+                                    <th sec:authorize="hasAnyRole('ADMIN','SUPERADMIN')">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -82,7 +82,7 @@
                                     <td>
                                         <i th:if="${u.esPrincipal}" class="bi bi-star-fill text-warning"></i>
                                     </td>
-                                    <td sec:authorize="hasRole('SUPERADMIN')">
+                                    <td sec:authorize="hasAnyRole('ADMIN','SUPERADMIN')">
                                         <form th:action="@{/catalogo/ubicaciones/eliminar/{id}(id=${u.id})}" method="post" style="display:inline">
                                             <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar definitivamente"
                                                     onclick="return confirm('¿ELIMINAR esta ubicación de forma permanente? Esta acción no se puede deshacer. Si tiene stock o transferencias, el sistema lo bloqueará.')">

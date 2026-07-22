@@ -63,7 +63,7 @@ public class RecepcionController {
     }
 
     @GetMapping("/nueva")
-    @PreAuthorize("hasRole('SUPERADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public String nueva(Model model) {
         model.addAttribute("empresas", empresaRepository.findByActivoTrue());
         model.addAttribute("articulos", articuloRepository.findByActivoTrue());
@@ -105,7 +105,7 @@ public class RecepcionController {
     }
 
     @GetMapping("/{id}/confirmar")
-    @PreAuthorize("hasRole('SUPERADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public String confirmarForm(@PathVariable Long id, Model model) {
         model.addAttribute("recepcion", recepcionService.buscarRecepcion(id));
         return "recepciones/confirmar";
@@ -128,7 +128,7 @@ public class RecepcionController {
     }
 
     @GetMapping("/facturar")
-    @PreAuthorize("hasRole('SUPERADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public String facturarForm(Model model) {
         model.addAttribute("recepciones", recepcionService.listarRecepcionesSinFactura());
         return "recepciones/facturar";

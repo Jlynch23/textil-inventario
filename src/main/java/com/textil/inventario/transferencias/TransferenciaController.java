@@ -41,7 +41,7 @@ public class TransferenciaController {
     }
 
     @GetMapping("/nueva")
-    @PreAuthorize("hasRole('SUPERADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public String nueva(Model model) {
         return "transferencias/nueva";
     }
@@ -75,7 +75,7 @@ public class TransferenciaController {
     }
 
     @GetMapping("/{id}/confirmar-salida")
-    @PreAuthorize("hasRole('SUPERADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public String confirmarSalidaForm(@PathVariable Long id, Model model) {
         model.addAttribute("transferencia", transferenciaService.buscarTransferencia(id));
         return "transferencias/confirmar-salida";
@@ -98,7 +98,7 @@ public class TransferenciaController {
     }
 
     @GetMapping("/{id}/confirmar-llegada")
-    @PreAuthorize("hasRole('SUPERADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public String confirmarLlegadaForm(@PathVariable Long id, Model model) {
         model.addAttribute("transferencia", transferenciaService.buscarTransferencia(id));
         model.addAttribute("ubicacionesDestino",

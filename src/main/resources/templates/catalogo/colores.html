@@ -23,7 +23,7 @@
 
     <div class="row g-4">
         <!-- FORMULARIO (solo SUPERADMIN puede crear/editar) -->
-        <div class="col-md-4" sec:authorize="hasRole('SUPERADMIN')">
+        <div class="col-md-4" sec:authorize="hasAnyRole('ADMIN','SUPERADMIN')">
             <div class="card">
                 <div class="card-body p-4">
                     <h6 class="fw-bold mb-3"
@@ -57,7 +57,7 @@
         </div>
 
         <!-- TABLA -->
-        <div th:class="${esSuperadmin} ? 'col-md-8' : 'col-md-8 offset-md-2'">
+        <div th:class="${esAdmin} ? 'col-md-8' : 'col-md-8 offset-md-2'">
             <div class="card">
                 <div class="card-body p-0">
                     <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
@@ -70,7 +70,7 @@
                                 <tr>
                                     <th>Nombre</th>
                                     <th>Código FAST DYE</th>
-                                    <th sec:authorize="hasRole('SUPERADMIN')">Acciones</th>
+                                    <th sec:authorize="hasAnyRole('ADMIN','SUPERADMIN')">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -82,7 +82,7 @@
                                                th:text="${c.nombreOficial}"></small>
                                     </td>
                                     <td><code class="codigo-fast-dye" th:text="${c.codigoFastDye}"></code></td>
-                                    <td sec:authorize="hasRole('SUPERADMIN')">
+                                    <td sec:authorize="hasAnyRole('ADMIN','SUPERADMIN')">
                                         <a th:href="@{/catalogo/colores/editar/{id}(id=${c.id})}"
                                            class="btn btn-sm btn-outline-primary">
                                             <i class="bi bi-pencil"></i>

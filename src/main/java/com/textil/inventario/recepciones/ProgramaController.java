@@ -40,7 +40,7 @@ public class ProgramaController {
     }
 
     @GetMapping("/nuevo")
-    @PreAuthorize("hasRole('SUPERADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public String nuevo(Model model) {
         model.addAttribute("empresas", empresaRepository.findByActivoTrue());
         model.addAttribute("colores", colorRepository.findByActivoTrue());
@@ -92,7 +92,7 @@ public class ProgramaController {
     }
 
     @GetMapping("/{id}/editar")
-    @PreAuthorize("hasRole('SUPERADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public String editar(@PathVariable Long id, Model model, RedirectAttributes ra) {
         Programa programa = programaService.buscarPrograma(id);
         if (programa.isCompleto()) {

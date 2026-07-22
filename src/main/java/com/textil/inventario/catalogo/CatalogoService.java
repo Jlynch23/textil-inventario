@@ -189,11 +189,11 @@ public class CatalogoService {
 
     // ELIMINAR (borrado real). Si el registro esta en uso por otras tablas (FK),
     // la base de datos rechaza el borrado y el controlador debe capturar la excepcion.
-    @org.springframework.security.access.prepost.PreAuthorize("hasRole('SUPERADMIN')")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public void eliminarColor(Long id) { colorRepository.deleteById(id); }
-    @org.springframework.security.access.prepost.PreAuthorize("hasRole('SUPERADMIN')")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public void eliminarArticulo(Long id) { articuloRepository.deleteById(id); }
-    @org.springframework.security.access.prepost.PreAuthorize("hasRole('SUPERADMIN')")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public void eliminarUbicacion(Long id) {
         Ubicacion u = ubicacionRepository.findById(id).orElseThrow();
         if (Boolean.TRUE.equals(u.getEsPrincipal())) {

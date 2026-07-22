@@ -52,16 +52,20 @@ public class GlobalModelAttributes {
     }
 
     /**
-     * Usado en vistas de catalogo (colores, ubicaciones, articulos) para
-     * centrar la tabla cuando el panel lateral de creacion esta oculto
-     * (no-SUPERADMIN) -- sin esto, la tabla queda pegada a la izquierda
-     * con un hueco vacio donde antes estaba el formulario.
+     * Usado en vistas de catalogo (colores, ubicaciones, articulos) y en los
+     * detalles de recepcion/transferencia para centrar la tabla cuando el panel
+     * lateral de creacion/edicion esta oculto -- sin esto, la tabla queda pegada
+     * a la izquierda con un hueco vacio donde iria el formulario.
+     * <p>
+     * Es true para ADMIN (dueño-cliente) y SUPERADMIN (proveedor): ambos ven los
+     * paneles de escritura. Para GERENTE (solo lectura) es false.
      */
-    @ModelAttribute("esSuperadmin")
-    public boolean esSuperadmin() {
+    @ModelAttribute("esAdmin")
+    public boolean esAdmin() {
         Usuario usuario = usuarioActualService.obtenerUsuarioActualOrNull();
-        return usuario != null && usuario.getRol() != null
-                && "SUPERADMIN".equalsIgnoreCase(usuario.getRol().getNombre());
+        if (usuario == null || usuario.getRol() == null) return false;
+        String rol = usuario.getRol().getNombre();
+        return "ADMIN".equalsIgnoreCase(rol) || "SUPERADMIN".equalsIgnoreCase(rol);
     }
 
     @ModelAttribute("nombreEmpresa")

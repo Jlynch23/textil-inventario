@@ -36,9 +36,14 @@ mvn -B test
 `DB_USERNAME` (def. `textil_user`), `DOCUMENTOS_PATH` (def. `./documentos`),
 `MAX_UPLOAD_SIZE` (def. `25MB`), `NOMBRE_EMPRESA`, y en prod `MYSQL_ROOT_PASSWORD` / `BIND_IP`.
 
-### Login por defecto (seed V2)
-Usuario **`admin`** (rol SUPERADMIN, derivado de `admin@textil.com`). El hash bcrypt está en
-`V2__seed_data.sql`; la credencial de arranque debe rotarse en el primer login.
+### Login por defecto (multi-tenant por instancia)
+Cada copia se alquila como **instancia propia** (BD + despliegue por cliente; el nombre del
+negocio se personaliza con `NOMBRE_EMPRESA`). Dos cuentas semilla:
+- **`admin`** (rol **SUPERADMIN**, seed V2): cuenta **oculta del proveedor** (soporte). Invisible
+  e intocable para el cliente. Hash bcrypt en `V2__seed_data.sql`.
+- **`dueno`** (rol **ADMIN**, seed V31): cuenta del **dueño del cliente**, a entregar y rotar.
+El propio ADMIN rota su contraseña en **Mi cuenta** (`/usuarios/mi-cuenta`). Ambas credenciales
+de arranque deben rotarse.
 
 ## Arquitectura
 
@@ -65,19 +70,33 @@ Módulos (paquete → ruta base del controlador):
 
 ## Roles y seguridad (`config/SecurityConfig.java`)
 
-- **SUPERADMIN**: acceso total. Es el `anyRequest()` por defecto y el único que aprueba la
-  cola de revisión del almacén (`/almacen/revision/**`).
+Jerarquía (mayor → menor): **SUPERADMIN** (proveedor) > **ADMIN** (dueño-cliente) >
+GERENTE / SUPERVISOR / VENDEDOR. El `anyRequest()` por defecto es **ADMIN + SUPERADMIN**.
+
+- **SUPERADMIN**: el **proveedor** (tú). Cuenta oculta de soporte que entra a cada copia.
+  Acceso total. **Reservado exclusivamente**: Reporte de Errores del Sistema
+  (`/reportes/errores`) y la gestión de cuentas SUPERADMIN (invisibles/intocables para el ADMIN,
+  ocultadas dentro de `UsuarioController`, no por URL). En el Log de Auditoría, sus acciones se
+  ocultan al ADMIN (filtro en `LogEventoRepository.buscarConFiltros`).
+- **ADMIN**: el **dueño del negocio cliente**. Controla todo lo operativo (recepciones,
+  transferencias, catálogo, revisión de almacén, reportes salvo errores, archivo histórico,
+  usuarios de su equipo). Puede asignar cualquier rol **menos SUPERADMIN**.
 - **SUPERVISOR**: personal de almacén. Accede a `/almacen/**` (entrada/salida rápida móvil);
   sus movimientos entran a la cola de revisión antes de afectar el stock. Al loguear se
   redirige a `/almacen`.
-- **GERENTE**: **solo lectura** (GET) de áreas operativas. Ojo con la lógica: las páginas GET
-  que son punto de entrada a una escritura (p.ej. `/recepciones/nueva`, `/programas/*/editar`,
-  `/catalogo/empresas`) se bloquean explícitamente para GERENTE **antes** de la regla general
-  de lectura. NUNCA accede a `/log/**` ni `/reportes/**`.
+- **GERENTE**: **solo lectura** (GET) de áreas operativas. Las páginas GET que son punto de
+  entrada a una escritura (p.ej. `/recepciones/nueva`, `/programas/*/editar`, `/catalogo/empresas`)
+  se bloquean para GERENTE (quedan ADMIN+SUPERADMIN). NUNCA accede a `/log/**` ni `/reportes/**`.
 - **VENDEDOR**: reservado para el futuro módulo de Ventas; hoy **sin permisos** en SecurityConfig.
 
-Al tocar rutas, revisar el orden de las reglas en `SecurityConfig`: son evaluadas en secuencia
-y varias excepciones GET para GERENTE dependen de estar listadas antes de la regla amplia.
+**Autoservicio**: cualquier usuario autenticado cambia su propia contraseña en
+`/usuarios/mi-cuenta` (rutas permitidas antes de `/usuarios/**` en SecurityConfig).
+
+**Defensa en profundidad**: la autorización de las páginas de escritura no depende solo del
+orden de las reglas de URL — los métodos de entrada a escritura (controladores) y los borrados
+(servicios) llevan `@PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")`. Igual, al tocar rutas
+revisar el orden en `SecurityConfig`: se evalúan en secuencia y las excepciones GER­ENTE/reservadas
+deben ir antes de la regla amplia.
 
 ## OCR con IA (`recepciones/AnthropicOcrService.java`)
 
@@ -91,7 +110,7 @@ parsing de guías, ese prompt es la fuente de verdad.
 
 - Todo cambio de esquema es una migración Flyway nueva en
   `src/main/resources/db/migration/V<n>__descripcion.sql`. **Nunca** editar una migración ya
-  aplicada; sumar una nueva con el siguiente número (actualmente van hasta **V30**).
+  aplicada; sumar una nueva con el siguiente número (actualmente van hasta **V31**).
 - `ddl-auto: validate`: si una entidad no calza con el esquema migrado, la app no arranca.
 - `baseline-on-migrate: true`.
 

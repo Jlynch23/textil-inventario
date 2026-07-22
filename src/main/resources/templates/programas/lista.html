@@ -6,7 +6,7 @@
 <section>
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h5 class="fw-bold mb-0">Programas</h5>
-        <a th:href="@{/programas/nuevo}" sec:authorize="hasRole('SUPERADMIN')" class="btn btn-primary btn-sm">
+        <a th:href="@{/programas/nuevo}" sec:authorize="hasAnyRole('ADMIN','SUPERADMIN')" class="btn btn-primary btn-sm">
             <i class="bi bi-plus-lg me-1"></i>Nuevo Programa
         </a>
     </div>

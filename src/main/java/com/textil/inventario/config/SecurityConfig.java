@@ -35,19 +35,39 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/login", "/logout", "/css/**", "/js/**", "/img/**").permitAll()
                 .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
-                .requestMatchers("/almacen/revision/**").hasRole("SUPERADMIN")
-                .requestMatchers("/almacen/**").hasAnyRole("SUPERVISOR", "SUPERADMIN")
+
+                // JERARQUIA (de mayor a menor):
+                //   SUPERADMIN (proveedor)  > ADMIN (dueño-cliente)
+                //     > GERENTE / SUPERVISOR / VENDEDOR
+                // El default (anyRequest) es ADMIN+SUPERADMIN: el ADMIN controla
+                // todo su negocio, salvo lo que se RESERVA explicitamente al
+                // proveedor mas abajo. SUPERADMIN es una cuenta oculta de soporte.
+
+                // --- Autoservicio: cualquier usuario autenticado gestiona SU
+                // propia cuenta (cambiar su contraseña). Va PRIMERO que /usuarios/**.
+                .requestMatchers("/usuarios/mi-cuenta", "/usuarios/cambiar-mi-password").authenticated()
+
+                // --- RESERVADO SOLO AL PROVEEDOR (SUPERADMIN) ---
+                // Reporte de Errores del Sistema (diagnostico tecnico/OCR). Debe ir
+                // ANTES del anyRequest ADMIN+SUPERADMIN para que el ADMIN no lo alcance.
+                .requestMatchers("/reportes/errores").hasRole("SUPERADMIN")
+                // La gestion de cuentas SUPERADMIN no se restringe por URL sino
+                // DENTRO de UsuarioController: el ADMIN entra a /usuarios pero no
+                // ve, ni crea, ni toca cuentas SUPERADMIN (quedan ocultas).
+                .requestMatchers("/usuarios/**").hasAnyRole("ADMIN", "SUPERADMIN")
+
+                // --- Almacen (operacion movil del SUPERVISOR) ---
+                // La cola de revision la aprueba el dueño (ADMIN) o el proveedor.
+                .requestMatchers("/almacen/revision/**").hasAnyRole("ADMIN", "SUPERADMIN")
+                .requestMatchers("/almacen/**").hasAnyRole("SUPERVISOR", "ADMIN", "SUPERADMIN")
+
                 // GERENTE: solo lectura (GET) en las areas operativas relevantes.
-                // Antes de la regla general de lectura, se bloquean explicitamente
-                // las paginas de creacion/edicion (subida de guias/facturas,
-                // confirmacion de recepcion, edicion de programa) -- aunque sean
-                // GET (muestran un formulario), son puntos de entrada a una accion
-                // de escritura y no deben ser accesibles de solo-lectura.
-                // DEFENSA EN PROFUNDIDAD: estos mismos metodos llevan ademas
-                // @PreAuthorize("hasRole('SUPERADMIN')") en el controlador, asi que
-                // su proteccion NO depende de que estas lineas queden antes de la
-                // regla amplia de abajo -- si alguien reordena las reglas por error,
-                // el guard a nivel de metodo sigue bloqueando a GERENTE.
+                // Antes de la regla general de lectura, se bloquean las paginas de
+                // creacion/edicion (aunque sean GET, son puntos de entrada a una
+                // escritura) dejandolas para ADMIN+SUPERADMIN. Estos mismos metodos
+                // llevan ademas @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')") en
+                // el controlador (defensa en profundidad): su proteccion NO depende
+                // de que estas lineas queden antes de la regla amplia de abajo.
                 .requestMatchers(org.springframework.http.HttpMethod.GET,
                         "/recepciones/nueva", "/recepciones/facturar", "/recepciones/*/confirmar",
                         "/programas/nuevo", "/programas/*/editar",
@@ -55,24 +75,24 @@ public class SecurityConfig {
                         "/catalogo/ubicaciones",
                         "/catalogo/empresas", "/catalogo/tipos-tela", "/catalogo/titulos",
                         "/catalogo/composiciones", "/catalogo/acabados"
-                ).hasRole("SUPERADMIN")
-                // NUNCA se le da acceso a /log/** ni /reportes/** (ni siquiera de
-                // lectura), y cualquier accion de escritura (POST/PUT/DELETE) a
-                // estas mismas rutas cae al anyRequest().hasRole("SUPERADMIN") de
-                // abajo, que GERENTE no cumple -- queda bloqueada automaticamente.
+                ).hasAnyRole("ADMIN", "SUPERADMIN")
+                // Lectura amplia para GERENTE (mas ADMIN y SUPERADMIN). Ojo: NO se
+                // incluyen /reportes/** ni /log/** aqui -- esos caen al anyRequest
+                // ADMIN+SUPERADMIN, asi que GERENTE nunca los alcanza (se mantiene
+                // su restriccion historica).
                 .requestMatchers(org.springframework.http.HttpMethod.GET,
                         "/", "/dashboard",
                         "/inventario/**", "/catalogo/**", "/programas/**",
                         "/documentos/**", "/recepciones/**", "/transferencias/**"
-                ).hasAnyRole("GERENTE", "SUPERADMIN")
+                ).hasAnyRole("GERENTE", "ADMIN", "SUPERADMIN")
                 // Descarga de documentos en zip: es solo lectura (igual que ver/descargar
                 // individual, ya permitido arriba a GERENTE), aunque tecnicamente sea POST
                 // porque manda una lista de ids en el body. Sin esta regla quedaria
                 // silenciosamente bloqueada para GERENTE por el anyRequest() de abajo.
                 .requestMatchers(org.springframework.http.HttpMethod.POST,
                         "/documentos/descargar-zip"
-                ).hasAnyRole("GERENTE", "SUPERADMIN")
-                .anyRequest().hasRole("SUPERADMIN")
+                ).hasAnyRole("GERENTE", "ADMIN", "SUPERADMIN")
+                .anyRequest().hasAnyRole("ADMIN", "SUPERADMIN")
             )
             .formLogin(form -> form
                 .loginPage("/login")

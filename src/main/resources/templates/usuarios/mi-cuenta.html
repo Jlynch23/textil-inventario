@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title/text()}, ~{::section})}">
+<head><title>Mi cuenta</title></head>
+<body>
+<section>
+    <div th:if="${mensaje}" class="alert alert-success alert-dismissible fade show">
+        <span th:text="${mensaje}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show">
+        <span th:text="${error}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold mb-3"><i class="bi bi-person-circle me-2"></i>Mi cuenta</h6>
+
+                    <dl class="row mb-4">
+                        <dt class="col-sm-4 text-muted fw-normal">Nombre</dt>
+                        <dd class="col-sm-8" th:text="${usuario.nombre}">Nombre</dd>
+                        <dt class="col-sm-4 text-muted fw-normal">Usuario</dt>
+                        <dd class="col-sm-8" th:text="${usuario.username}">usuario</dd>
+                        <dt class="col-sm-4 text-muted fw-normal">Rol</dt>
+                        <dd class="col-sm-8"><span class="badge bg-primary" th:text="${usuario.rol.nombre}">ROL</span></dd>
+                    </dl>
+
+                    <h6 class="fw-bold mb-3">Cambiar mi contraseña</h6>
+                    <form th:action="@{/usuarios/cambiar-mi-password}" method="post">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Contraseña actual</label>
+                            <input type="password" class="form-control" name="passwordActual" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Nueva contraseña</label>
+                            <input type="password" class="form-control" name="passwordNueva" minlength="6" required>
+                            <small class="text-muted">Mínimo 6 caracteres.</small>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Confirmar nueva contraseña</label>
+                            <input type="password" class="form-control" name="passwordConfirmacion" minlength="6" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-key me-2"></i>Actualizar contraseña
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+</body>
+</html>
