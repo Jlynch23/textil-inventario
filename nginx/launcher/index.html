@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TexControl — Ingreso</title>
+    <style>
+        :root { --rojo:#c0392b; --oscuro:#1f2937; --gris:#6b7280; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            min-height: 100vh; display: flex; align-items: center; justify-content: center;
+            background: linear-gradient(135deg, #111827 0%, #1f2937 100%); color: #111827; padding: 20px;
+        }
+        .card {
+            background: #fff; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,.35);
+            width: 100%; max-width: 420px; padding: 40px 36px; text-align: center;
+        }
+        .brand { font-size: 30px; font-weight: 800; letter-spacing: 1px; color: var(--oscuro); }
+        .brand span { color: var(--rojo); }
+        .sub { color: var(--gris); font-size: 14px; margin-top: 6px; margin-bottom: 28px; }
+        label { display:block; text-align:left; font-weight:600; font-size:14px; margin-bottom:8px; color:var(--oscuro); }
+        .campo { display: flex; align-items: stretch; border: 1px solid #d1d5db; border-radius: 10px; overflow: hidden; }
+        .campo:focus-within { border-color: var(--rojo); box-shadow: 0 0 0 3px rgba(192,57,43,.15); }
+        .campo input { flex: 1; border: none; outline: none; padding: 12px 14px; font-size: 16px; min-width: 0; }
+        .campo .suf { display:flex; align-items:center; padding: 0 12px; background:#f3f4f6; color:var(--gris); font-size:14px; white-space:nowrap; }
+        button {
+            margin-top: 20px; width: 100%; background: var(--rojo); color: #fff; border: none;
+            padding: 13px; border-radius: 10px; font-size: 16px; font-weight: 700; cursor: pointer;
+        }
+        button:hover { background: #a93226; }
+        .ayuda { margin-top: 18px; font-size: 12.5px; color: var(--gris); }
+        .error { color: var(--rojo); font-size: 13px; margin-top: 10px; min-height: 18px; text-align:left; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="brand">TEX<span>CONTROL</span></div>
+        <div class="sub">Control total para la industria textil</div>
+
+        <form id="form" onsubmit="return ir(event)">
+            <label for="empresa">Ingresá el nombre de tu empresa</label>
+            <div class="campo">
+                <input id="empresa" type="text" placeholder="textillaura" autocomplete="off" autofocus>
+                <span class="suf">.texcontrol.pe</span>
+            </div>
+            <div class="error" id="error"></div>
+            <button type="submit">Ingresar &rarr;</button>
+        </form>
+
+        <div class="ayuda">Escribí el nombre de tu empresa y te llevamos a tu sistema.</div>
+    </div>
+
+    <script>
+        // Normaliza lo que escribe el cliente a un slug de subdominio.
+        // normalize('NFD') separa la tilde de la letra (a + acento); luego, al
+        // dejar solo a-z0-9, el acento se descarta y "á" queda en "a".
+        function slug(txt) {
+            return txt.normalize('NFD').toLowerCase().replace(/[^a-z0-9]/g, '');
+        }
+        function ir(e) {
+            e.preventDefault();
+            var s = slug(document.getElementById('empresa').value);
+            var err = document.getElementById('error');
+            if (!s) { err.textContent = 'Escribí el nombre de tu empresa.'; return false; }
+            err.textContent = '';
+            window.location.href = 'https://' + s + '.texcontrol.pe';
+            return false;
+        }
+    </script>
+</body>
+</html>

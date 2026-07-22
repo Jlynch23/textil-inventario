@@ -50,6 +50,8 @@ services:
       - "${BIND_IP:-0.0.0.0}:443:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      # Pagina lanzador servida en el dominio raiz (texcontrol.pe).
+      - ./nginx/launcher:/usr/share/nginx/launcher:ro
       # Certificados de Let's Encrypt emitidos en el host (ver DEPLOY.md). Es
       # bind mount de solo lectura; si la carpeta no existe todavia, Docker la
       # crea vacia (inofensivo mientras nginx siga en modo HTTP sin TLS).
