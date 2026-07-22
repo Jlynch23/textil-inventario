@@ -151,3 +151,22 @@ push/PR a **ambas** ramas.
 - Credenciales **nunca** hardcodeadas: siempre variables de entorno (ver `application.yml`).
 - Despliegue en VPS documentado en `DEPLOY.md` (Docker: MySQL + app + Nginx, acceso por Tailscale,
   `docker-compose.prod.yml`).
+
+## Roadmap / pendientes
+
+Estado actual: **en vivo** en `texcontrol.pe` (dominio + HTTPS wildcard; `login.texcontrol.pe` =
+lanzador, `<empresa>.texcontrol.pe` = la app). Falta, por orden de prioridad:
+
+1. **Multi-cliente real (BD aislada por empresa)**: hoy TODOS los subdominios van a la MISMA app y
+   MISMA base de datos. Falta que cada empresa tenga su **stack aislado** (su BD + su contenedor) en
+   el mismo VPS, con nginx ruteando cada subdominio a su contenedor, y un script `nuevo-cliente.sh`
+   que aprovisione un cliente con un comando. Es la pieza que habilita el modelo de negocio.
+2. **App móvil iOS/Android**: una app para celular para que **los usuarios ingresen desde el móvil**
+   (los vendedores/almaceneros/gerentes de cada empresa). A definir: nativa contra una API REST
+   (que hay que construir), PWA instalable sobre la web actual, o wrapper WebView. Pedido explícito
+   del cliente.
+3. **Antes del primer cliente que pague**: backups automáticos (cron por cliente), rotar `jlynch`
+   con clave única por copia, limpiar/cerrar cuentas de prueba, `NOMBRE_EMPRESA` por cliente.
+4. **Marketing** en `texcontrol.pe` (hoy la raíz redirige a `login.`).
+5. **Hardening**: cerrar el puerto 22 al público (SSH solo por Tailscale).
+6. **Módulo de Ventas** (rol `VENDEDOR`, hoy sin permisos).
