@@ -34,6 +34,10 @@ public class SecurityConfig {
         http
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/login", "/logout", "/css/**", "/js/**", "/img/**").permitAll()
+                // Archivos de la PWA (app movil instalable). El service worker
+                // DEBE servirse desde la raiz para controlar todo el origen, y el
+                // manifest/offline los pide el navegador sin sesion.
+                .requestMatchers("/manifest.webmanifest", "/sw.js", "/offline.html", "/favicon.ico").permitAll()
                 .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
 
                 // JERARQUIA (de mayor a menor):
