@@ -25,7 +25,13 @@
             border-bottom: 1px solid rgba(148,163,184,.14);
         }
         .nav { display: flex; align-items: center; justify-content: space-between; height: 66px; }
-        .nav img { height: 30px; width: auto; }
+        /* Marca en texto (nitida a cualquier tamaño) + el simbolo transparente. */
+        .marca { display: inline-flex; align-items: center; gap: 10px; }
+        .marca img { height: 32px; width: auto; }
+        .marca .nombre { font-size: 21px; font-weight: 800; letter-spacing: -.3px; color: #fff; line-height: 1; }
+        .marca .erp { font-size: 10px; font-weight: 700; letter-spacing: .6px; color: var(--azul);
+            border: 1px solid rgba(26,130,240,.55); border-radius: 4px; padding: 2px 5px; margin-left: 8px;
+            vertical-align: middle; }
         .nav-links { display: flex; align-items: center; gap: 28px; }
         .nav-links a { color: #c7d2e2; font-size: 15px; font-weight: 500; }
         .nav-links a:hover { color: #fff; }
@@ -87,7 +93,9 @@
         /* --- Footer --- */
         footer { background: #070c16; color: #6f7f9b; padding: 34px 0; font-size: 14px; }
         footer .contenedor { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; }
-        footer img { height: 24px; opacity: .85; }
+        footer .marca img { height: 26px; }
+        footer .marca .nombre { font-size: 17px; color: #c7d2e2; }
+        footer .marca .erp { font-size: 9px; padding: 1px 4px; }
         footer a { color: #93a4bd; }
         footer a:hover { color: #fff; }
 
@@ -100,7 +108,10 @@
 <body>
     <header>
         <div class="contenedor nav">
-            <a href="/"><img src="/logo.png" alt="TexControl"></a>
+            <a class="marca" href="/">
+                <img src="/marca.png" alt="">
+                <span class="nombre">TexControl</span><span class="erp">ERP</span>
+            </a>
             <nav class="nav-links">
                 <a href="#funciones">Funciones</a>
                 <a href="#como">Cómo funciona</a>
@@ -219,7 +230,10 @@
 
     <footer>
         <div class="contenedor">
-            <img src="/logo.png" alt="TexControl">
+            <a class="marca" href="/">
+                <img src="/marca.png" alt="">
+                <span class="nombre">TexControl</span><span class="erp">ERP</span>
+            </a>
             <div>© TexControl — Software de gestión para la industria textil.</div>
             <a href="https://login.texcontrol.pe">Ingresar</a>
         </div>
