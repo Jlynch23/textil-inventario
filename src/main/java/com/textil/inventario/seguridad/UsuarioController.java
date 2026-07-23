@@ -58,7 +58,8 @@ public class UsuarioController {
         List<Usuario> usuarios = usuarioRepository.findAll().stream()
                 .filter(u -> superadmin || !esOculto(u))
                 .toList();
-        List<Rol> roles = rolRepository.findAll().stream()
+        // Ordenados por jerarquia (mayor -> menor poder), no por id.
+        List<Rol> roles = rolRepository.findAllByOrderByJerarquiaAsc().stream()
                 .filter(r -> superadmin || !ROL_SUPERADMIN.equalsIgnoreCase(r.getNombre()))
                 .toList();
 
