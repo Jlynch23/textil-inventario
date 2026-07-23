@@ -43,6 +43,19 @@ public class AuditLogService {
         }
     }
 
+    public void registrarLogout(String username) {
+        try {
+            Usuario usuario = usuarioRepository.findByUsername(username).orElse(null);
+            LogEvento log = new LogEvento();
+            log.setUsuario(usuario);
+            log.setAccion("LOGOUT");
+            log.setDescripcion("Cierre de sesion: " + username);
+            logEventoRepository.save(log);
+        } catch (Exception e) {
+            System.err.println("Error al registrar logout: " + e.getMessage());
+        }
+    }
+
     private Usuario obtenerUsuarioActual() {
         try {
             String username = SecurityContextHolder.getContext().getAuthentication().getName();
