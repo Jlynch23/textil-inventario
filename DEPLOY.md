@@ -171,13 +171,30 @@ docker compose -p texcontrol_proxy -f multicliente/docker-compose.proxy.yml up -
 # El OCR usa la API key del proveedor; se pasa por el entorno y queda en el
 # .env del cliente. Sin ella, el cliente arranca igual pero sin OCR.
 ANTHROPIC_API_KEY=sk-ant-... ./scripts/nuevo-cliente.sh laura "Laura & Clemente"
-#   -> crea BD aislada, levanta app_laura + db_laura, genera el bloque nginx y
-#      recarga el proxy. Queda en https://laura.texcontrol.pe
+#   -> crea BD aislada, levanta app_laura + db_laura, genera el bloque nginx,
+#      recarga el proxy y ENDURECE la copia. Queda en https://laura.texcontrol.pe
 ```
 El script genera credenciales propias del cliente (`openssl rand`), las guarda en
 `clientes/<slug>/.env` (permisos 600, en `.gitignore`), y deja la BD lista con las
-cuentas semilla (Flyway migra al arrancar). Login inicial `jlynch` / `superadmin`
-(rotar de inmediato; desde ahí el SUPERADMIN crea la cuenta ADMIN del dueño).
+cuentas semilla (Flyway migra al arrancar). Por defecto **endurece** la copia (ver
+abajo) e imprime la clave única de `jlynch` **una sola vez** — guardala en tu gestor
+de contraseñas. Con `--prueba` se omite el endurecimiento (copia de testeo interno,
+`jlynch`/`superadmin` + cuentas de prueba).
+
+**Endurecer para producción** (rotar `jlynch` a una clave única de esta copia +
+eliminar las cuentas de prueba). `nuevo-cliente.sh` ya lo hace por defecto; este
+script sirve para endurecer una copia de `--prueba`, o re-rotar `jlynch`:
+```bash
+./scripts/endurecer-cliente.sh laura
+```
+Sin esto, `jlynch`/`superadmin` sería la **misma llave maestra en todas las copias**
+(el hash de arranque viene fijo de la migración V33). El hash bcrypt se genera con un
+contenedor efímero `httpd:alpine` (compatible con Spring Security), sin instalar nada.
+
+**Cron de backups automáticos** (idempotente; instala/actualiza la entrada):
+```bash
+./scripts/instalar-cron-backups.sh        # diario a las 2am (o pasar la hora: ... 4)
+```
 
 **Backups por cliente (gratis, reemplazan al backup pago de Vultr):**
 ```bash

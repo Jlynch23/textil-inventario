@@ -5,7 +5,8 @@
 # cliente (app + su MySQL), genera su bloque de nginx y recarga el proxy.
 #
 # Uso:
-#   ./scripts/nuevo-cliente.sh <slug> "<Nombre de la empresa>"
+#   ./scripts/nuevo-cliente.sh <slug> "<Nombre de la empresa>"      (produccion)
+#   ./scripts/nuevo-cliente.sh --prueba <slug> "<Nombre>"           (testeo interno)
 #
 # Ejemplo:
 #   ./scripts/nuevo-cliente.sh laura "Laura & Clemente"
@@ -14,6 +15,11 @@
 # El <slug> es el subdominio: solo letras minusculas y numeros, sin espacios
 # ni tildes (igual que el lanzador). El "Nombre de la empresa" es lo que ve el
 # usuario en la UI (NOMBRE_EMPRESA), puede llevar espacios y mayusculas.
+#
+# Por defecto (produccion) el cliente queda ENDURECIDO: se rota la clave de
+# jlynch a una unica de esta copia y se eliminan las cuentas de prueba (ver
+# endurecer-cliente.sh). Con --prueba se omite ese paso y la copia queda con
+# jlynch/superadmin y las cuentas *prueba, para testeo interno del proveedor.
 #
 # ANTHROPIC_API_KEY (para el OCR) se toma del entorno si esta definida y se
 # copia al .env del cliente. Si falta, el cliente arranca igual pero sin OCR.
@@ -25,8 +31,14 @@ cd "$RAIZ"
 source "$RAIZ/scripts/lib-cliente.sh"
 
 # --- 1. Validar argumentos -------------------------------------------------
+MODO_PRUEBA=0
+if [ "${1:-}" = "--prueba" ]; then
+    MODO_PRUEBA=1
+    shift
+fi
+
 if [ $# -ne 2 ]; then
-    echo "Uso: $0 <slug> \"<Nombre de la empresa>\"" >&2
+    echo "Uso: $0 [--prueba] <slug> \"<Nombre de la empresa>\"" >&2
     echo "Ej:  $0 laura \"Laura & Clemente\"" >&2
     exit 1
 fi
@@ -60,14 +72,26 @@ echo "Generando el bloque de nginx para $SLUG.texcontrol.pe..."
 mc_generar_nginx "$RAIZ" "$SLUG" "$NOMBRE_EMPRESA"
 mc_recargar_nginx || exit 1
 
-# --- 4. Resumen ------------------------------------------------------------
+# --- 4. Endurecer (produccion) o dejar para testeo interno (--prueba) -------
 echo ""
 echo "======================================================================"
 echo " Cliente dado de alta: $NOMBRE_EMPRESA"
 echo " URL:        https://$SLUG.texcontrol.pe"
 echo " Contenedor: app_$SLUG  +  db_$SLUG"
 echo " Datos:      $DIR_CLIENTE (documentos + .env con credenciales)"
-echo ""
-echo " Login inicial: usuario 'jlynch' / clave 'superadmin' (ROTAR de inmediato)."
-echo " Desde ahi, el SUPERADMIN crea la cuenta ADMIN del dueño."
 echo "======================================================================"
+
+if [ "$MODO_PRUEBA" -eq 1 ]; then
+    echo ""
+    echo " MODO PRUEBA (testeo interno): copia SIN endurecer."
+    echo " Login: jlynch / superadmin. Cuentas *prueba disponibles (activar como"
+    echo " SUPERADMIN para usarlas). NO entregar asi a un cliente que paga:"
+    echo " endurecela antes con ./scripts/endurecer-cliente.sh $SLUG"
+else
+    echo ""
+    echo "Endureciendo la copia para produccion (clave unica de jlynch + baja de"
+    echo "cuentas de prueba)..."
+    "$RAIZ/scripts/endurecer-cliente.sh" "$SLUG"
+    echo ""
+    echo " Desde jlynch, el SUPERADMIN crea la cuenta ADMIN del dueño."
+fi

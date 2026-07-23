@@ -157,6 +157,33 @@ server {
 EOF
 }
 
+# --- Hash bcrypt compatible con Spring Security ----------------------------
+# La imagen JRE de la app no expone un CLI de hashing y en el VPS no se puede
+# asumir htpasswd/bcrypt instalados; se usa un contenedor efimero httpd:alpine
+# (trae htpasswd). htpasswd -B genera bcrypt ($2y$), que BCryptPasswordEncoder
+# de Spring acepta igual que $2a$. -i lee la clave por STDIN para que NO quede
+# en la lista de procesos. Cost 10 = el strength por defecto de la app.
+MC_IMAGEN_BCRYPT="httpd:2.4-alpine"
+
+mc_hash_bcrypt() {
+    local pass="$1"
+    if ! docker image inspect "$MC_IMAGEN_BCRYPT" >/dev/null 2>&1; then
+        docker pull "$MC_IMAGEN_BCRYPT" >/dev/null
+    fi
+    printf '%s' "$pass" | docker run --rm -i "$MC_IMAGEN_BCRYPT" \
+        htpasswd -niBC 10 "" | cut -d: -f2
+}
+
+# --- Ejecutar SQL contra la base de UN cliente (como root) -----------------
+# Lee la clave de root del propio clientes/<slug>/.env. -N quita los encabezados.
+mc_sql_cliente() {
+    local raiz="$1" slug="$2" sql="$3"
+    local root
+    root="$(grep -E '^MYSQL_ROOT_PASSWORD=' "$raiz/clientes/$slug/.env" | cut -d= -f2-)"
+    docker exec -e MYSQL_PWD="$root" "db_$slug" \
+        mysql -u root -N -e "$sql" textil_inventario
+}
+
 # --- Validar y recargar nginx (si el proxy está corriendo) -----------------
 mc_recargar_nginx() {
     if docker ps --format '{{.Names}}' | grep -q "^${MC_NGINX_CONTENEDOR}$"; then

@@ -32,10 +32,12 @@ igual hasta que se migre de forma deliberada.
 | `nginx/00-texcontrol.conf` | Config base de nginx: marketing, lanzador, fallback + `include` de clientes. |
 | `nginx/clientes/cliente-<slug>.conf` | Bloque `server` de cada cliente (generado, en `.gitignore`). |
 | `../scripts/lib-cliente.sh` | Librería común (constantes + funciones). La cargan los demás con `source`; no se ejecuta sola. |
-| `../scripts/nuevo-cliente.sh` | Da de alta un cliente con un comando. |
+| `../scripts/nuevo-cliente.sh` | Da de alta un cliente con un comando (endurece por defecto; `--prueba` para testeo interno). |
 | `../scripts/migrar-cliente.sh` | Migra un despliegue actual (un solo cliente) a este modelo, sin perder datos. |
+| `../scripts/endurecer-cliente.sh` | Rota la clave de `jlynch` (única por copia) y elimina las cuentas de prueba. |
 | `../scripts/eliminar-cliente.sh` | Da de baja un cliente. |
 | `../scripts/backup-cliente.sh` | Backup por cliente (`<slug>` o `--todos`). |
+| `../scripts/instalar-cron-backups.sh` | Instala el cron diario de backups de todos los clientes. |
 | `../scripts/listar-clientes.sh` | Lista clientes, su estado y consumo de RAM. |
 | `../clientes/<slug>/` | Estado por cliente: `.env` (credenciales) + `documentos/`. En `.gitignore`. |
 
