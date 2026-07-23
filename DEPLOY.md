@@ -143,11 +143,106 @@ EOF
 sudo chmod +x /etc/letsencrypt/renewal-hooks/deploy/restart-nginx.sh
 ```
 
-### 6.6 Multi-cliente (siguiente etapa)
-Con el wildcard, sumar un cliente **no** requiere tocar el certificado. Falta
-parametrizar los stacks (un `docker-compose` por cliente, con su BD/puerto/nombres
-de contenedor) y darle a nginx un `server` block por subdominio que apunte al
-`app` de ese cliente. Es la próxima iteración del deploy.
+### 6.6 Multi-cliente (BD aislada por empresa)
+Modelo: **cada empresa corre en su propio stack aislado** (su contenedor de app
++ su propio MySQL + su propia base de datos + su carpeta de documentos + sus
+credenciales). Un único nginx (el "portero") rutea cada `<empresa>.texcontrol.pe`
+al contenedor `app_<empresa>`. Con el wildcard TLS, sumar un cliente **no**
+requiere tocar el certificado ni el DNS. Todo vive en `multicliente/` + los
+scripts `scripts/*-cliente.sh`.
+
+**Aislamiento**: el MySQL de cada cliente solo está en la red privada de ese
+cliente (`interna`); nunca en la red compartida (`texcontrol_red`), que solo une
+nginx con las apps. Así ningún cliente puede alcanzar la BD de otro.
+
+**Dimensionamiento (VPS de 4 GB)**: cada cliente consume ~0.8–1 GB de RAM
+(app `-Xmx384m` + MySQL con `innodb-buffer-pool-size=128M`, ya afinados en el
+compose). Techo práctico **~3 clientes** en 4 GB; al llegar al 3.º/4.º cliente
+pagando, subir la RAM del VPS (o migrar a MySQL compartido). CPU y disco sobran.
+
+**Levantar el proxy (una sola vez):**
+```bash
+docker network create texcontrol_red
+docker compose -p texcontrol_proxy -f multicliente/docker-compose.proxy.yml up -d
+```
+
+**Dar de alta un cliente (un comando):**
+```bash
+# El OCR usa la API key del proveedor; se pasa por el entorno y queda en el
+# .env del cliente. Sin ella, el cliente arranca igual pero sin OCR.
+ANTHROPIC_API_KEY=sk-ant-... ./scripts/nuevo-cliente.sh laura "Laura & Clemente"
+#   -> crea BD aislada, levanta app_laura + db_laura, genera el bloque nginx,
+#      recarga el proxy y ENDURECE la copia. Queda en https://laura.texcontrol.pe
+```
+El script genera credenciales propias del cliente (`openssl rand`), las guarda en
+`clientes/<slug>/.env` (permisos 600, en `.gitignore`), y deja la BD lista con las
+cuentas semilla (Flyway migra al arrancar). Por defecto **endurece** la copia (ver
+abajo) e imprime la clave única de `jlynch` **una sola vez** — guardala en tu gestor
+de contraseñas. Con `--prueba` se omite el endurecimiento (copia de testeo interno,
+`jlynch`/`superadmin` + cuentas de prueba).
+
+**Endurecer para producción** (rotar `jlynch` a una clave única de esta copia +
+eliminar las cuentas de prueba). `nuevo-cliente.sh` ya lo hace por defecto; este
+script sirve para endurecer una copia de `--prueba`, o re-rotar `jlynch`:
+```bash
+./scripts/endurecer-cliente.sh laura
+```
+Sin esto, `jlynch`/`superadmin` sería la **misma llave maestra en todas las copias**
+(el hash de arranque viene fijo de la migración V33). El hash bcrypt se genera con un
+contenedor efímero `httpd:alpine` (compatible con Spring Security), sin instalar nada.
+
+**Cron de backups automáticos** (idempotente; instala/actualiza la entrada):
+```bash
+./scripts/instalar-cron-backups.sh        # diario a las 2am (o pasar la hora: ... 4)
+```
+
+**Backups por cliente (gratis, reemplazan al backup pago de Vultr):**
+```bash
+./scripts/backup-cliente.sh laura      # un cliente
+./scripts/backup-cliente.sh --todos    # todos (para el cron diario)
+```
+A diferencia del backup de máquina de Vultr, esto permite **restaurar a un solo
+cliente** sin tocar a los demás. Cron diario sugerido:
+```
+0 2 * * * cd /ruta/textil-inventario && ./scripts/backup-cliente.sh --todos >> ~/backups/backup.log 2>&1
+```
+
+**Dar de baja un cliente:**
+```bash
+./scripts/backup-cliente.sh laura      # respaldar ANTES
+./scripts/eliminar-cliente.sh laura    # apaga stack, borra BD/documentos y su bloque nginx
+```
+
+**Actualizar el código de todos los clientes** (comparten la imagen
+`texcontrol-app:latest`):
+```bash
+git pull                                       # traer la version nueva
+docker build -t texcontrol-app:latest .        # reconstruir la imagen una vez
+# reiniciar la app de cada cliente para tomar la imagen nueva:
+for e in clientes/*/.env; do s=$(basename $(dirname $e)); \
+  docker compose -p texcontrol_$s --env-file $e -f multicliente/docker-compose.cliente.yml up -d; done
+```
+
+**Ver los clientes dados de alta** (estado + consumo de RAM, para vigilar el techo):
+```bash
+./scripts/listar-clientes.sh
+```
+
+**Migrar la Laura actual (modelo viejo) a este esquema** — automatizado en el
+orden correcto (restaura el dump ANTES de arrancar la app, para que Flyway no
+choque) y **sin tocar la instalación vieja**:
+```bash
+./scripts/backup-db.sh          # 1) respaldar la BD vieja (deja el .sql.gz)
+./scripts/migrar-cliente.sh laura "Laura & Clemente" \
+    ~/backups/textil-inventario/textil_inventario_XXXX.sql.gz ./documentos
+# 2) verificar https://laura.texcontrol.pe (login, stock, kardex)
+# 3) recién ahí apagar la vieja:
+#    docker compose -f docker-compose.yml -f docker-compose.prod.yml down
+```
+
+> Nota: este modelo (`multicliente/`) convive con el modelo actual de un solo
+> cliente (`docker-compose.prod.yml`) sin pisarlo. La producción actual sigue
+> igual hasta que se haga la migración de arriba de forma deliberada.
 
 ## 7. Rollback
 

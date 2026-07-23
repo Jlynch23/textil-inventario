@@ -1,0 +1,43 @@
+# Reverse proxy COMPARTIDO de todo el VPS (el "portero"), modelo multi-cliente.
+#
+# Un unico nginx atiende texcontrol.pe, login.texcontrol.pe y TODOS los
+# subdominios de empresa, ruteando cada <empresa>.texcontrol.pe al contenedor
+# app_<empresa> a traves de la red compartida `texcontrol_red`.
+#
+# Se levanta UNA sola vez (no por cliente):
+#   docker network create texcontrol_red    # si no existe todavia
+#   docker compose -p texcontrol_proxy -f multicliente/docker-compose.proxy.yml up -d
+#
+# Los bloques por-cliente los genera scripts/nuevo-cliente.sh en
+# multicliente/nginx/clientes/ y este nginx los incluye automaticamente.
+
+services:
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: textil_nginx
+    restart: unless-stopped
+    ports:
+      # Igual que en produccion actual: BIND_IP restringe a una interfaz.
+      # 0.0.0.0 para acceso por dominio publico; IP de Tailscale para acceso
+      # solo por VPN. Ver docker-compose.prod.yml y .env.example.
+      - "${BIND_IP:-0.0.0.0}:80:80"
+      - "${BIND_IP:-0.0.0.0}:443:443"
+    volumes:
+      # Config base (marketing + lanzador + fallback + include de clientes).
+      - ./multicliente/nginx/00-texcontrol.conf:/etc/nginx/conf.d/00-texcontrol.conf:ro
+      # Bloques generados por cliente (cliente-<slug>.conf). El 00-... los
+      # incluye con `include .../clientes/*.conf`.
+      - ./multicliente/nginx/clientes:/etc/nginx/conf.d/clientes:ro
+      # Sitio de marketing servido en el dominio raiz (texcontrol.pe).
+      - ./nginx/marketing:/usr/share/nginx/marketing:ro
+      # Pagina lanzador estatica (se reutiliza la misma del modelo actual).
+      - ./nginx/launcher:/usr/share/nginx/launcher:ro
+      # Certificados wildcard de Let's Encrypt emitidos en el host (DEPLOY.md).
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    networks:
+      - red
+
+networks:
+  red:
+    external: true
+    name: texcontrol_red

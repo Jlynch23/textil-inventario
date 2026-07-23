@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TexControl — Software de inventario para la industria textil</title>
+    <meta name="description" content="TexControl es el sistema de gestion de inventario para empresas textiles: recepcion con lectura de guias por IA, kardex con trazabilidad total, transferencias entre tiendas y reportes a Excel.">
+    <meta name="theme-color" content="#0b1220">
+    <link rel="icon" href="/icon.png" type="image/png">
+    <style>
+        :root {
+            --azul:#1a82f0; --azul-oscuro:#1568c8; --navy:#0b1220; --navy2:#0f1a2e;
+            --texto:#1f2937; --gris:#5b6b85; --linea:#e5e9f0; --claro:#f4f7fb;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--texto); line-height: 1.6; }
+        a { text-decoration: none; color: inherit; }
+        .contenedor { width: 100%; max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+
+        /* --- Barra superior --- */
+        header {
+            position: sticky; top: 0; z-index: 50;
+            background: rgba(11,18,32,.92); backdrop-filter: blur(8px);
+            border-bottom: 1px solid rgba(148,163,184,.14);
+        }
+        .nav { display: flex; align-items: center; justify-content: space-between; height: 66px; }
+        .nav img { height: 30px; width: auto; }
+        .nav-links { display: flex; align-items: center; gap: 28px; }
+        .nav-links a { color: #c7d2e2; font-size: 15px; font-weight: 500; }
+        .nav-links a:hover { color: #fff; }
+        .btn {
+            display: inline-block; background: var(--azul); color: #fff; font-weight: 700;
+            padding: 11px 20px; border-radius: 10px; transition: background .15s;
+        }
+        .btn:hover { background: var(--azul-oscuro); }
+        .btn-grande { padding: 15px 28px; font-size: 17px; }
+        .nav-links .ingresar { color:#fff; }
+
+        /* --- Hero --- */
+        .hero {
+            background: radial-gradient(1200px 600px at 50% -10%, #16233b 0%, var(--navy) 60%, #070c16 100%);
+            color: #fff; text-align: center; padding: 92px 0 104px;
+        }
+        .hero h1 { font-size: clamp(2rem, 5vw, 3.3rem); font-weight: 800; line-height: 1.12; letter-spacing: -.5px; }
+        .hero h1 span { color: var(--azul); }
+        .hero p { color: #a7b5cc; font-size: clamp(1.05rem, 2vw, 1.3rem); max-width: 640px; margin: 22px auto 34px; }
+        .hero-cta { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+        .btn-fantasma { background: transparent; border: 1px solid #33425d; color: #dbe4f0; }
+        .btn-fantasma:hover { background: rgba(255,255,255,.06); }
+        .hero-nota { margin-top: 20px; color: #6f7f9b; font-size: 13.5px; }
+
+        /* --- Tira de valor --- */
+        .tira { background: var(--navy2); color: #93a4bd; border-top: 1px solid rgba(148,163,184,.10); }
+        .tira .contenedor { display: flex; flex-wrap: wrap; justify-content: space-around; gap: 18px; padding: 26px 24px; text-align: center; }
+        .tira b { color: #fff; font-size: 1.4rem; display: block; }
+        .tira small { font-size: 13px; }
+
+        /* --- Secciones --- */
+        section.bloque { padding: 84px 0; }
+        .titulo { text-align: center; max-width: 640px; margin: 0 auto 54px; }
+        .titulo h2 { font-size: clamp(1.6rem, 3.5vw, 2.4rem); font-weight: 800; letter-spacing: -.4px; }
+        .titulo p { color: var(--gris); font-size: 1.1rem; margin-top: 12px; }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 22px; }
+        .tarjeta { border: 1px solid var(--linea); border-radius: 16px; padding: 30px 26px; background: #fff; transition: box-shadow .2s, transform .2s; }
+        .tarjeta:hover { box-shadow: 0 14px 40px rgba(15,26,46,.10); transform: translateY(-3px); }
+        .tarjeta .ico { width: 46px; height: 46px; border-radius: 12px; background: rgba(26,130,240,.12); color: var(--azul);
+            display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 16px; }
+        .tarjeta h3 { font-size: 1.2rem; margin-bottom: 8px; }
+        .tarjeta p { color: var(--gris); font-size: .98rem; }
+
+        /* --- Como funciona --- */
+        .pasos { background: var(--claro); }
+        .pasos .grid { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+        .paso { text-align: center; padding: 10px; }
+        .paso .num { width: 52px; height: 52px; border-radius: 50%; background: var(--azul); color: #fff; font-weight: 800; font-size: 1.3rem;
+            display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
+        .paso h3 { margin-bottom: 6px; }
+        .paso p { color: var(--gris); font-size: .98rem; }
+
+        /* --- CTA final --- */
+        .cierre { background: radial-gradient(900px 400px at 50% 120%, #16233b 0%, var(--navy) 70%); color: #fff; text-align: center; padding: 88px 0; }
+        .cierre h2 { font-size: clamp(1.7rem, 4vw, 2.6rem); font-weight: 800; }
+        .cierre p { color: #a7b5cc; font-size: 1.15rem; margin: 16px auto 30px; max-width: 560px; }
+
+        /* --- Footer --- */
+        footer { background: #070c16; color: #6f7f9b; padding: 34px 0; font-size: 14px; }
+        footer .contenedor { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; }
+        footer img { height: 24px; opacity: .85; }
+        footer a { color: #93a4bd; }
+        footer a:hover { color: #fff; }
+
+        @media (max-width: 640px) {
+            .nav-links a:not(.ingresar) { display: none; }
+            section.bloque, .cierre, .hero { padding-left: 0; padding-right: 0; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="contenedor nav">
+            <a href="/"><img src="/logo.png" alt="TexControl"></a>
+            <nav class="nav-links">
+                <a href="#funciones">Funciones</a>
+                <a href="#como">Cómo funciona</a>
+                <a class="ingresar btn" href="https://login.texcontrol.pe">Ingresar</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- HERO -->
+    <section class="hero">
+        <div class="contenedor">
+            <h1>Control total de tu <span>inventario textil</span></h1>
+            <p>Desde que la tela teñida llega hasta que se mueve entre tus tiendas:
+               recepción, almacén, transferencias y reportes, en un solo sistema.</p>
+            <div class="hero-cta">
+                <a class="btn btn-grande" href="https://login.texcontrol.pe">Ingresar a mi sistema</a>
+                <a class="btn btn-grande btn-fantasma" href="#funciones">Ver funciones</a>
+            </div>
+            <div class="hero-nota">Hecho para empresas textiles que trabajan con telas RIB de algodón peinado.</div>
+        </div>
+    </section>
+
+    <!-- TIRA DE VALOR -->
+    <div class="tira">
+        <div class="contenedor">
+            <div><b>OCR con IA</b><small>Lee tus guías y facturas solo</small></div>
+            <div><b>Kardex</b><small>Trazabilidad de cada movimiento</small></div>
+            <div><b>Multi-tienda</b><small>Stock por ubicación en vivo</small></div>
+            <div><b>Excel</b><small>Reportes exportables al instante</small></div>
+        </div>
+    </div>
+
+    <!-- FUNCIONES -->
+    <section class="bloque" id="funciones">
+        <div class="contenedor">
+            <div class="titulo">
+                <h2>Todo lo que tu almacén necesita</h2>
+                <p>Pensado con el flujo real de una textilería, no un sistema genérico adaptado a la fuerza.</p>
+            </div>
+            <div class="grid">
+                <div class="tarjeta">
+                    <div class="ico">🤖</div>
+                    <h3>Recepción con IA</h3>
+                    <p>Sube la guía o factura y la inteligencia artificial extrae tipo de tela,
+                       título, composición y color. Tú solo confirmas.</p>
+                </div>
+                <div class="tarjeta">
+                    <div class="ico">📦</div>
+                    <h3>Recepción en 4 pasos</h3>
+                    <p>Documento, conteo físico, validación y confirmación. Sin saltarse
+                       controles y con el rollo contado de verdad.</p>
+                </div>
+                <div class="tarjeta">
+                    <div class="ico">🔄</div>
+                    <h3>Transferencias seguras</h3>
+                    <p>Traslados entre ubicaciones con doble confirmación (salida y llegada)
+                       y reparto de una línea a varios destinos.</p>
+                </div>
+                <div class="tarjeta">
+                    <div class="ico">📊</div>
+                    <h3>Kardex y trazabilidad</h3>
+                    <p>Cada entrada y salida queda registrada. Sabes en todo momento qué hay,
+                       dónde está y cómo llegó ahí.</p>
+                </div>
+                <div class="tarjeta">
+                    <div class="ico">📈</div>
+                    <h3>Reportes a Excel</h3>
+                    <p>Stock, kardex, recepciones, transferencias y stock bajo, exportables a
+                       Excel con un clic para tu contabilidad.</p>
+                </div>
+                <div class="tarjeta">
+                    <div class="ico">🔐</div>
+                    <h3>Roles y permisos</h3>
+                    <p>Dueño, gerente, supervisor de almacén y más. Cada quien ve y hace solo
+                       lo que le corresponde.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- COMO FUNCIONA -->
+    <section class="bloque pasos" id="como">
+        <div class="contenedor">
+            <div class="titulo">
+                <h2>Empezar es simple</h2>
+                <p>Sin instalaciones complicadas. Entras desde el navegador o desde el celular.</p>
+            </div>
+            <div class="grid">
+                <div class="paso">
+                    <div class="num">1</div>
+                    <h3>Recibes la tela</h3>
+                    <p>Registras la tela teñida que llega, con ayuda de la IA que lee tus guías.</p>
+                </div>
+                <div class="paso">
+                    <div class="num">2</div>
+                    <h3>La mueves</h3>
+                    <p>Transfieres entre almacén y tiendas con control de salida y llegada.</p>
+                </div>
+                <div class="paso">
+                    <div class="num">3</div>
+                    <h3>La controlas</h3>
+                    <p>Ves tu stock en tiempo real y sacas reportes cuando los necesitas.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA FINAL -->
+    <section class="cierre">
+        <div class="contenedor">
+            <h2>Ordena tu inventario hoy</h2>
+            <p>Cada empresa tiene su propio sistema, con su nombre y sus datos aislados.</p>
+            <a class="btn btn-grande" href="https://login.texcontrol.pe">Ingresar a mi sistema</a>
+        </div>
+    </section>
+
+    <footer>
+        <div class="contenedor">
+            <img src="/logo.png" alt="TexControl">
+            <div>© TexControl — Software de gestión para la industria textil.</div>
+            <a href="https://login.texcontrol.pe">Ingresar</a>
+        </div>
+    </footer>
+</body>
+</html>

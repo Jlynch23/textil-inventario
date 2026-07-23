@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sin conexion - TexControl</title>
+    <meta name="theme-color" content="#1F4E79">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            min-height: 100vh; display: flex; align-items: center; justify-content: center;
+            background: #f0f4f8; color: #1F4E79; text-align: center; padding: 24px;
+        }
+        .caja { max-width: 380px; }
+        img { width: 96px; height: 96px; margin-bottom: 20px; }
+        h1 { font-size: 1.35rem; margin-bottom: 10px; }
+        p { color: #55627a; line-height: 1.5; margin-bottom: 22px; }
+        button {
+            background: #1F4E79; color: #fff; border: none; border-radius: 10px;
+            padding: 12px 22px; font-size: 1rem; font-weight: 700; cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="caja">
+        <img src="/img/pwa/icon-192.png" alt="TexControl">
+        <h1>Sin conexion</h1>
+        <p>No pudimos conectarnos al servidor. Revisa tu conexion a internet e
+           intenta de nuevo.</p>
+        <button onclick="location.reload()">Reintentar</button>
+    </div>
+</body>
+</html>
