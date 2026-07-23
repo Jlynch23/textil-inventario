@@ -24,6 +24,14 @@ public class SecurityConfig {
     private final UsuarioDetailsService usuarioDetailsService;
     private final AuditLogService auditLogService;
 
+    // Clave que firma la cookie "recordar sesion" (remember-me). DEBE ser
+    // estable entre reinicios/despliegues: si cambia, todas las cookies
+    // persistentes se invalidan y los usuarios (sobre todo en el celular)
+    // quedan deslogueados. Se fija por instancia via REMEMBER_ME_KEY; el
+    // default solo sirve para desarrollo local.
+    @org.springframework.beans.factory.annotation.Value("${app.remember-me-key:texcontrol-remember-me-dev}")
+    private String rememberMeKey;
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -104,13 +112,43 @@ public class SecurityConfig {
                 .failureUrl("/login?error=true")
                 .permitAll()
             )
+            // "Recordar sesion": cookie persistente (con Max-Age) que re-autentica
+            // sola cuando la sesion de servidor caduca o cuando el celular
+            // suspende/mata la PWA y descarta la cookie de sesion JSESSIONID (que
+            // no tiene Max-Age). Sin esto, el almacenero/vendedor tenia que volver
+            // a loguearse cada vez que reabria la app en el movil. alwaysRemember
+            // la activa para todo login (no hace falta un checkbox). El token
+            // incluye el hash de la password y la 'key' estable: si el usuario
+            // cambia su clave, la cookie deja de valer.
+            .rememberMe(remember -> remember
+                .key(rememberMeKey)
+                .alwaysRemember(true)
+                .tokenValiditySeconds(60 * 60 * 24 * 30) // 30 dias
+                .userDetailsService(usuarioDetailsService)
+            )
             .logout(logout -> logout
                 .logoutRequestMatcher(new AntPathRequestMatcher("/logout", "GET"))
-                .logoutSuccessUrl("/login?logout=true")
+                .logoutSuccessHandler(logoutSuccessHandler())
+                // El cierre de sesion explicito SI borra la cookie persistente
+                // (remember-me) ademas de invalidar la sesion.
+                .deleteCookies("JSESSIONID")
                 .permitAll()
             );
 
         return http.build();
+    }
+
+    @Bean
+    public org.springframework.security.web.authentication.logout.LogoutSuccessHandler logoutSuccessHandler() {
+        org.springframework.security.web.authentication.logout.SimpleUrlLogoutSuccessHandler delegate =
+                new org.springframework.security.web.authentication.logout.SimpleUrlLogoutSuccessHandler();
+        delegate.setDefaultTargetUrl("/login?logout=true");
+        return (request, response, authentication) -> {
+            if (authentication != null) {
+                auditLogService.registrarLogout(authentication.getName());
+            }
+            delegate.onLogoutSuccess(request, response, authentication);
+        };
     }
 
     @Bean

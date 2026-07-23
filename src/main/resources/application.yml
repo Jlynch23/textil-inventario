@@ -30,6 +30,16 @@ spring:
     multipart:
       max-file-size: ${MAX_UPLOAD_SIZE:25MB}
       max-request-size: ${MAX_UPLOAD_SIZE:25MB}
+    session:
+      # La cookie de sesion (JSESSIONID) igual dura la jornada; el "recordar
+      # sesion" (remember-me, ver SecurityConfig) es lo que mantiene logueado
+      # al usuario en el celular cuando la PWA se suspende y esta cookie cae.
+      timeout: 8h
+      cookie:
+        # SameSite=Lax evita que el navegador descarte la cookie al reabrir la
+        # PWA desde el icono del escritorio (contexto de navegacion top-level).
+        same-site: lax
+        http-only: true
 
 server:
   port: 8080
@@ -63,6 +73,10 @@ documentos:
 
 app:
   nombre-empresa: ${NOMBRE_EMPRESA:Laura & Clemente}
+  # Clave que firma la cookie "recordar sesion" (remember-me). Debe fijarse por
+  # instancia (valor unico y secreto) y NO cambiar entre despliegues, o los
+  # usuarios quedan deslogueados en cada reinicio. El default es solo para dev.
+  remember-me-key: ${REMEMBER_ME_KEY:texcontrol-remember-me-dev}
 ---
 spring:
   config:

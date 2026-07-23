@@ -22,6 +22,7 @@
                     <select class="form-select form-select-sm" name="accion">
                         <option value="">Todas</option>
                         <option value="LOGIN" th:selected="${filtroAccion == 'LOGIN'}">Login</option>
+                        <option value="LOGOUT" th:selected="${filtroAccion == 'LOGOUT'}">Logout</option>
                         <option value="CREAR" th:selected="${filtroAccion == 'CREAR'}">Crear</option>
                         <option value="CONFIRMAR" th:selected="${filtroAccion == 'CONFIRMAR'}">Confirmar</option>
                         <option value="EDITAR" th:selected="${filtroAccion == 'EDITAR'}">Editar</option>
