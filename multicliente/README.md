@@ -31,9 +31,12 @@ igual hasta que se migre de forma deliberada.
 | `docker-compose.cliente.yml` | Plantilla del stack de **un** cliente (app + su MySQL). La usa el script. |
 | `nginx/00-texcontrol.conf` | Config base de nginx: marketing, lanzador, fallback + `include` de clientes. |
 | `nginx/clientes/cliente-<slug>.conf` | Bloque `server` de cada cliente (generado, en `.gitignore`). |
+| `../scripts/lib-cliente.sh` | Librería común (constantes + funciones). La cargan los demás con `source`; no se ejecuta sola. |
 | `../scripts/nuevo-cliente.sh` | Da de alta un cliente con un comando. |
+| `../scripts/migrar-cliente.sh` | Migra un despliegue actual (un solo cliente) a este modelo, sin perder datos. |
 | `../scripts/eliminar-cliente.sh` | Da de baja un cliente. |
 | `../scripts/backup-cliente.sh` | Backup por cliente (`<slug>` o `--todos`). |
+| `../scripts/listar-clientes.sh` | Lista clientes, su estado y consumo de RAM. |
 | `../clientes/<slug>/` | Estado por cliente: `.env` (credenciales) + `documentos/`. En `.gitignore`. |
 
 ## Uso rápido

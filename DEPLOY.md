@@ -206,10 +206,22 @@ for e in clientes/*/.env; do s=$(basename $(dirname $e)); \
   docker compose -p texcontrol_$s --env-file $e -f multicliente/docker-compose.cliente.yml up -d; done
 ```
 
-**Migrar la Laura actual (modelo viejo) a este esquema**: respaldar su BD con el
-`backup-db.sh` actual, dar de alta el cliente con `nuevo-cliente.sh laura ...`, y
-restaurar el dump dentro de `db_laura`. Hacerlo con calma y con la copia vieja
-todavía en pie hasta confirmar que la nueva anda. (Ver `multicliente/README.md`.)
+**Ver los clientes dados de alta** (estado + consumo de RAM, para vigilar el techo):
+```bash
+./scripts/listar-clientes.sh
+```
+
+**Migrar la Laura actual (modelo viejo) a este esquema** — automatizado en el
+orden correcto (restaura el dump ANTES de arrancar la app, para que Flyway no
+choque) y **sin tocar la instalación vieja**:
+```bash
+./scripts/backup-db.sh          # 1) respaldar la BD vieja (deja el .sql.gz)
+./scripts/migrar-cliente.sh laura "Laura & Clemente" \
+    ~/backups/textil-inventario/textil_inventario_XXXX.sql.gz ./documentos
+# 2) verificar https://laura.texcontrol.pe (login, stock, kardex)
+# 3) recién ahí apagar la vieja:
+#    docker compose -f docker-compose.yml -f docker-compose.prod.yml down
+```
 
 > Nota: este modelo (`multicliente/`) convive con el modelo actual de un solo
 > cliente (`docker-compose.prod.yml`) sin pisarlo. La producción actual sigue
