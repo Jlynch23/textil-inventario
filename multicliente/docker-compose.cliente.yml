@@ -1,0 +1,92 @@
+# Stack AISLADO de UN cliente (modelo multi-cliente, MySQL propio por empresa).
+#
+# Cada empresa corre en su propio "proyecto" de Docker Compose, con su propio
+# contenedor de app + su propio MySQL + su propia base de datos + su propia
+# carpeta de documentos + sus propias credenciales. Ningun cliente puede ver
+# los datos de otro: cada MySQL vive SOLO en la red privada de su cliente
+# (`interna`) y nunca se publica ni se cuelga de la red compartida.
+#
+# NO se levanta a mano: lo orquesta scripts/nuevo-cliente.sh, que arma el
+# archivo clientes/<slug>/.env y ejecuta el comando correcto. Referencia:
+#
+#   docker compose -p texcontrol_<slug> \
+#       --env-file clientes/<slug>/.env \
+#       -f multicliente/docker-compose.cliente.yml up -d
+#
+# La imagen de la app (texcontrol-app:latest) se construye UNA sola vez y la
+# comparten todos los clientes (mismo codigo); por eso aca no hay `build:`.
+
+services:
+  db:
+    image: mysql:8.4
+    container_name: db_${CLIENTE_SLUG}
+    restart: unless-stopped
+    environment:
+      # root separada de la del usuario de la app: si se filtra DB_PASSWORD,
+      # no debe dar acceso root a MySQL (misma regla que docker-compose.yml).
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: textil_inventario
+      MYSQL_USER: textil_user
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    command:
+      # Afinado de memoria para que varios MySQL quepan en los 4 GB del VPS.
+      # El buffer pool es lo que mas RAM consume en InnoDB; 128M es holgado
+      # para el volumen de datos de una textileria. performance_schema OFF
+      # ahorra ~150-200 MB mas por instancia. Subir si algun cliente crece.
+      - --innodb-buffer-pool-size=128M
+      - --performance-schema=OFF
+    volumes:
+      # Volumen nombrado, aislado por proyecto: en el cliente "laura" queda
+      # como texcontrol_laura_db_data, distinto del de cualquier otro cliente.
+      - db_data:/var/lib/mysql
+    networks:
+      - interna
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    image: texcontrol-app:latest
+    container_name: app_${CLIENTE_SLUG}
+    restart: unless-stopped
+    environment:
+      # "db" resuelve al MySQL de ESTE cliente dentro de la red `interna`.
+      DB_URL: jdbc:mysql://db:3306/textil_inventario?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Lima
+      DB_USERNAME: textil_user
+      DB_PASSWORD: ${DB_PASSWORD}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      DOCUMENTOS_PATH: /app/documentos
+      MAX_UPLOAD_SIZE: ${MAX_UPLOAD_SIZE:-25MB}
+      # Lo que distingue a cada cliente en la UI (bajo el logo TEXCONTROL).
+      NOMBRE_EMPRESA: ${NOMBRE_EMPRESA}
+      SPRING_PROFILES_ACTIVE: prod
+      # Techo de heap de la JVM para caber varios clientes en 4 GB (ver el
+      # dimensionamiento en DEPLOY.md). Ajustable por cliente via JVM_XMX.
+      JAVA_TOOL_OPTIONS: -Xmx${JVM_XMX:-384m}
+    volumes:
+      # Bind mount a una carpeta real del host (ruta absoluta calculada por
+      # nuevo-cliente.sh), para que los PDFs entren facil en el backup.
+      - ${DOCUMENTOS_DIR}:/app/documentos
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      # `interna`: para hablar con su propio MySQL (privado, no compartido).
+      - interna
+      # `red`: red compartida SOLO para que nginx (el portero) lo alcance por
+      # su nombre de contenedor (app_<slug>). El MySQL NO esta en esta red.
+      - red
+
+volumes:
+  db_data:
+
+networks:
+  interna:
+    # Red privada de este cliente (app <-> su MySQL). No la comparte con nadie.
+  red:
+    # Red compartida de todo el VPS (nginx <-> apps). La crea una sola vez
+    # scripts/nuevo-cliente.sh (docker network create texcontrol_red).
+    external: true
+    name: texcontrol_red

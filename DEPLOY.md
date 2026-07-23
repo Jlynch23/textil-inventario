@@ -143,11 +143,77 @@ EOF
 sudo chmod +x /etc/letsencrypt/renewal-hooks/deploy/restart-nginx.sh
 ```
 
-### 6.6 Multi-cliente (siguiente etapa)
-Con el wildcard, sumar un cliente **no** requiere tocar el certificado. Falta
-parametrizar los stacks (un `docker-compose` por cliente, con su BD/puerto/nombres
-de contenedor) y darle a nginx un `server` block por subdominio que apunte al
-`app` de ese cliente. Es la próxima iteración del deploy.
+### 6.6 Multi-cliente (BD aislada por empresa)
+Modelo: **cada empresa corre en su propio stack aislado** (su contenedor de app
++ su propio MySQL + su propia base de datos + su carpeta de documentos + sus
+credenciales). Un único nginx (el "portero") rutea cada `<empresa>.texcontrol.pe`
+al contenedor `app_<empresa>`. Con el wildcard TLS, sumar un cliente **no**
+requiere tocar el certificado ni el DNS. Todo vive en `multicliente/` + los
+scripts `scripts/*-cliente.sh`.
+
+**Aislamiento**: el MySQL de cada cliente solo está en la red privada de ese
+cliente (`interna`); nunca en la red compartida (`texcontrol_red`), que solo une
+nginx con las apps. Así ningún cliente puede alcanzar la BD de otro.
+
+**Dimensionamiento (VPS de 4 GB)**: cada cliente consume ~0.8–1 GB de RAM
+(app `-Xmx384m` + MySQL con `innodb-buffer-pool-size=128M`, ya afinados en el
+compose). Techo práctico **~3 clientes** en 4 GB; al llegar al 3.º/4.º cliente
+pagando, subir la RAM del VPS (o migrar a MySQL compartido). CPU y disco sobran.
+
+**Levantar el proxy (una sola vez):**
+```bash
+docker network create texcontrol_red
+docker compose -p texcontrol_proxy -f multicliente/docker-compose.proxy.yml up -d
+```
+
+**Dar de alta un cliente (un comando):**
+```bash
+# El OCR usa la API key del proveedor; se pasa por el entorno y queda en el
+# .env del cliente. Sin ella, el cliente arranca igual pero sin OCR.
+ANTHROPIC_API_KEY=sk-ant-... ./scripts/nuevo-cliente.sh laura "Laura & Clemente"
+#   -> crea BD aislada, levanta app_laura + db_laura, genera el bloque nginx y
+#      recarga el proxy. Queda en https://laura.texcontrol.pe
+```
+El script genera credenciales propias del cliente (`openssl rand`), las guarda en
+`clientes/<slug>/.env` (permisos 600, en `.gitignore`), y deja la BD lista con las
+cuentas semilla (Flyway migra al arrancar). Login inicial `jlynch` / `superadmin`
+(rotar de inmediato; desde ahí el SUPERADMIN crea la cuenta ADMIN del dueño).
+
+**Backups por cliente (gratis, reemplazan al backup pago de Vultr):**
+```bash
+./scripts/backup-cliente.sh laura      # un cliente
+./scripts/backup-cliente.sh --todos    # todos (para el cron diario)
+```
+A diferencia del backup de máquina de Vultr, esto permite **restaurar a un solo
+cliente** sin tocar a los demás. Cron diario sugerido:
+```
+0 2 * * * cd /ruta/textil-inventario && ./scripts/backup-cliente.sh --todos >> ~/backups/backup.log 2>&1
+```
+
+**Dar de baja un cliente:**
+```bash
+./scripts/backup-cliente.sh laura      # respaldar ANTES
+./scripts/eliminar-cliente.sh laura    # apaga stack, borra BD/documentos y su bloque nginx
+```
+
+**Actualizar el código de todos los clientes** (comparten la imagen
+`texcontrol-app:latest`):
+```bash
+git pull                                       # traer la version nueva
+docker build -t texcontrol-app:latest .        # reconstruir la imagen una vez
+# reiniciar la app de cada cliente para tomar la imagen nueva:
+for e in clientes/*/.env; do s=$(basename $(dirname $e)); \
+  docker compose -p texcontrol_$s --env-file $e -f multicliente/docker-compose.cliente.yml up -d; done
+```
+
+**Migrar la Laura actual (modelo viejo) a este esquema**: respaldar su BD con el
+`backup-db.sh` actual, dar de alta el cliente con `nuevo-cliente.sh laura ...`, y
+restaurar el dump dentro de `db_laura`. Hacerlo con calma y con la copia vieja
+todavía en pie hasta confirmar que la nueva anda. (Ver `multicliente/README.md`.)
+
+> Nota: este modelo (`multicliente/`) convive con el modelo actual de un solo
+> cliente (`docker-compose.prod.yml`) sin pisarlo. La producción actual sigue
+> igual hasta que se haga la migración de arriba de forma deliberada.
 
 ## 7. Rollback
 
