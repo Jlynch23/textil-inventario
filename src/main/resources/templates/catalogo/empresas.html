@@ -27,16 +27,11 @@
                             <input type="text" class="form-control" th:field="*{nombre}"
                                    required>
                         </div>
-                        <div class="mb-3">
+                        <div class="mb-4">
                             <label class="form-label fw-semibold">RUC</label>
                             <input type="text" class="form-control" th:field="*{ruc}"
                                    required>
-                        </div>
-                        <div class="mb-4">
-                            <label class="form-label fw-semibold">Carpeta de documentos</label>
-                            <input type="text" class="form-control" th:field="*{carpeta}"
-                                  >
-                            <small class="text-muted">Subcarpeta donde se guardan sus guías/facturas. Si se deja vacía, se usa "Otros".</small>
+                            <small class="text-muted">La carpeta de documentos se genera sola a partir del nombre.</small>
                         </div>
                         <button type="submit" class="btn btn-primary w-100">
                             <i class="bi bi-save me-2"></i>Guardar
@@ -61,7 +56,7 @@
                                 <tr>
                                     <th>Nombre</th>
                                     <th>RUC</th>
-                                    <th>Carpeta</th>
+                                    <th>Carpeta (auto)</th>
                                     <th>Acciones</th>
                                 </tr>
                             </thead>

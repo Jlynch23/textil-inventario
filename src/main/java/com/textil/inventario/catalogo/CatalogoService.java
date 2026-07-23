@@ -30,9 +30,25 @@ public class CatalogoService {
     public Empresa guardarEmpresa(Empresa e) {
         e.setNombre(normalizar(e.getNombre()));
         e.setRuc(normalizar(e.getRuc()));
+        // La carpeta de documentos ya no se carga a mano: se auto-genera como
+        // un slug del nombre ("TEXTIL LAURA" -> "textil-laura"). Asi el usuario
+        // solo pone el nombre y el resto se arma solo.
+        e.setCarpeta(generarCarpeta(e.getNombre()));
         return empresaRepository.save(e);
     }
     public Empresa buscarEmpresa(Long id) { return empresaRepository.findById(id).orElseThrow(); }
+
+    /** Slug de carpeta a partir del nombre: sin tildes, minusculas, espacios y
+     *  simbolos -> guion. "TEXTIL LAURA" -> "textil-laura". Vacio -> "otros". */
+    private String generarCarpeta(String nombre) {
+        if (nombre == null) return "otros";
+        String slug = java.text.Normalizer.normalize(nombre, java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .toLowerCase()
+                .replaceAll("[^a-z0-9]+", "-")
+                .replaceAll("(^-+|-+$)", "");
+        return slug.isBlank() ? "otros" : slug;
+    }
 
     // UBICACIONES
     public List<Ubicacion> listarUbicaciones() { return ubicacionRepository.findByActivoTrue(); }
