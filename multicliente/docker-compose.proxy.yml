@@ -22,16 +22,22 @@ services:
       # solo por VPN. Ver docker-compose.prod.yml y .env.example.
       - "${BIND_IP:-0.0.0.0}:80:80"
       - "${BIND_IP:-0.0.0.0}:443:443"
+    # IMPORTANTE: Docker Compose resuelve las rutas relativas de los volumenes
+    # respecto al directorio de ESTE archivo (multicliente/), NO respecto al
+    # cwd. Por eso van relativas a multicliente/: ./nginx/... para lo de aca y
+    # ../nginx/... para lo de la raiz del repo. Si se ponen como ./multicliente/
+    # Docker no encuentra la ruta y crea un DIRECTORIO vacio en su lugar, y
+    # nginx se cae ("Is a directory").
     volumes:
       # Config base (marketing + lanzador + fallback + include de clientes).
-      - ./multicliente/nginx/00-texcontrol.conf:/etc/nginx/conf.d/00-texcontrol.conf:ro
+      - ./nginx/00-texcontrol.conf:/etc/nginx/conf.d/00-texcontrol.conf:ro
       # Bloques generados por cliente (cliente-<slug>.conf). El 00-... los
       # incluye con `include .../clientes/*.conf`.
-      - ./multicliente/nginx/clientes:/etc/nginx/conf.d/clientes:ro
+      - ./nginx/clientes:/etc/nginx/conf.d/clientes:ro
       # Sitio de marketing servido en el dominio raiz (texcontrol.pe).
-      - ./nginx/marketing:/usr/share/nginx/marketing:ro
+      - ../nginx/marketing:/usr/share/nginx/marketing:ro
       # Pagina lanzador estatica (se reutiliza la misma del modelo actual).
-      - ./nginx/launcher:/usr/share/nginx/launcher:ro
+      - ../nginx/launcher:/usr/share/nginx/launcher:ro
       # Certificados wildcard de Let's Encrypt emitidos en el host (DEPLOY.md).
       - /etc/letsencrypt:/etc/letsencrypt:ro
     networks:
