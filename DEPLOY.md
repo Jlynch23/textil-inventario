@@ -253,3 +253,43 @@ git log --oneline -10          # ubicar el commit bueno anterior
 git checkout <sha-del-commit-bueno>
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 ```
+
+## 8. Hardening: SSH solo por Tailscale
+
+El puerto 22 no debe estar abierto al internet público; el acceso administrativo
+va **solo por la red privada de Tailscale**. La web (80/443) sí queda pública.
+
+**Regla de oro:** nunca cerrar el 22 público sin confirmar antes que entras por
+Tailscale. La **consola web de Vultr** es el salvavidas final (aunque el SSH quede
+bloqueado, se entra por el navegador y se corrige `ufw`).
+
+Procedimiento (con "hombre muerto" que reabre el SSH si algo sale mal):
+
+```bash
+# 0. VERIFICAR primero (no cambia nada):
+tailscale status                 # el VPS y tu maquina deben estar en el tailnet
+echo $SSH_CONNECTION             # 3ra IP = lado servidor; ideal ya estar por Tailscale (100.x)
+# y abrir OTRA terminal: ssh linuxuser@<IP-tailscale-del-vps>  -> debe entrar
+
+# 1. Red de seguridad: reabre el 22 publico en 10 min salvo que se cancele
+sudo systemd-run --on-active=600 --unit=deadman-ssh /usr/sbin/ufw allow 22/tcp
+
+# 2. Permitir SSH solo por la interfaz de Tailscale (ANTES de borrar el publico)
+sudo ufw allow in on tailscale0 to any port 22 proto tcp
+
+# 3. Cerrar el SSH publico
+sudo ufw delete allow 22/tcp
+sudo ufw reload
+sudo ufw status verbose          # 22 debe quedar solo "on tailscale0"
+
+# 4. Verificar una sesion NUEVA por Tailscale y recien ahi desarmar el hombre muerto
+sudo systemctl stop deadman-ssh.timer
+sudo systemctl reset-failed deadman-ssh.service 2>/dev/null || true
+```
+
+Estado final de `ufw`: `80/tcp` y `443/tcp` desde Anywhere; `22/tcp on tailscale0`.
+
+> Pendientes opcionales de hardening extra: deshabilitar el login SSH por
+> contraseña (dejar solo llaves), aplicar las actualizaciones de seguridad del
+> SO (`sudo apt update && sudo apt upgrade`), y cerrar el 22 tambien en el
+> firewall de Vultr (capa adicional a nivel proveedor).
