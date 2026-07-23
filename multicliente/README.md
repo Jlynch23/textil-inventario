@@ -11,7 +11,7 @@ igual hasta que se migre de forma deliberada.
 ## Arquitectura
 
 ```
-                 nginx (textil_nginx)  ── red compartida: texcontrol_red ──┐
+          nginx (texcontrol_proxy_nginx)  ── red compartida: texcontrol_red ──┐
                  rutea por subdominio                                       │
    laura.texcontrol.pe ─────────► app_laura ─┐   juan.texcontrol.pe ──► app_juan ─┐
                                              │                                    │
