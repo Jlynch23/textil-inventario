@@ -1,0 +1,77 @@
+# Entorno de PRUEBAS (staging) — corre la rama `develop` con su PROPIA base de
+# datos, AISLADA de produccion. Se sirve en https://dev.texcontrol.pe, OCULTO
+# detras de Basic Auth en el nginx de produccion. Ver STAGING.md.
+#
+# Se levanta con el script (usa un clon aparte del repo, en develop):
+#   ./scripts/deploy-dev.sh
+# O a mano, desde un clon en develop:
+#   docker compose --env-file .env.dev -f docker-compose.dev.yml up -d --build
+#
+# app_dev se une a la red del stack de produccion (textil-inventario_default)
+# para que el nginx de produccion (textil_nginx) lo alcance por nombre. Su MySQL
+# vive en una red privada (dev_interna) que NUNCA se comparte -> datos aislados.
+
+name: textil_dev
+
+services:
+  mysql_dev:
+    image: mysql:8.4
+    container_name: textil_mysql_dev
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: textil_inventario
+      MYSQL_USER: textil_user
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - mysql_data_dev:/var/lib/mysql
+    networks:
+      - dev_interna
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app_dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: textil-inventario-app-dev:latest
+    container_name: textil_app_dev
+    restart: unless-stopped
+    environment:
+      # Apunta al MySQL del PROPIO entorno dev (no al de produccion).
+      DB_URL: jdbc:mysql://mysql_dev:3306/textil_inventario?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Lima
+      DB_USERNAME: textil_user
+      DB_PASSWORD: ${DB_PASSWORD}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      DOCUMENTOS_PATH: /app/documentos
+      MAX_UPLOAD_SIZE: ${MAX_UPLOAD_SIZE:-25MB}
+      # Marca visible para no confundir dev con produccion.
+      NOMBRE_EMPRESA: ${NOMBRE_EMPRESA:-DEV - Pruebas}
+      REMEMBER_ME_KEY: ${REMEMBER_ME_KEY}
+      SPRING_PROFILES_ACTIVE: prod
+    volumes:
+      - ./documentos-dev:/app/documentos
+    depends_on:
+      mysql_dev:
+        condition: service_healthy
+    networks:
+      # dev_interna: para alcanzar su propio MySQL (aislado).
+      - dev_interna
+      # proxy_red: la red del stack de produccion, para que textil_nginx lo
+      # alcance por nombre (textil_app_dev). Tambien le da salida a internet
+      # (OCR/Anthropic), que dev_interna al ser 'internal' no tiene.
+      - proxy_red
+
+networks:
+  dev_interna:
+    driver: bridge
+    internal: true
+  proxy_red:
+    external: true
+    name: textil-inventario_default
+
+volumes:
+  mysql_data_dev:

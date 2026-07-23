@@ -7,6 +7,12 @@ application-local.yml
 /documentos/
 .env
 
+# Entorno de PRUEBAS (staging, docker-compose.dev.yml): credenciales, datos y el
+# archivo de Basic Auth. NUNCA se commitea. Ver STAGING.md.
+.env.dev
+/documentos-dev/
+/nginx/dev.htpasswd
+
 # Estado por-cliente del modelo multi-cliente: lleva credenciales (.env de cada
 # cliente) y datos (documentos). NUNCA se commitea.
 /clientes/

@@ -204,11 +204,13 @@ Tailscale), `fail2ban`, y Docker ya NO depende de Tailscale.
 
 Falta, por orden de prioridad:
 
-1. **Entrada secreta / staging en la nube (PENDIENTE PRINCIPAL)**: un entorno de pruebas en el VPS que
-   corre la rama `develop`, con SU PROPIA base de datos (aislada de producción), accesible desde casa y
-   trabajo por una URL secreta (subdominio no adivinable + auth básica). Objetivo: dejar de levantar
-   MySQL/app en local en cada PC y tener UNA sola BD de pruebas en la nube. Es el primer uso real del
-   patrón multicliente (un stack extra = "dev", corriendo `develop` en vez de `main`).
+1. **Entrada secreta / staging en la nube (PENDIENTE PRINCIPAL)**: entorno de pruebas en
+   **`dev.texcontrol.pe`** (OCULTO, Basic Auth) que corre la rama `develop` con SU PROPIA base de datos
+   (aislada de producción), para probar desde casa y trabajo sin levantar nada en local. **Archivos ya
+   armados en `develop`**: `docker-compose.dev.yml`, `.env.dev.example`, `scripts/deploy-dev.sh`, bloque
+   `dev` en `nginx/nginx.conf`, mount del htpasswd en `docker-compose.prod.yml`. **Setup y uso paso a
+   paso en `STAGING.md`.** Falta ejecutar el alta en el VPS (crear htpasswd → promover a main → levantar
+   el stack dev). Es el primer uso real del patrón multicliente.
 2. **Multi-cliente real (BD aislada por empresa)**: migrar de forma deliberada al modelo `multicliente/`
    (proxy `texcontrol_proxy_nginx` + un stack `app_<cliente>` + `db_<cliente>` por empresa, ruteados por
    subdominio). El scaffolding ya existe en `multicliente/` y `scripts/nuevo-cliente.sh`. Clientes arriba.

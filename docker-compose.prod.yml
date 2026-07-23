@@ -58,5 +58,10 @@ services:
       # bind mount de solo lectura; si la carpeta no existe todavia, Docker la
       # crea vacia (inofensivo mientras nginx siga en modo HTTP sin TLS).
       - /etc/letsencrypt:/etc/letsencrypt:ro
+      # Basic Auth de la entrada secreta dev.texcontrol.pe. El archivo se crea EN
+      # EL VPS con htpasswd (untracked, sobrevive el `git reset --hard` del
+      # deploy) y NO se versiona. DEBE existir antes de levantar nginx, o Docker
+      # crea un directorio vacio en su lugar. Ver STAGING.md.
+      - ./nginx/dev.htpasswd:/etc/nginx/dev.htpasswd:ro
     depends_on:
       - app
