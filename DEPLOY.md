@@ -1,6 +1,21 @@
 # Despliegue en el VPS
 
-Guía para poner TexControl a correr en el servidor (por IP, sin dominio todavía). Todo corre en Docker: MySQL, la app y Nginx como reverse proxy.
+Guía para poner TexControl a correr en el servidor. Todo corre en Docker: MySQL, la app y Nginx como reverse proxy.
+
+> **ESTADO ACTUAL (jul-2026) — leer primero.** La app YA está **en vivo** en
+> `texcontrol.pe` con dominio + HTTPS wildcard. Cambios respecto a lo que dicen
+> las secciones históricas de abajo:
+> - **Tailscale fue REMOVIDO.** El acceso admin es por **SSH con clave pública**
+>   directo a la IP pública (`ssh texcontrol` → `linuxuser@64.176.3.149`), con
+>   login por contraseña **deshabilitado** y `fail2ban` activo. La sección 8
+>   ("SSH solo por Tailscale") quedó **reescrita** con el estado real.
+> - **`BIND_IP=0.0.0.0`** (la web es pública por dominio). Ya NO se usa la IP de
+>   Tailscale.
+> - **Docker** tenía un override de systemd que lo ataba a `tailscaled`; al sacar
+>   Tailscale eso rompió el arranque de Docker. Ya se quitó (ver
+>   `/etc/systemd/system/docker.service.d/override.conf`).
+> - Las secciones **1 y 2** describen el bootstrap histórico "por IP"; siguen
+>   siendo útiles como referencia de instalación desde cero.
 
 ## 1. Prerrequisitos en el VPS
 
@@ -39,7 +54,8 @@ ANTHROPIC_API_KEY=<tu API key de Anthropic, si vas a usar el OCR>
 DOCUMENTOS_PATH=./documentos
 MAX_UPLOAD_SIZE=25MB
 NOMBRE_EMPRESA=<nombre del negocio que va bajo el logo TEXCONTROL>
-BIND_IP=<tu IP de Tailscale, ej. 100.x.x.x -- sin esto, nginx queda expuesto a 0.0.0.0>
+BIND_IP=0.0.0.0   # web publica por dominio (Cloudflare DNS-only). Tailscale ya no se usa.
+REMEMBER_ME_KEY=<openssl rand -hex 32 -- firma la cookie "recordar sesion" movil>
 ```
 
 Levantá todo (la primera vez construye la imagen de la app, tarda unos minutos):
@@ -254,42 +270,44 @@ git checkout <sha-del-commit-bueno>
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 ```
 
-## 8. Hardening: SSH solo por Tailscale
+## 8. Acceso admin y hardening del SSH (estado real, jul-2026)
 
-El puerto 22 no debe estar abierto al internet público; el acceso administrativo
-va **solo por la red privada de Tailscale**. La web (80/443) sí queda pública.
+**Tailscale fue removido.** El acceso administrativo es por **SSH con clave
+pública**, directo a la IP pública del VPS. Estado actual:
 
-**Regla de oro:** nunca cerrar el 22 público sin confirmar antes que entras por
-Tailscale. La **consola web de Vultr** es el salvavidas final (aunque el SSH quede
-bloqueado, se entra por el navegador y se corrige `ufw`).
+- **Firewall (`ufw`)**: `80/tcp`, `443/tcp` y `22/tcp` desde `Anywhere`. (Ya NO
+  hay reglas atadas a `tailscale0`.)
+- **SSH**: login por **contraseña deshabilitado** (`PasswordAuthentication no`
+  en `/etc/ssh/sshd_config.d/00-hardening.conf`) — **solo clave**.
+- **fail2ban** activo (banea IPs que intentan fuerza bruta).
+- **Alias de conexión** (en el `~/.ssh/config` de tu PC):
+  ```
+  Host texcontrol
+      HostName 64.176.3.149
+      User linuxuser
+      IdentityFile ~/.ssh/id_ed25519
+  ```
+  Se entra con `ssh texcontrol`.
 
-Procedimiento (con "hombre muerto" que reabre el SSH si algo sale mal):
+**Salvavidas final:** la **consola web de Vultr** ("View Console") entra sin SSH
+aunque te bloquees; desde ahí se corrige `ufw`, `sshd` o se resetea una clave con
+`sudo passwd linuxuser`.
 
+**Habilitar una PC nueva (casa/trabajo)** — como el password está deshabilitado,
+no sirve `ssh-copy-id` a ciegas; agregá la clave pública de la PC nueva desde una
+sesión ya abierta:
 ```bash
-# 0. VERIFICAR primero (no cambia nada):
-tailscale status                 # el VPS y tu maquina deben estar en el tailnet
-echo $SSH_CONNECTION             # 3ra IP = lado servidor; ideal ya estar por Tailscale (100.x)
-# y abrir OTRA terminal: ssh linuxuser@<IP-tailscale-del-vps>  -> debe entrar
-
-# 1. Red de seguridad: reabre el 22 publico en 10 min salvo que se cancele
-sudo systemd-run --on-active=600 --unit=deadman-ssh /usr/sbin/ufw allow 22/tcp
-
-# 2. Permitir SSH solo por la interfaz de Tailscale (ANTES de borrar el publico)
-sudo ufw allow in on tailscale0 to any port 22 proto tcp
-
-# 3. Cerrar el SSH publico
-sudo ufw delete allow 22/tcp
-sudo ufw reload
-sudo ufw status verbose          # 22 debe quedar solo "on tailscale0"
-
-# 4. Verificar una sesion NUEVA por Tailscale y recien ahi desarmar el hombre muerto
-sudo systemctl stop deadman-ssh.timer
-sudo systemctl reset-failed deadman-ssh.service 2>/dev/null || true
+# en la PC nueva: generar clave y mostrar la publica
+ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519 -N ""
+cat ~/.ssh/id_ed25519.pub          # copiar esta linea
+# en una sesion ya logueada al VPS (ssh texcontrol desde la PC vieja): pegarla
+echo "ssh-ed25519 AAAA... comentario" >> ~/.ssh/authorized_keys
 ```
 
-Estado final de `ufw`: `80/tcp` y `443/tcp` desde Anywhere; `22/tcp on tailscale0`.
+> ⚠️ **Regla de oro:** nunca cerrar/cambiar el acceso SSH sin confirmar en OTRA
+> terminal que el método nuevo entra. Y ojo con Docker: tenía un override que lo
+> ataba a `tailscaled` — si Docker no arranca tras tocar la red, revisar
+> `/etc/systemd/system/docker.service.d/override.conf`.
 
-> Pendientes opcionales de hardening extra: deshabilitar el login SSH por
-> contraseña (dejar solo llaves), aplicar las actualizaciones de seguridad del
-> SO (`sudo apt update && sudo apt upgrade`), y cerrar el 22 tambien en el
-> firewall de Vultr (capa adicional a nivel proveedor).
+> Pendiente opcional de hardening extra: restringir el `22/tcp` a tu IP/rango en
+> vez de `Anywhere`, y aplicar actualizaciones del SO (`sudo apt update && sudo apt upgrade`).

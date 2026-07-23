@@ -162,6 +162,35 @@ promover a `main` (dispara el redeploy). CI (`.github/workflows/ci.yml`) corre e
   directo por IP. Ojo: Docker tenía un override de systemd que lo ataba a `tailscaled` — ya se quitó, si
   algo similar reaparece revisar `/etc/systemd/system/docker.service.d/override.conf`.
 
+## Infraestructura (producción) — resumen; el detalle vive en `DEPLOY.md`
+
+- **VPS**: Vultr, Ubuntu 24.04, IP pública `64.176.3.149`. Acceso admin por
+  **SSH con clave** (`ssh texcontrol`), password deshabilitado, `fail2ban`. **Sin
+  Tailscale** (removido jul-2026). Consola web de Vultr = salvavidas si te bloqueás.
+- **Dominio**: `texcontrol.pe`, **Cloudflare DNS-only** (nube gris) con dos `A`:
+  `texcontrol.pe` y **`*.texcontrol.pe`** → IP del VPS. El **wildcard** hace que
+  CUALQUIER subdominio nuevo (`dev.texcontrol.pe`, `<empresa>.texcontrol.pe`)
+  resuelva solo, **sin tocar DNS**.
+- **HTTPS**: certificado **wildcard** Let's Encrypt (`*.texcontrol.pe`, DNS-01 vía
+  API de Cloudflare) en `/etc/letsencrypt/live/texcontrol.pe/`, renovación
+  automática. Un subdominio nuevo ya queda cubierto sin emitir nada.
+- **Rutas**: `login.texcontrol.pe` = lanzador; `<empresa>.texcontrol.pe` = la app.
+- **Modelo actual = SINGLE-cliente**: UN stack (`docker-compose.yml` +
+  `docker-compose.prod.yml`) = `textil_app` + `textil_mysql` + `textil_nginx`,
+  corriendo `main`, sirviendo a `textillaura`. `BIND_IP=0.0.0.0`. La BD arranca de
+  cero con las 36 migraciones + cuentas semilla. **Usar clave de BD sin símbolos**
+  (hex): `deploy.sh` sincroniza leyendo el `.env` literal, pero el hex evita todo
+  problema de escaping.
+- **Multicliente** (roadmap, scaffolding listo en `multicliente/`): un stack
+  aislado por empresa (`app_<slug>` + `db_<slug>`, BD propia, red `interna`) tras
+  el proxy compartido **`texcontrol_proxy_nginx`** (red `texcontrol_red`). Alta con
+  `scripts/nuevo-cliente.sh <slug> "<nombre>"`. Techo ~3 clientes en 4 GB de RAM.
+  **OJO**: el proxy NO debe llamarse `textil_nginx` (ese nombre es del single-cliente
+  y chocan) — es `texcontrol_proxy_nginx`.
+- **Deploy** (NO es automático): `ssh texcontrol` → `cd ~/textil-inventario` →
+  `./scripts/deploy.sh` (trae `main`, reconstruye la imagen, reinicia; los datos de
+  MySQL no se tocan).
+
 ## Roadmap / pendientes
 
 Estado actual (jul-2026): **en vivo** en `texcontrol.pe` (dominio + HTTPS wildcard; `login.texcontrol.pe`
