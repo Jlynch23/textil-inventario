@@ -117,7 +117,7 @@ parsing de guías, ese prompt es la fuente de verdad.
 
 - Todo cambio de esquema es una migración Flyway nueva en
   `src/main/resources/db/migration/V<n>__descripcion.sql`. **Nunca** editar una migración ya
-  aplicada; sumar una nueva con el siguiente número (actualmente van hasta **V35**).
+  aplicada; sumar una nueva con el siguiente número (actualmente van hasta **V36**).
 - `ddl-auto: validate`: si una entidad no calza con el esquema migrado, la app no arranca.
 - `baseline-on-migrate: true`.
 
@@ -130,15 +130,22 @@ parsing de guías, ese prompt es la fuente de verdad.
 
 ## Flujo de trabajo (ramas)
 
-Dos ramas de larga vida:
-- **`develop`**: rama de **trabajo y pruebas**. Acá se commitea y se prueba **en local**
-  (`mvn spring-boot:run` + MySQL en Docker). Todo lo nuevo pasa primero por acá.
+**Solo existen DOS ramas y NO se crean otras** (nada de `feature/*`, `claude/*`, ni ramas efímeras
+por tarea — es una molestia explícita del dueño):
+- **`develop`**: rama de **trabajo y pruebas**. Todo lo nuevo pasa primero por acá.
 - **`main`**: **producción**. El VPS despliega de esta rama (`scripts/deploy.sh` hace
   `git reset --hard origin/main`). **Solo** se mergea `develop → main` cuando está probado y estable.
 
 Regla: nunca pushear features a medio hacer a `main`; probar en `develop`, y recién cuando anda,
-promover a `main` (que dispara el redeploy del cliente). CI (`.github/workflows/ci.yml`) corre en
-push/PR a **ambas** ramas.
+promover a `main` (dispara el redeploy). CI (`.github/workflows/ci.yml`) corre en push/PR a **ambas**.
+
+> **Pruebas en la nube, no en local**: el objetivo es dejar de levantar MySQL+app en cada PC
+> (casa/trabajo) y probar `develop` contra un entorno de **staging en el propio VPS** (ver "entrada
+> secreta" en el Roadmap), con UNA sola base de datos en la nube. Así el trabajo vive en el servidor
+> y no hay que copiar bases entre máquinas.
+
+> **Futuro (más adelante, no ahora)**: se sumará una tercera rama **"limpia"** = la plantilla base que
+> se copia cada vez que se vende una instancia nueva. Se define cuando toque; hasta entonces, solo dos ramas.
 
 ## Convenciones
 
@@ -149,24 +156,70 @@ push/PR a **ambas** ramas.
   cliente. Nada de texto de ejemplo gris dentro de los `<input>`; alcanza con el `<label>` (y un
   `<small>` de ayuda debajo si de verdad hace falta), pero el campo va vacío.
 - Credenciales **nunca** hardcodeadas: siempre variables de entorno (ver `application.yml`).
-- Despliegue en VPS documentado en `DEPLOY.md` (Docker: MySQL + app + Nginx, acceso por Tailscale,
-  `docker-compose.prod.yml`).
+- Despliegue en VPS documentado en `DEPLOY.md` (Docker: MySQL + app + Nginx, `docker-compose.prod.yml`).
+  **Acceso admin: SSH por clave** (`ssh texcontrol` → `linuxuser@64.176.3.149`); password deshabilitado
+  y `fail2ban` activo. **Tailscale fue REMOVIDO** (jul-2026): la web es pública por dominio y el SSH va
+  directo por IP. Ojo: Docker tenía un override de systemd que lo ataba a `tailscaled` — ya se quitó, si
+  algo similar reaparece revisar `/etc/systemd/system/docker.service.d/override.conf`.
+
+## Infraestructura (producción) — resumen; el detalle vive en `DEPLOY.md`
+
+- **VPS**: Vultr, Ubuntu 24.04, IP pública `64.176.3.149`. Acceso admin por
+  **SSH con clave** (`ssh texcontrol`), password deshabilitado, `fail2ban`. **Sin
+  Tailscale** (removido jul-2026). Consola web de Vultr = salvavidas si te bloqueás.
+- **Dominio**: `texcontrol.pe`, **Cloudflare DNS-only** (nube gris) con dos `A`:
+  `texcontrol.pe` y **`*.texcontrol.pe`** → IP del VPS. El **wildcard** hace que
+  CUALQUIER subdominio nuevo (`dev.texcontrol.pe`, `<empresa>.texcontrol.pe`)
+  resuelva solo, **sin tocar DNS**.
+- **HTTPS**: certificado **wildcard** Let's Encrypt (`*.texcontrol.pe`, DNS-01 vía
+  API de Cloudflare) en `/etc/letsencrypt/live/texcontrol.pe/`, renovación
+  automática. Un subdominio nuevo ya queda cubierto sin emitir nada.
+- **Rutas**: `login.texcontrol.pe` = lanzador; `<empresa>.texcontrol.pe` = la app.
+- **Modelo actual = SINGLE-cliente**: UN stack (`docker-compose.yml` +
+  `docker-compose.prod.yml`) = `textil_app` + `textil_mysql` + `textil_nginx`,
+  corriendo `main`, sirviendo a `textillaura`. `BIND_IP=0.0.0.0`. La BD arranca de
+  cero con las 36 migraciones + cuentas semilla. **Usar clave de BD sin símbolos**
+  (hex): `deploy.sh` sincroniza leyendo el `.env` literal, pero el hex evita todo
+  problema de escaping.
+- **Multicliente** (roadmap, scaffolding listo en `multicliente/`): un stack
+  aislado por empresa (`app_<slug>` + `db_<slug>`, BD propia, red `interna`) tras
+  el proxy compartido **`texcontrol_proxy_nginx`** (red `texcontrol_red`). Alta con
+  `scripts/nuevo-cliente.sh <slug> "<nombre>"`. Techo ~3 clientes en 4 GB de RAM.
+  **OJO**: el proxy NO debe llamarse `textil_nginx` (ese nombre es del single-cliente
+  y chocan) — es `texcontrol_proxy_nginx`.
+- **Deploy** (NO es automático): `ssh texcontrol` → `cd ~/textil-inventario` →
+  `./scripts/deploy.sh` (trae `main`, reconstruye la imagen, reinicia; los datos de
+  MySQL no se tocan).
 
 ## Roadmap / pendientes
 
-Estado actual: **en vivo** en `texcontrol.pe` (dominio + HTTPS wildcard; `login.texcontrol.pe` =
-lanzador, `<empresa>.texcontrol.pe` = la app). Falta, por orden de prioridad:
+Estado actual (jul-2026): **en vivo** en `texcontrol.pe` (dominio + HTTPS wildcard; `login.texcontrol.pe`
+= lanzador, `<empresa>.texcontrol.pe` = la app). **Modelo single-cliente**: hoy hay UN solo stack
+(app + MySQL + nginx de `docker-compose.prod.yml`) sirviendo a `textillaura`. Infra: SSH por clave (sin
+Tailscale), `fail2ban`, y Docker ya NO depende de Tailscale.
 
-1. **Multi-cliente real (BD aislada por empresa)**: hoy TODOS los subdominios van a la MISMA app y
-   MISMA base de datos. Falta que cada empresa tenga su **stack aislado** (su BD + su contenedor) en
-   el mismo VPS, con nginx ruteando cada subdominio a su contenedor, y un script `nuevo-cliente.sh`
-   que aprovisione un cliente con un comando. Es la pieza que habilita el modelo de negocio.
-2. **App móvil iOS/Android**: una app para celular para que **los usuarios ingresen desde el móvil**
+**Clientes** (una instancia por cliente, cada uno con su BD propia):
+- **`textillaura`** — cliente actual = **Textil Laura + Textil Clemente** juntos (una sola instancia/BD).
+- Futuro (todavía no vendidos): **Textil Camargo**, **Textil Emilio**.
+
+Falta, por orden de prioridad:
+
+1. **Entrada secreta / staging en la nube (PENDIENTE PRINCIPAL)**: entorno de pruebas en
+   **`dev.texcontrol.pe`** (OCULTO, Basic Auth) que corre la rama `develop` con SU PROPIA base de datos
+   (aislada de producción), para probar desde casa y trabajo sin levantar nada en local. **Archivos ya
+   armados en `develop`**: `docker-compose.dev.yml`, `.env.dev.example`, `scripts/deploy-dev.sh`, bloque
+   `dev` en `nginx/nginx.conf`, mount del htpasswd en `docker-compose.prod.yml`. **Setup y uso paso a
+   paso en `STAGING.md`.** Falta ejecutar el alta en el VPS (crear htpasswd → promover a main → levantar
+   el stack dev). Es el primer uso real del patrón multicliente.
+2. **Multi-cliente real (BD aislada por empresa)**: migrar de forma deliberada al modelo `multicliente/`
+   (proxy `texcontrol_proxy_nginx` + un stack `app_<cliente>` + `db_<cliente>` por empresa, ruteados por
+   subdominio). El scaffolding ya existe en `multicliente/` y `scripts/nuevo-cliente.sh`. Clientes arriba.
+   Es la pieza que habilita el modelo de negocio.
+3. **App móvil iOS/Android**: una app para celular para que **los usuarios ingresen desde el móvil**
    (los vendedores/almaceneros/gerentes de cada empresa). A definir: nativa contra una API REST
    (que hay que construir), PWA instalable sobre la web actual, o wrapper WebView. Pedido explícito
-   del cliente.
-3. **Antes del primer cliente que pague**: backups automáticos (cron por cliente), rotar `jlynch`
+   del cliente. (Ya hay PWA instalable + sesión persistente móvil implementada.)
+4. **Antes del primer cliente que pague**: backups automáticos (cron por cliente), rotar `jlynch`
    con clave única por copia, limpiar/cerrar cuentas de prueba, `NOMBRE_EMPRESA` por cliente.
-4. **Marketing** en `texcontrol.pe` (hoy la raíz redirige a `login.`).
-5. **Hardening**: cerrar el puerto 22 al público (SSH solo por Tailscale).
+5. **Marketing** en `texcontrol.pe` (hoy la raíz redirige a `login.`).
 6. **Módulo de Ventas** (rol `VENDEDOR`, hoy sin permisos).

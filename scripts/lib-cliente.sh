@@ -8,7 +8,7 @@ MC_RED_COMPARTIDA="texcontrol_red"
 MC_IMAGEN="texcontrol-app:latest"
 MC_COMPOSE_CLIENTE="multicliente/docker-compose.cliente.yml"
 MC_NGINX_CLIENTES="multicliente/nginx/clientes"
-MC_NGINX_CONTENEDOR="textil_nginx"
+MC_NGINX_CONTENEDOR="texcontrol_proxy_nginx"
 # Subdominios que NO se pueden asignar como empresa (chocan con la infra).
 MC_RESERVADOS="login www adminer api mail ftp admin"
 

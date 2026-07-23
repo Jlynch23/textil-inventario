@@ -39,11 +39,18 @@ fi
 # contrasena de MySQL y la del .env quedaron desincronizadas entre un
 # despliegue y el siguiente.
 echo "Sincronizando password de textil_user con el .env..."
-set -a
-source .env
-set +a
+# Leemos los valores del .env de forma LITERAL (grep/cut), NO con `source`.
+# `source` expande $, backticks y comillas del shell, dejando un valor distinto
+# al que docker-compose le pasa a MySQL y a la app (que es el texto crudo del
+# .env). Si el password tiene simbolos, `source` lo desincroniza y la app queda
+# en "Access denied" en cada deploy. Con grep/cut leemos exactamente los mismos
+# bytes que ve docker-compose, asi la clave siempre coincide.
+DB_PASSWORD="$(grep -E '^DB_PASSWORD=' .env | cut -d= -f2-)"
+MYSQL_ROOT_PASSWORD="$(grep -E '^MYSQL_ROOT_PASSWORD=' .env | cut -d= -f2-)"
+# Escapamos comillas simples para el literal SQL (' -> '').
+DB_PASSWORD_SQL=${DB_PASSWORD//\'/\'\'}
 docker exec -e MYSQL_PWD="$MYSQL_ROOT_PASSWORD" textil_mysql \
-    mysql -uroot -e "ALTER USER 'textil_user'@'%' IDENTIFIED BY '$DB_PASSWORD'; FLUSH PRIVILEGES;"
+    mysql -uroot -e "ALTER USER 'textil_user'@'%' IDENTIFIED BY '${DB_PASSWORD_SQL}'; FLUSH PRIVILEGES;"
 
 echo "Reconstruyendo y reiniciando contenedores..."
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
