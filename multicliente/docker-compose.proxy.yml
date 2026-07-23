@@ -28,6 +28,8 @@ services:
       # Bloques generados por cliente (cliente-<slug>.conf). El 00-... los
       # incluye con `include .../clientes/*.conf`.
       - ./multicliente/nginx/clientes:/etc/nginx/conf.d/clientes:ro
+      # Sitio de marketing servido en el dominio raiz (texcontrol.pe).
+      - ./nginx/marketing:/usr/share/nginx/marketing:ro
       # Pagina lanzador estatica (se reutiliza la misma del modelo actual).
       - ./nginx/launcher:/usr/share/nginx/launcher:ro
       # Certificados wildcard de Let's Encrypt emitidos en el host (DEPLOY.md).
