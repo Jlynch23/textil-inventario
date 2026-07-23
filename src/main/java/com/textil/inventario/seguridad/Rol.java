@@ -19,4 +19,9 @@ public class Rol extends BaseEntity {
 
     @Column(nullable = false)
     private Boolean activo = true;
+
+    // Orden de PODER (1 = mayor). Independiente del id: define como se muestran
+    // los roles en la UI, de mayor a menor autoridad. Ver V36__roles_jerarquia.
+    @Column(nullable = false)
+    private Integer jerarquia = 0;
 }
