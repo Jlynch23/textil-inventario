@@ -222,8 +222,7 @@ producción lo tome):
   con `BIND_IP=0.0.0.0`.
 - **Empresas**: la carpeta de documentos se auto-genera del nombre (slug); el formulario quedó Nombre + RUC;
   el nombre bajo el logo TEXCONTROL ahora sale de las **empresas activas** (unidas por " & ") con fallback a
-  `NOMBRE_EMPRESA`. *Decisión pendiente*: se muestra en MAYÚSCULAS (así lo guarda el catálogo) — confirmar si
-  se quiere en formato normal.
+  `NOMBRE_EMPRESA`. *Decisión (24-jul, confirmada)*: se deja en **MAYÚSCULAS** (así lo guarda el catálogo).
 - **Recepción**: "Crear artículo" ahora **crea las piezas base que falten** (tipo de tela/título/composición/
   acabado) en vez de cortar con "no existe en el catálogo base".
 
