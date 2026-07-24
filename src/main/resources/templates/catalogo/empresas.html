@@ -61,19 +61,29 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr th:each="e : ${empresas}">
-                                    <td th:text="${e.nombre}"></td>
+                                <tr th:each="e : ${empresas}" th:classappend="${!e.activo} ? 'text-muted' : ''">
+                                    <td>
+                                        <span th:text="${e.nombre}"></span>
+                                        <span th:unless="${e.activo}" class="badge bg-secondary ms-2">Inactiva</span>
+                                    </td>
                                     <td><code th:text="${e.ruc}"></code></td>
                                     <td th:text="${e.carpeta}"></td>
                                     <td>
                                         <a th:href="@{/catalogo/empresas/editar/{id}(id=${e.id})}"
-                                           class="btn btn-sm btn-outline-primary">
+                                           class="btn btn-sm btn-outline-primary" title="Editar">
                                             <i class="bi bi-pencil"></i>
                                         </a>
-                                        <form th:action="@{/catalogo/empresas/inactivar/{id}(id=${e.id})}" method="post" style="display:inline">
+                                        <!-- Activa: botón para inactivar -->
+                                        <form th:if="${e.activo}" th:action="@{/catalogo/empresas/inactivar/{id}(id=${e.id})}" method="post" style="display:inline">
                                             <button type="submit" class="btn btn-sm btn-outline-warning" title="Inactivar (reversible)"
-                                                    onclick="return confirm('¿Inactivar esta empresa?')">
+                                                    onclick="return confirm('¿Inactivar esta empresa? Dejará de aparecer en los formularios, pero queda en la lista y podés reactivarla cuando quieras.')">
                                                 <i class="bi bi-eye-slash"></i>
+                                            </button>
+                                        </form>
+                                        <!-- Inactiva: botón para reactivar -->
+                                        <form th:unless="${e.activo}" th:action="@{/catalogo/empresas/reactivar/{id}(id=${e.id})}" method="post" style="display:inline">
+                                            <button type="submit" class="btn btn-sm btn-outline-success" title="Reactivar">
+                                                <i class="bi bi-eye"></i>
                                             </button>
                                         </form>
                                     </td>

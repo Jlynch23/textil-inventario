@@ -295,7 +295,7 @@ public class CatalogoController {
             catalogoService.guardarEmpresa(empresa);
             ra.addFlashAttribute("mensaje", "Empresa guardada correctamente.");
         } catch (DataIntegrityViolationException e) {
-            ra.addFlashAttribute("error", "Ya existe una empresa con ese RUC.");
+            ra.addFlashAttribute("error", "Ya existe una empresa con ese RUC (puede estar inactiva en la lista; reactivala en vez de crear otra).");
         }
         return "redirect:/catalogo/empresas";
     }
@@ -309,11 +309,22 @@ public class CatalogoController {
     }
 
     @PostMapping("/empresas/inactivar/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public String inactivarEmpresa(@PathVariable Long id, RedirectAttributes ra) {
         Empresa e = catalogoService.buscarEmpresa(id);
         e.setActivo(false);
         catalogoService.guardarEmpresa(e);
-        ra.addFlashAttribute("mensaje", "Empresa inactivada.");
+        ra.addFlashAttribute("mensaje", "Empresa inactivada. Sigue en la lista (marcada como inactiva); podés reactivarla cuando quieras.");
+        return "redirect:/catalogo/empresas";
+    }
+
+    @PostMapping("/empresas/reactivar/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
+    public String reactivarEmpresa(@PathVariable Long id, RedirectAttributes ra) {
+        Empresa e = catalogoService.buscarEmpresa(id);
+        e.setActivo(true);
+        catalogoService.guardarEmpresa(e);
+        ra.addFlashAttribute("mensaje", "Empresa reactivada.");
         return "redirect:/catalogo/empresas";
     }
 
