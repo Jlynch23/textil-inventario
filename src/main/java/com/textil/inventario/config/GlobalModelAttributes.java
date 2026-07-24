@@ -6,6 +6,7 @@ import com.textil.inventario.seguridad.Usuario;
 import com.textil.inventario.seguridad.UsuarioActualService;
 import lombok.RequiredArgsConstructor;
 import java.util.stream.Collectors;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
 
@@ -25,6 +26,20 @@ public class GlobalModelAttributes {
 
     private final UsuarioActualService usuarioActualService;
     private final EmpresaRepository empresaRepository;
+
+    // Etiqueta del entorno (ej. "BETA" en staging), vacia en produccion.
+    @Value("${app.entorno-etiqueta:}")
+    private String entornoEtiqueta;
+
+    /**
+     * Etiqueta del entorno para mostrar en el login (ej. "BETA" en dev). Vacia
+     * en produccion -> la vista oculta el distintivo. Sirve para no confundir
+     * el login de staging (dev.texcontrol.pe) con el de produccion.
+     */
+    @ModelAttribute("entornoEtiqueta")
+    public String entornoEtiqueta() {
+        return entornoEtiqueta != null ? entornoEtiqueta : "";
+    }
 
     @ModelAttribute("nombreUsuarioActual")
     public String nombreUsuarioActual() {

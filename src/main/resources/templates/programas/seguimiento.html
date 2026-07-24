@@ -65,8 +65,12 @@
                             <td th:text="${d.cantidadRecibida}"></td>
                             <td th:text="${d.cantidadPendiente}"></td>
                             <td>
-                                <div th:if="${d.completo}" class="d-flex align-items-center gap-2 flex-wrap">
-                                    <span class="badge bg-success">Completo</span>
+                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                    <span th:if="${d.completo}" class="badge bg-success">Completo</span>
+                                    <span th:unless="${d.completo}" class="badge bg-warning text-dark">Pendiente</span>
+                                    <!-- Guia(s) de la(s) entrega(s): aparecen en CUALQUIER linea que ya
+                                         recibio algo (completa o parcial). Ojito para abrir el PDF si la
+                                         guia tiene documento archivado; si no, solo el numero. -->
                                     <span th:each="hg : ${historialPorLinea.get(d.id)}" class="d-inline-flex align-items-center gap-1">
                                         <a th:if="${hg.documentoId != null}"
                                            th:href="@{/documentos/{docId}/ver(docId=${hg.documentoId})}"
@@ -77,7 +81,6 @@
                                         <small th:unless="${hg.documentoId != null}" class="text-muted" th:text="${hg.numeroGuia}"></small>
                                     </span>
                                 </div>
-                                <span th:unless="${d.completo}" class="badge bg-warning text-dark">Pendiente</span>
                             </td>
                         </tr>
                     </tbody>

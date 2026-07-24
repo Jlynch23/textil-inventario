@@ -50,6 +50,9 @@ services:
       MAX_UPLOAD_SIZE: ${MAX_UPLOAD_SIZE:-25MB}
       # Marca visible para no confundir dev con produccion.
       NOMBRE_EMPRESA: ${NOMBRE_EMPRESA:-DEV - Pruebas}
+      # Distintivo en el login (pastilla ambar). Solo dev lo pone; prod lo deja
+      # vacio y no muestra nada.
+      ENTORNO_ETIQUETA: ${ENTORNO_ETIQUETA:-BETA}
       REMEMBER_ME_KEY: ${REMEMBER_ME_KEY}
       SPRING_PROFILES_ACTIVE: prod
     volumes:

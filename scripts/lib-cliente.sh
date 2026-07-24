@@ -52,6 +52,10 @@ mc_generar_env() {
     local env_cliente="$dir_cliente/.env"
 
     mkdir -p "$dir_cliente/documentos"
+    # La app corre como appuser (uid 999). El bind mount de documentos debe ser
+    # de su propiedad o falla al archivar guias/facturas con "Permission denied"
+    # (500). Un contenedor efimero (root) le pone el dueño correcto, sin sudo.
+    docker run --rm -v "$dir_cliente/documentos:/d" alpine chown -R 999:999 /d
     # openssl rand -hex: secretos aleatorios; cada cliente tiene los suyos.
     local db_pass root_pass rememberme
     db_pass="$(openssl rand -hex 24)"

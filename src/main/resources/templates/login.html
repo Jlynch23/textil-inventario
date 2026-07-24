@@ -44,11 +44,22 @@
         .alerta-ok { background: rgba(52,211,153,.12); border: 1px solid rgba(52,211,153,.35); color: #6ee7b7; }
         .volver { display: inline-block; margin-top: 22px; color: #7c8ba6; font-size: 13.5px; text-decoration: none; }
         .volver:hover { color: #f1f5f9; }
+        /* Distintivo de entorno (ej. BETA en dev): pastilla ambar + borde de la
+           tarjeta ambar, para no confundir staging con produccion. */
+        .badge-entorno {
+            display: inline-block; margin: 0 auto 14px; padding: 4px 14px;
+            background: rgba(245,158,11,.16); border: 1px solid rgba(245,158,11,.55);
+            color: #fbbf24; border-radius: 999px; font-size: 12px; font-weight: 800;
+            letter-spacing: .12em; text-transform: uppercase;
+        }
+        .card.entorno { border-color: rgba(245,158,11,.45); }
     </style>
 </head>
 <body>
-    <div class="card">
+    <div class="card" th:classappend="${entornoEtiqueta != null and !entornoEtiqueta.isEmpty()} ? 'entorno' : ''">
         <img class="logo" src="/img/texcontrol-logo-recortado.png" alt="TexControl">
+        <div th:if="${entornoEtiqueta != null and !entornoEtiqueta.isEmpty()}"
+             class="badge-entorno" th:text="${entornoEtiqueta}">BETA</div>
         <div class="sub">Control total para la industria textil</div>
 
         <div th:if="${param.error}" class="alerta alerta-error">
