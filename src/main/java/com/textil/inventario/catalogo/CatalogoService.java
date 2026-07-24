@@ -26,7 +26,11 @@ public class CatalogoService {
     }
 
     // EMPRESAS
-    public List<Empresa> listarEmpresas() { return empresaRepository.findByActivoTrue(); }
+    // Pantalla de gestion (Catalogo -> Empresas): lista TODAS, activas e
+    // inactivas (las inactivas van marcadas y se pueden reactivar). Los
+    // dropdowns de recepciones/programas/reportes usan findByActivoTrue() aparte,
+    // asi que siguen viendo solo las activas.
+    public List<Empresa> listarEmpresas() { return empresaRepository.findAllByOrderByActivoDescNombreAsc(); }
     public Empresa guardarEmpresa(Empresa e) {
         e.setNombre(normalizar(e.getNombre()));
         e.setRuc(normalizar(e.getRuc()));

@@ -224,7 +224,9 @@ producción lo tome):
   el nombre bajo el logo TEXCONTROL ahora sale de las **empresas activas** (unidas por " & "). **Sin fallback**:
   si no hay empresas activas cargadas, el subtítulo no se muestra (nada de `NOMBRE_EMPRESA` hardcodeado, para que
   una copia recién entregada no exhiba el nombre de otro cliente). *Decisión (24-jul, confirmada)*: se deja en
-  **MAYÚSCULAS** (así lo guarda el catálogo).
+  **MAYÚSCULAS** (así lo guarda el catálogo). La lista de Empresas ahora muestra **también las inactivas**
+  (marcadas, con botón de **reactivar**): el ojito inactiva (`activo=false`) pero el RUC sigue ocupado por el
+  constraint único, así que si quedaban ocultas trababan crear otra con el mismo RUC sin que se viera por qué.
 - **Recepción**: "Crear artículo" ahora **crea las piezas base que falten** (tipo de tela/título/composición/
   acabado) en vez de cortar con "no existe en el catálogo base".
 
