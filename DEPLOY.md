@@ -26,9 +26,9 @@ sudo usermod -aG docker $USER
 # cerrar sesión y volver a entrar para que el grupo tome efecto
 ```
 
-**No abras el puerto 80 al público en el firewall de la instancia.** El acceso está pensado para ser solo por Tailscale (o la VPN que uses) — `docker-compose.prod.yml` publica nginx únicamente en la IP que definas como `BIND_IP` en el `.env` (ej. tu IP de Tailscale), nunca en `0.0.0.0`. Si `BIND_IP` no se define, cae por defecto en `0.0.0.0` (todas las interfaces, incluida la pública) — definila siempre en producción. Ver sección 6 para el día que agregues un dominio público de verdad, que es el único caso en el que sí correspondería abrir el 80/443 públicamente (con HTTPS).
+**Exposición de red.** Hoy producción es **pública por dominio** (`texcontrol.pe`) con HTTPS, así que en el firewall de la instancia van abiertos **80 y 443** (ver sección 6) y en el `.env` va `BIND_IP=0.0.0.0` — nginx escucha en todas las interfaces y termina el TLS. El puerto lo controla `BIND_IP` en `docker-compose.prod.yml`: si algún día quisieras exponer la app solo por una interfaz o VPN interna, fijá ahí esa IP en vez de `0.0.0.0`. Si `BIND_IP` no se define, cae por defecto en `0.0.0.0`.
 
-Los puertos 3307 (MySQL) y 8081 (Adminer) **no hace falta abrirlos** — `docker-compose.yml` ya los deja bindeados solo a `127.0.0.1`, así que ni siquiera están expuestos fuera del servidor. El puerto 22 (SSH) sí necesita estar abierto para poder conectarte; restringirlo a tu rango de Tailscale (en vez de "Anywhere") es una mejora recomendada pero no forma parte de este documento.
+Los puertos 3307 (MySQL) y 8081 (Adminer) **no hace falta abrirlos** — `docker-compose.yml` ya los deja bindeados solo a `127.0.0.1`, así que ni siquiera están expuestos fuera del servidor. El puerto 22 (SSH) sí necesita estar abierto para poder conectarte; restringirlo a tu IP/rango de confianza (en vez de "Anywhere") es una mejora recomendada pero no forma parte de este documento.
 
 ## 2. Primera vez
 

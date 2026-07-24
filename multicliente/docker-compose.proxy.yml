@@ -22,8 +22,9 @@ services:
     restart: unless-stopped
     ports:
       # Igual que en produccion actual: BIND_IP restringe a una interfaz.
-      # 0.0.0.0 para acceso por dominio publico; IP de Tailscale para acceso
-      # solo por VPN. Ver docker-compose.prod.yml y .env.example.
+      # 0.0.0.0 para acceso por dominio publico (lo actual); o una IP de
+      # interfaz/VPN interna si quisieras limitarlo. Ver docker-compose.prod.yml
+      # y .env.example.
       - "${BIND_IP:-0.0.0.0}:80:80"
       - "${BIND_IP:-0.0.0.0}:443:443"
     # IMPORTANTE: Docker Compose resuelve las rutas relativas de los volumenes
