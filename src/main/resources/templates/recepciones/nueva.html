@@ -6,6 +6,10 @@
 <section>
     <div class="row justify-content-center">
         <div class="col-md-8">
+            <div th:if="${error}" class="alert alert-danger alert-dismissible fade show">
+                <span th:text="${error}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
 
             <!-- SUBIDA DE PDF -->
             <div class="card mb-4 border-primary">
@@ -395,14 +399,16 @@
                 const chkResp = await fetch('/recepciones/verificar-guia?numero=' + encodeURIComponent(numeroGuia));
                 const chkData = await chkResp.json();
                 if (chkData.existe) {
-                    const confirmar = confirm(
-                        '⚠️ Ya existe una guía con el número "' + numeroGuia + '"\n\n' +
+                    // Bloqueo total: una guía no se puede registrar dos veces
+                    // (evita duplicar el stock). El backend también lo rechaza.
+                    alert(
+                        '⛔ Ya existe una recepción con la guía "' + numeroGuia + '"\n\n' +
                         'Empresa: ' + chkData.empresa + '\n' +
                         'Fecha: ' + chkData.fecha + '\n' +
                         'Estado: ' + chkData.estado + '\n\n' +
-                        '¿Estás seguro de que quieres registrarla de nuevo? Esto puede duplicar el stock.'
+                        'Una guía no se puede registrar dos veces.'
                     );
-                    if (!confirmar) return;
+                    return;
                 }
             } catch (err) {
                 console.error('No se pudo verificar duplicado de guía:', err);

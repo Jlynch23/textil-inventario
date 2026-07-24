@@ -271,4 +271,18 @@ class RecepcionServiceTest {
         verify(stockActualRepository, never()).save(any());
         verify(kardexRepository, never()).save(any());
     }
+
+    @Test
+    void crearRecepcion_guiaDuplicada_lanzaYNoGuarda() {
+        // Una guía = una recepción: no se puede registrar dos veces (si no,
+        // confirmar ambas duplica el stock y deja el programa en pendiente negativo).
+        when(recepcionRepository.findFirstByNumeroGuia("TG01-00019662"))
+                .thenReturn(Optional.of(new Recepcion()));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                service.crearRecepcion(1L, "TG01-00019662", null, java.time.LocalDate.now(), null)
+        ).isInstanceOf(IllegalArgumentException.class);
+
+        verify(recepcionRepository, never()).save(any());
+    }
 }

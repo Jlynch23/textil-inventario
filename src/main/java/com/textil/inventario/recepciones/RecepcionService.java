@@ -148,9 +148,19 @@ public class RecepcionService {
 
     @Transactional
     public Recepcion crearRecepcion(Long empresaId, String numeroGuia, String numeroFactura, LocalDate fechaGuia, String observaciones) {
+        String guiaNorm = normalizar(numeroGuia);
+        // Guía duplicada: una guía = una recepción. Sin este bloqueo, cargar la
+        // misma guía dos veces y confirmar ambas DUPLICA el stock y deja el
+        // programa con recibido > solicitado (pendiente negativo). El aviso del
+        // front es saltable; acá se hace obligatorio (defensa en el backend).
+        if (guiaNorm != null && !guiaNorm.isBlank()
+                && recepcionRepository.findFirstByNumeroGuia(guiaNorm).isPresent()) {
+            throw new IllegalArgumentException(
+                    "Ya existe una recepción con la guía " + guiaNorm + ". Una guía no se puede registrar dos veces.");
+        }
         Recepcion r = new Recepcion();
         r.setEmpresa(empresaRepository.findById(empresaId).orElseThrow());
-        r.setNumeroGuia(normalizar(numeroGuia));
+        r.setNumeroGuia(guiaNorm);
         r.setNumeroFactura(normalizar(numeroFactura));
         r.setFechaGuia(fechaGuia);
         r.setFechaRecepcion(LocalDate.now());

@@ -78,9 +78,14 @@ public class RecepcionController {
                         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaGuia,
                         @RequestParam(required = false) String observaciones,
                         RedirectAttributes ra) {
-        Recepcion r = recepcionService.crearRecepcion(empresaId, numeroGuia, numeroFactura, fechaGuia, observaciones);
-        ra.addFlashAttribute("mensaje", "Recepción creada. Ahora agrega los detalles.");
-        return "redirect:/recepciones/" + r.getId() + "/detalle";
+        try {
+            Recepcion r = recepcionService.crearRecepcion(empresaId, numeroGuia, numeroFactura, fechaGuia, observaciones);
+            ra.addFlashAttribute("mensaje", "Recepción creada. Ahora agrega los detalles.");
+            return "redirect:/recepciones/" + r.getId() + "/detalle";
+        } catch (IllegalArgumentException e) {
+            ra.addFlashAttribute("error", e.getMessage());
+            return "redirect:/recepciones/nueva";
+        }
     }
 
     @GetMapping("/{id}/detalle")
@@ -234,6 +239,10 @@ public class RecepcionController {
                     request.empresaId(), request.numeroGuia(), request.numeroFactura(), request.fechaGuia(),
                     request.observaciones(), request.lineas());
             return ResponseEntity.ok(Map.of("id", r.getId(), "redirectUrl", "/recepciones/" + r.getId() + "/detalle"));
+        } catch (IllegalArgumentException e) {
+            // Errores esperados y accionables por el usuario (ej. guía duplicada):
+            // devolver el mensaje real con 400, no el 500 genérico.
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
             log.error("Error en crearConLineas: {}", e.getMessage(), e);
             return ResponseEntity.status(500).body(Map.of("error", "Ocurrió un error interno. Intenta de nuevo o contacta al administrador."));
