@@ -44,8 +44,9 @@ services:
     restart: unless-stopped
     ports:
       # BIND_IP restringe los puertos a una sola interfaz. Para acceso por
-      # dominio publico (Cloudflare DNS-only), BIND_IP debe ser 0.0.0.0 en el
-      # .env. Para acceso solo por Tailscale, se fija la IP de Tailscale.
+      # dominio publico (Cloudflare DNS-only) —lo actual— BIND_IP debe ser
+      # 0.0.0.0 en el .env. Para limitarlo a una interfaz o VPN interna, se
+      # fija ahi esa IP.
       - "${BIND_IP:-0.0.0.0}:80:80"
       - "${BIND_IP:-0.0.0.0}:443:443"
     volumes:

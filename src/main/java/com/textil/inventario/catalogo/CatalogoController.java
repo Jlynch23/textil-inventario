@@ -423,44 +423,67 @@ public class CatalogoController {
     @ResponseBody
     public ResponseEntity<?> crearArticuloRapido(@RequestBody ArticuloRapidoRequest request) {
         try {
-            Optional<TipoTela> tipoTela = catalogoService.buscarTipoTelaPorNombre(request.tipoTelaNombre());
-            if (tipoTela.isEmpty()) {
-                return ResponseEntity.status(400).body(Map.of("error",
-                        "Tipo de tela '" + request.tipoTelaNombre() + "' no existe en el catálogo base."));
+            // Onboarding (multi-cliente): si el tipo de tela / titulo / composicion
+            // / acabado que detecto la guia todavia no existen (cliente nuevo con
+            // catalogo vacio), se CREAN automaticamente con el valor leido, en vez
+            // de cortar con "no existe en el catalogo base". Asi el cliente arma su
+            // catalogo A MEDIDA que lee guias. Se reusan los mismos buscar/guardar
+            // que la creacion inline manual (mismo comportamiento, empaquetado).
+            if (request.tipoTelaNombre() == null || request.tipoTelaNombre().isBlank()) {
+                return ResponseEntity.status(400).body(Map.of("error", "Falta el tipo de tela detectado en la guía."));
             }
+            TipoTela tipoTela = catalogoService.buscarTipoTelaPorNombre(request.tipoTelaNombre())
+                    .orElseGet(() -> {
+                        TipoTela t = new TipoTela();
+                        t.setNombre(request.tipoTelaNombre().trim());
+                        t.setActivo(true);
+                        return catalogoService.guardarTipoTela(t);
+                    });
 
-            Optional<Titulo> titulo = catalogoService.buscarTituloPorValor(request.tituloValor());
-            if (titulo.isEmpty()) {
-                return ResponseEntity.status(400).body(Map.of("error",
-                        "Título '" + request.tituloValor() + "' no existe en el catálogo base."));
+            if (request.tituloValor() == null || request.tituloValor().isBlank()) {
+                return ResponseEntity.status(400).body(Map.of("error", "Falta el título detectado en la guía."));
             }
+            Titulo titulo = catalogoService.buscarTituloPorValor(request.tituloValor())
+                    .orElseGet(() -> {
+                        Titulo t = new Titulo();
+                        t.setValor(request.tituloValor().trim());
+                        t.setActivo(true);
+                        return catalogoService.guardarTitulo(t);
+                    });
 
-            Optional<Composicion> composicion = catalogoService.buscarComposicionPorNombre(request.composicionNombre());
-            if (composicion.isEmpty()) {
-                return ResponseEntity.status(400).body(Map.of("error",
-                        "Composición '" + request.composicionNombre() + "' no existe en el catálogo base."));
+            if (request.composicionNombre() == null || request.composicionNombre().isBlank()) {
+                return ResponseEntity.status(400).body(Map.of("error", "Falta la composición detectada en la guía."));
             }
+            Composicion composicion = catalogoService.buscarComposicionPorNombre(request.composicionNombre())
+                    .orElseGet(() -> {
+                        Composicion c = new Composicion();
+                        c.setNombre(request.composicionNombre().trim());
+                        c.setActivo(true);
+                        return catalogoService.guardarComposicion(c);
+                    });
 
             String acabadoNombre = (request.acabadoNombre() == null || request.acabadoNombre().isBlank())
                     ? "LISO" : request.acabadoNombre();
-            Optional<Acabado> acabado = catalogoService.buscarAcabadoPorNombre(acabadoNombre);
-            if (acabado.isEmpty()) {
-                return ResponseEntity.status(400).body(Map.of("error",
-                        "Acabado '" + acabadoNombre + "' no existe en el catálogo base."));
-            }
+            Acabado acabado = catalogoService.buscarAcabadoPorNombre(acabadoNombre)
+                    .orElseGet(() -> {
+                        Acabado a = new Acabado();
+                        a.setNombre(acabadoNombre.trim());
+                        a.setActivo(true);
+                        return catalogoService.guardarAcabado(a);
+                    });
 
             Optional<Articulo> existente = catalogoService.buscarArticuloPorCombinacion(
-                    tipoTela.get().getId(), titulo.get().getId(), composicion.get().getId(), acabado.get().getId());
+                    tipoTela.getId(), titulo.getId(), composicion.getId(), acabado.getId());
             if (existente.isPresent()) {
                 return ResponseEntity.ok(Map.of("id", existente.get().getId(), "yaExistia", true));
             }
 
             Articulo articulo = new Articulo();
-            articulo.setTipoTela(tipoTela.get());
-            articulo.setTitulo(titulo.get());
-            articulo.setComposicion(composicion.get());
-            articulo.setAcabado(acabado.get());
-            articulo.setCodigoInterno(catalogoService.generarCodigoInterno(tipoTela.get(), titulo.get(), composicion.get(), acabado.get()));
+            articulo.setTipoTela(tipoTela);
+            articulo.setTitulo(titulo);
+            articulo.setComposicion(composicion);
+            articulo.setAcabado(acabado);
+            articulo.setCodigoInterno(catalogoService.generarCodigoInterno(tipoTela, titulo, composicion, acabado));
             articulo.setActivo(true);
 
             Articulo guardado = catalogoService.guardarArticulo(articulo);

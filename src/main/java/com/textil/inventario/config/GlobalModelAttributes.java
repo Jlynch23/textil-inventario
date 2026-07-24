@@ -1,8 +1,11 @@
 package com.textil.inventario.config;
 
+import com.textil.inventario.catalogo.EmpresaRepository;
+import com.textil.inventario.catalogo.Empresa;
 import com.textil.inventario.seguridad.Usuario;
 import com.textil.inventario.seguridad.UsuarioActualService;
 import lombok.RequiredArgsConstructor;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -22,12 +25,14 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 public class GlobalModelAttributes {
 
     private final UsuarioActualService usuarioActualService;
+    private final EmpresaRepository empresaRepository;
 
     // Subtitulo del sidebar (bajo el logo TEXCONTROL). TEXCONTROL es el
     // nombre del producto y queda fijo; esto es el nombre del NEGOCIO que
-    // lo usa, que cambia por cada cliente/instalacion -- se configura por
-    // variable de entorno (NOMBRE_EMPRESA) en vez de quedar hardcodeado,
-    // para poder desplegar el mismo codigo a un cliente nuevo sin fork.
+    // lo usa. Se arma con las EMPRESAS activas cargadas (ver nombreEmpresa()):
+    // asi, al vender una instancia, basta con dar de alta la(s) empresa(s) y la
+    // marca bajo el logo se actualiza sola, sin tocar codigo ni entorno. La
+    // variable NOMBRE_EMPRESA queda como fallback (si aun no hay empresas).
     @Value("${app.nombre-empresa:Laura & Clemente}")
     private String nombreEmpresa;
 
@@ -70,6 +75,18 @@ public class GlobalModelAttributes {
 
     @ModelAttribute("nombreEmpresa")
     public String nombreEmpresa() {
-        return nombreEmpresa;
+        try {
+            // Marca = nombres de las empresas activas unidos por " & "
+            // (ej. duo "TEXTIL LAURA & TEXTIL CLEMENTE"; un solo cliente = su nombre).
+            String desdeEmpresas = empresaRepository.findByActivoTrue().stream()
+                    .map(Empresa::getNombre)
+                    .filter(n -> n != null && !n.isBlank())
+                    .collect(Collectors.joining(" & "));
+            if (!desdeEmpresas.isBlank()) return desdeEmpresas;
+        } catch (Exception ignore) {
+            // Tolerante a fallos: corre en CADA request (incluido el login sin
+            // sesion). Ante cualquier problema, cae al valor por defecto.
+        }
+        return nombreEmpresa; // fallback: variable de entorno NOMBRE_EMPRESA
     }
 }

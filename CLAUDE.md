@@ -202,24 +202,45 @@ Tailscale), `fail2ban`, y Docker ya NO depende de Tailscale.
 - **`textillaura`** — cliente actual = **Textil Laura + Textil Clemente** juntos (una sola instancia/BD).
 - Futuro (todavía no vendidos): **Textil Camargo**, **Textil Emilio**.
 
+### Estado de trabajo (dónde quedamos — sesión 23-jul-2026)
+
+**✅ Entrada secreta / staging YA EN VIVO**: `dev.texcontrol.pe` (OCULTO, Basic Auth) corre `develop` con
+su propia BD aislada (setup y uso en `STAGING.md`). **Flujo de trabajo nuevo**: pushear a `develop` → en el
+VPS `cd ~/textil-inventario && ./scripts/deploy-dev.sh` → probar en `dev.texcontrol.pe` → cuando anda,
+promover `develop → main` + `./scripts/deploy.sh`. Se acabó levantar MySQL/app en local.
+
+**En `develop`, probado en dev pero AÚN NO promovido a `main`:**
+- **Empresas**: la carpeta de documentos se auto-genera del nombre (slug); el formulario quedó Nombre + RUC;
+  el nombre bajo el logo TEXCONTROL ahora sale de las **empresas activas** (unidas por " & ") con fallback a
+  `NOMBRE_EMPRESA`. *Decisión pendiente*: se muestra en MAYÚSCULAS (así lo guarda el catálogo) — confirmar si
+  se quiere en formato normal.
+- **Recepción**: "Crear artículo" ahora **crea las piezas base que falten** (tipo de tela/título/composición/
+  acabado) en vez de cortar con "no existe en el catálogo base".
+
+**⚠️ Tema de fondo (clave para multicliente): el sistema asume un catálogo YA poblado.** Un cliente nuevo
+arranca con el catálogo vacío y choca con "no existe en el catálogo" en varios flujos. Hay que permitir crear
+entradas al vuelo desde los flujos (como ya hace "Crear color"). Hecho: "Crear artículo". **Abierto:**
+- **BUG a diagnosticar**: en la página de crear **Programa**, al "Crear color" nuevo el color no aparece en el
+  desplegable de la línea. El código (`templates/programas/nuevo.html`, handler `btnGuardarColorRapidoPrograma`)
+  se ve correcto; falta el síntoma exacto / error de consola del usuario para cazarlo.
+- El form de Programa solo ofrece colores existentes → en dev vacío un programa queda con pocas líneas
+  (esperado). Se resuelve con el crear-color-al-vuelo de arriba, o poblando el catálogo.
+
+**Para probar flujos con datos reales en dev** (en vez del catálogo vacío): copiar prod → dev con
+`mysqldump` de `textil_mysql` restaurado en `textil_mysql_dev` (aislado, `--ignore-table=...flyway_schema_history`,
+no toca prod). Pendiente dejarlo como `scripts/sembrar-dev-desde-prod.sh`.
+
 Falta, por orden de prioridad:
 
-1. **Entrada secreta / staging en la nube (PENDIENTE PRINCIPAL)**: entorno de pruebas en
-   **`dev.texcontrol.pe`** (OCULTO, Basic Auth) que corre la rama `develop` con SU PROPIA base de datos
-   (aislada de producción), para probar desde casa y trabajo sin levantar nada en local. **Archivos ya
-   armados en `develop`**: `docker-compose.dev.yml`, `.env.dev.example`, `scripts/deploy-dev.sh`, bloque
-   `dev` en `nginx/nginx.conf`, mount del htpasswd en `docker-compose.prod.yml`. **Setup y uso paso a
-   paso en `STAGING.md`.** Falta ejecutar el alta en el VPS (crear htpasswd → promover a main → levantar
-   el stack dev). Es el primer uso real del patrón multicliente.
-2. **Multi-cliente real (BD aislada por empresa)**: migrar de forma deliberada al modelo `multicliente/`
+1. **Multi-cliente real (BD aislada por empresa)**: migrar de forma deliberada al modelo `multicliente/`
    (proxy `texcontrol_proxy_nginx` + un stack `app_<cliente>` + `db_<cliente>` por empresa, ruteados por
    subdominio). El scaffolding ya existe en `multicliente/` y `scripts/nuevo-cliente.sh`. Clientes arriba.
    Es la pieza que habilita el modelo de negocio.
-3. **App móvil iOS/Android**: una app para celular para que **los usuarios ingresen desde el móvil**
+2. **App móvil iOS/Android**: una app para celular para que **los usuarios ingresen desde el móvil**
    (los vendedores/almaceneros/gerentes de cada empresa). A definir: nativa contra una API REST
    (que hay que construir), PWA instalable sobre la web actual, o wrapper WebView. Pedido explícito
    del cliente. (Ya hay PWA instalable + sesión persistente móvil implementada.)
-4. **Antes del primer cliente que pague**: backups automáticos (cron por cliente), rotar `jlynch`
+3. **Antes del primer cliente que pague**: backups automáticos (cron por cliente), rotar `jlynch`
    con clave única por copia, limpiar/cerrar cuentas de prueba, `NOMBRE_EMPRESA` por cliente.
-5. **Marketing** en `texcontrol.pe` (hoy la raíz redirige a `login.`).
-6. **Módulo de Ventas** (rol `VENDEDOR`, hoy sin permisos).
+4. **Marketing** en `texcontrol.pe` (hoy la raíz redirige a `login.`).
+5. **Módulo de Ventas** (rol `VENDEDOR`, hoy sin permisos).
