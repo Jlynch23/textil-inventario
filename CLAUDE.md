@@ -221,8 +221,10 @@ producción lo tome):
   Tailscale obsoletos de la doc (`.env.example`, `DEPLOY.md`, ambos compose): hoy prod es pública por dominio
   con `BIND_IP=0.0.0.0`.
 - **Empresas**: la carpeta de documentos se auto-genera del nombre (slug); el formulario quedó Nombre + RUC;
-  el nombre bajo el logo TEXCONTROL ahora sale de las **empresas activas** (unidas por " & ") con fallback a
-  `NOMBRE_EMPRESA`. *Decisión (24-jul, confirmada)*: se deja en **MAYÚSCULAS** (así lo guarda el catálogo).
+  el nombre bajo el logo TEXCONTROL ahora sale de las **empresas activas** (unidas por " & "). **Sin fallback**:
+  si no hay empresas activas cargadas, el subtítulo no se muestra (nada de `NOMBRE_EMPRESA` hardcodeado, para que
+  una copia recién entregada no exhiba el nombre de otro cliente). *Decisión (24-jul, confirmada)*: se deja en
+  **MAYÚSCULAS** (así lo guarda el catálogo).
 - **Recepción**: "Crear artículo" ahora **crea las piezas base que falten** (tipo de tela/título/composición/
   acabado) en vez de cortar con "no existe en el catálogo base".
 
