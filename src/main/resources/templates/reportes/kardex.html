@@ -48,7 +48,11 @@
         <tbody>
         <tr th:each="m : ${movimientos}">
             <td th:text="${#temporals.format(m.fecha, 'dd/MM/yyyy HH:mm')}"></td>
-            <td th:text="${m.tipoMovimiento}"></td>
+            <td th:with="t=${m.tipoMovimiento.name()}">
+                <span class="badge"
+                      th:classappend="${(t == 'INGRESO' or t == 'TRANSFERENCIA_IN') ? 'bg-success' : (t == 'TRANSFERENCIA_OUT' ? 'bg-danger' : 'bg-secondary')}"
+                      th:text="${m.tipoMovimiento}"></span>
+            </td>
             <td th:text="${m.articulo.tipoTela.nombre + ' - ' + m.articulo.titulo.valor + ' - ' + m.articulo.composicion.nombre + (m.articulo.acabado.nombre != 'LISO' ? ' · ' + m.articulo.acabado.nombre : '') + ' - ' + m.color.nombreMostrar}"></td>
             <td th:text="${m.ubicacionOrigen != null ? m.ubicacionOrigen.nombre : '-'}"></td>
             <td th:text="${m.ubicacionDestino != null ? m.ubicacionDestino.nombre : '-'}"></td>
