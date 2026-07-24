@@ -82,7 +82,10 @@ public class ProgramaController {
 
         Map<Long, List<ProgramaService.HistorialGuiaView>> historialPorLinea = new HashMap<>();
         for (ProgramaDetalle d : programa.getDetalles()) {
-            if (d.isCompleto()) {
+            // Se arma la(s) guia(s) de CUALQUIER linea que ya recibio algo
+            // (completa o parcial), no solo las completas: asi se ve de que guia
+            // vino la entrega aunque el color siga pendiente.
+            if (d.getCantidadRecibida() != null && d.getCantidadRecibida() > 0) {
                 historialPorLinea.put(d.getId(), programaService.historialDeLineaConDocumento(d.getId()));
             }
         }
