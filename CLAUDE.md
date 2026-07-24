@@ -233,9 +233,13 @@ producción lo tome):
 **⚠️ Tema de fondo (clave para multicliente): el sistema asume un catálogo YA poblado.** Un cliente nuevo
 arranca con el catálogo vacío y choca con "no existe en el catálogo" en varios flujos. Hay que permitir crear
 entradas al vuelo desde los flujos (como ya hace "Crear color"). Hecho: "Crear artículo". **Abierto:**
-- **BUG a diagnosticar**: en la página de crear **Programa**, al "Crear color" nuevo el color no aparece en el
-  desplegable de la línea. El código (`templates/programas/nuevo.html`, handler `btnGuardarColorRapidoPrograma`)
-  se ve correcto; falta el síntoma exacto / error de consola del usuario para cazarlo.
+- **"Crear al vuelo" en Programa** (color/tipo de tela/título/composición): revisado, el código estaba correcto
+  (reconstruye TODOS los `<select>` y preserva lo elegido en las demás líneas). El fallo puntual no reproducible
+  ("un color nuevo no apareció") se atribuyó a doble-submit; se endurecieron los 4 botones: se bloquean durante
+  el alta + dedupe por id. `templates/programas/nuevo.html`.
+- **Borrar Programa** (nuevo): botón en la lista, solo ADMIN/SUPERADMIN, borrado **PROTEGIDO** — si el programa
+  ya tiene recepciones asociadas no se borra y avisa (`existsByProgramaDetalle_ProgramaId`). Si no, cascade borra
+  sus líneas. `ProgramaController/Service`, `programas/lista.html`.
 - El form de Programa solo ofrece colores existentes → en dev vacío un programa queda con pocas líneas
   (esperado). Se resuelve con el crear-color-al-vuelo de arriba, o poblando el catálogo.
 

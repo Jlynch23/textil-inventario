@@ -4,6 +4,14 @@
 <head><title>Programas</title></head>
 <body>
 <section>
+    <div th:if="${mensaje}" class="alert alert-success alert-dismissible fade show">
+        <span th:text="${mensaje}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show">
+        <span th:text="${error}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h5 class="fw-bold mb-0">Programas</h5>
         <a th:href="@{/programas/nuevo}" sec:authorize="hasAnyRole('ADMIN','SUPERADMIN')" class="btn btn-primary btn-sm">
@@ -20,11 +28,12 @@
                             <th>Empresa</th>
                             <th>Fecha</th>
                             <th style="min-width: 220px;">Progreso</th>
+                            <th class="text-end" sec:authorize="hasAnyRole('ADMIN','SUPERADMIN')">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr th:if="${programas.empty}">
-                            <td colspan="4" class="text-center text-muted py-4">Sin programas registrados.</td>
+                            <td colspan="5" class="text-center text-muted py-4">Sin programas registrados.</td>
                         </tr>
                         <tr th:each="p : ${programas}" style="cursor:pointer;"
                             th:onclick="'window.location=\'' + @{/programas/{id}(id=${p.id})} + '\''">
@@ -49,6 +58,14 @@
                                           th:text="${p.detallesCompletos} + '/' + ${p.totalDetalles}">
                                     </span>
                                 </div>
+                            </td>
+                            <td class="text-end" sec:authorize="hasAnyRole('ADMIN','SUPERADMIN')" onclick="event.stopPropagation()">
+                                <form th:action="@{/programas/{id}/eliminar(id=${p.id})}" method="post" style="display:inline"
+                                      onsubmit="return confirm('¿Eliminar este programa? Esta acción no se puede deshacer.')">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar programa">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                     </tbody>

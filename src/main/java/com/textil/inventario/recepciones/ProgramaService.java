@@ -40,6 +40,22 @@ public class ProgramaService {
         return programaRepository.findById(id).orElseThrow();
     }
 
+    /**
+     * Borra un programa y sus líneas (cascade). Borrado PROTEGIDO: si alguna
+     * línea del programa ya fue usada en una recepción, no se borra (perderíamos
+     * la trazabilidad del kardex); se avisa para que anulen/editen esa recepción
+     * primero.
+     */
+    @Transactional
+    public void eliminarPrograma(Long id) {
+        Programa programa = buscarPrograma(id);
+        if (recepcionDetalleRepository.existsByProgramaDetalle_ProgramaId(id)) {
+            throw new IllegalStateException(
+                "No se puede borrar: el programa ya tiene recepciones asociadas. Anula o edita esas recepciones antes de borrarlo.");
+        }
+        programaRepository.delete(programa); // cascade ALL borra las líneas (ProgramaDetalle)
+    }
+
     @Transactional
     public Programa crearPrograma(String numero, Long empresaId, LocalDate fecha, String observaciones,
                                    Integer totalRollos,
