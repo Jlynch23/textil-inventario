@@ -6,7 +6,6 @@ import com.textil.inventario.seguridad.Usuario;
 import com.textil.inventario.seguridad.UsuarioActualService;
 import lombok.RequiredArgsConstructor;
 import java.util.stream.Collectors;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
 
@@ -26,15 +25,6 @@ public class GlobalModelAttributes {
 
     private final UsuarioActualService usuarioActualService;
     private final EmpresaRepository empresaRepository;
-
-    // Subtitulo del sidebar (bajo el logo TEXCONTROL). TEXCONTROL es el
-    // nombre del producto y queda fijo; esto es el nombre del NEGOCIO que
-    // lo usa. Se arma con las EMPRESAS activas cargadas (ver nombreEmpresa()):
-    // asi, al vender una instancia, basta con dar de alta la(s) empresa(s) y la
-    // marca bajo el logo se actualiza sola, sin tocar codigo ni entorno. La
-    // variable NOMBRE_EMPRESA queda como fallback (si aun no hay empresas).
-    @Value("${app.nombre-empresa:Laura & Clemente}")
-    private String nombreEmpresa;
 
     @ModelAttribute("nombreUsuarioActual")
     public String nombreUsuarioActual() {
@@ -73,20 +63,29 @@ public class GlobalModelAttributes {
         return "ADMIN".equalsIgnoreCase(rol) || "SUPERADMIN".equalsIgnoreCase(rol);
     }
 
+    /**
+     * Subtitulo del sidebar (bajo el logo TEXCONTROL). TEXCONTROL es el nombre
+     * del producto y queda fijo; esto es el nombre del NEGOCIO que lo usa. Se
+     * arma con las EMPRESAS activas cargadas unidas por " & " (ej. duo
+     * "TEXTIL LAURA & TEXTIL CLEMENTE"; un solo cliente = su nombre): al vender
+     * una instancia, basta con dar de alta la(s) empresa(s) y la marca se
+     * actualiza sola, sin tocar codigo ni entorno.
+     * <p>
+     * Si NO hay empresas activas cargadas, devuelve vacio -> el subtitulo no se
+     * muestra (la vista oculta el elemento). Asi una copia recien entregada, sin
+     * empresas, no exhibe ningun nombre de otro cliente.
+     */
     @ModelAttribute("nombreEmpresa")
     public String nombreEmpresa() {
         try {
-            // Marca = nombres de las empresas activas unidos por " & "
-            // (ej. duo "TEXTIL LAURA & TEXTIL CLEMENTE"; un solo cliente = su nombre).
-            String desdeEmpresas = empresaRepository.findByActivoTrue().stream()
+            return empresaRepository.findByActivoTrue().stream()
                     .map(Empresa::getNombre)
                     .filter(n -> n != null && !n.isBlank())
                     .collect(Collectors.joining(" & "));
-            if (!desdeEmpresas.isBlank()) return desdeEmpresas;
         } catch (Exception ignore) {
             // Tolerante a fallos: corre en CADA request (incluido el login sin
-            // sesion). Ante cualquier problema, cae al valor por defecto.
+            // sesion). Ante cualquier problema, no mostramos nada.
+            return "";
         }
-        return nombreEmpresa; // fallback: variable de entorno NOMBRE_EMPRESA
     }
 }

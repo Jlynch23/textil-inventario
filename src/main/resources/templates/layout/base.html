@@ -113,7 +113,7 @@
         <div class="brand">
             <img src="/img/texcontrol-icono.png" alt="TEXCONTROL">
             <h6>TEXCONTROL</h6>
-            <small th:text="${nombreEmpresa}">Laura &amp; Clemente</small>
+            <small th:if="${nombreEmpresa != null and !nombreEmpresa.isEmpty()}" th:text="${nombreEmpresa}">Laura &amp; Clemente</small>
         </div>
         <nav class="mt-2">
             <div class="nav-section">Principal</div>
