@@ -415,11 +415,14 @@
         }
         engancharBotones();
 
-        document.getElementById('btnGuardarColorRapidoPrograma').addEventListener('click', async () => {
+        document.getElementById('btnGuardarColorRapidoPrograma').addEventListener('click', async (ev) => {
+            const boton = ev.currentTarget;
             const nombreOficial = document.getElementById('modalColorNombre').value.trim();
             const codigoFastDye = document.getElementById('modalColorCodigo').value.trim();
             const errorDiv = document.getElementById('modalColorError');
             if (!nombreOficial || !codigoFastDye) { errorDiv.textContent = 'Nombre y código son obligatorios.'; return; }
+            if (boton.disabled) return;              // ya hay un alta en curso: evita el doble click
+            boton.disabled = true;
             try {
                 const resp = await fetchConCsrf('/catalogo/colores/crear-rapido', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -427,7 +430,11 @@
                 });
                 const data = await resp.json();
                 if (!resp.ok) { errorDiv.textContent = data.error || 'Error al crear el color.'; return; }
-                coloresData.push({ id: data.id, nombreOficial: data.nombreOficial, codigoFastDye: codigoFastDye });
+                // El backend es idempotente (si el codigo FAST DYE ya existe devuelve
+                // yaExistia): no lo agregamos dos veces a la lista en memoria.
+                if (!coloresData.some(c => c.id === data.id)) {
+                    coloresData.push({ id: data.id, nombreOficial: data.nombreOficial, codigoFastDye: codigoFastDye });
+                }
                 document.querySelectorAll('.select-color').forEach(sel => {
                     const idPreseleccionar = sel === selectColorActual ? data.id : null;
                     const valorActual = sel.value;
@@ -435,7 +442,11 @@
                     if (!idPreseleccionar && valorActual) sel.value = valorActual;
                 });
                 bootstrap.Modal.getInstance(document.getElementById('modalColorRapidoPrograma')).hide();
-            } catch (e) { errorDiv.textContent = 'Error de conexión: ' + e.message; }
+            } catch (e) {
+                errorDiv.textContent = 'Error de conexión: ' + e.message;
+            } finally {
+                boton.disabled = false;
+            }
         });
 
         document.getElementById('btnGuardarTipoTelaPrograma').addEventListener('click', async () => {
