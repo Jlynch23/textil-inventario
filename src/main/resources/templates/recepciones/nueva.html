@@ -113,6 +113,10 @@
 <script th:inline="javascript">
     const articulos = /*[[${articulos}]]*/ [];
     let lineasExtraidas = [];
+    // Se guarda el archivo elegido al hacer OCR, para archivarlo despues de
+    // crear la recepcion SIN depender de que el <input file> lo retenga (podia
+    // quedar vacio al momento de crear -> la guia se perdia sin archivar).
+    let pdfSeleccionado = null;
 
     function articuloLabel(a) {
         return a.tipoTela.nombre + ' ' + a.titulo.valor + ' / ' + (a.composicion ? a.composicion.nombre : '')
@@ -129,6 +133,7 @@
         const estadoDiv = document.getElementById('extraccionEstado');
         estadoDiv.innerHTML = '<span class="text-primary"><i class="bi bi-hourglass-split me-1"></i>Leyendo guía con IA, espera un momento...</span>';
 
+        pdfSeleccionado = fileInput.files[0];   // se retiene para archivarlo al crear
         const formData = new FormData();
         formData.append('file', fileInput.files[0]);
 
@@ -439,10 +444,9 @@
             });
             const data = await resp.json();
             if (resp.ok) {
-                const fileInput = document.getElementById('pdfInput');
-                if (fileInput.files.length > 0) {
+                if (pdfSeleccionado) {
                     const fd = new FormData();
-                    fd.append('file', fileInput.files[0]);
+                    fd.append('file', pdfSeleccionado);
                     try {
                         const respDoc = await fetchConCsrf('/recepciones/' + data.id + '/guardar-documento-guia', { method: 'POST', body: fd });
                         if (!respDoc.ok) {
@@ -455,7 +459,7 @@
                         alert('La recepción se creó, pero NO se pudo archivar el PDF de la guía (error de red):\n' + err.message);
                     }
                 } else {
-                    alert('Aviso: la recepción se creó SIN adjuntar el PDF de la guía porque no había ningún archivo seleccionado en el campo de subida.');
+                    alert('Aviso: la recepción se creó SIN adjuntar el PDF de la guía porque no se subió ningún archivo (solo se archiva la guía si la leés con el lector de PDF).');
                 }
                 window.location.href = data.redirectUrl;
             } else {
