@@ -202,18 +202,27 @@ Tailscale), `fail2ban`, y Docker ya NO depende de Tailscale.
 - **`textillaura`** — cliente actual = **Textil Laura + Textil Clemente** juntos (una sola instancia/BD).
 - Futuro (todavía no vendidos): **Textil Camargo**, **Textil Emilio**.
 
-### Estado de trabajo (dónde quedamos — sesión 23-jul-2026)
+### Estado de trabajo (dónde quedamos — sesión 24-jul-2026)
 
-**✅ Entrada secreta / staging YA EN VIVO**: `dev.texcontrol.pe` (OCULTO, Basic Auth) corre `develop` con
-su propia BD aislada (setup y uso en `STAGING.md`). **Flujo de trabajo nuevo**: pushear a `develop` → en el
-VPS `cd ~/textil-inventario && ./scripts/deploy-dev.sh` → probar en `dev.texcontrol.pe` → cuando anda,
-promover `develop → main` + `./scripts/deploy.sh`. Se acabó levantar MySQL/app en local.
+**✅ Entrada secreta / staging YA EN VIVO y en uso desde casa**: `dev.texcontrol.pe` (OCULTO, Basic Auth)
+corre `develop` con su propia BD aislada (setup y uso en `STAGING.md`). El Basic Auth es usuario **`jlynch`**
+(el archivo untracked `nginx/dev.htpasswd`; se resetea con `htpasswd -B nginx/dev.htpasswd jlynch` + `docker
+exec textil_nginx nginx -s reload`). **Flujo de trabajo nuevo**: pushear a `develop` → en el VPS
+`cd ~/textil-inventario && ./scripts/deploy-dev.sh` → probar en `dev.texcontrol.pe` → cuando anda, promover
+`develop → main` + `./scripts/deploy.sh`. Se acabó levantar MySQL/app en local.
 
-**En `develop`, probado en dev pero AÚN NO promovido a `main`:**
+**SSH desde casa**: el alias `ssh texcontrol` de la PC de casa apuntaba a la vieja IP de Tailscale (ya
+removido) → daba timeout. Corregido a la IP pública `64.176.3.149` en `~/.ssh/config` (clave
+`~/.ssh/texcontrol_vps`, ya autorizada). Recordatorio: ese alias vive en cada PC, no dentro del VPS.
+
+**Promovido a `main` el 24-jul** (ya en `origin/main`; falta correr `./scripts/deploy.sh` en el VPS para que
+producción lo tome):
+- **Limpieza**: se eliminó `texcontrol-logo-completo.png` (2.1 MB, sin uso) y se quitaron los consejos
+  Tailscale obsoletos de la doc (`.env.example`, `DEPLOY.md`, ambos compose): hoy prod es pública por dominio
+  con `BIND_IP=0.0.0.0`.
 - **Empresas**: la carpeta de documentos se auto-genera del nombre (slug); el formulario quedó Nombre + RUC;
   el nombre bajo el logo TEXCONTROL ahora sale de las **empresas activas** (unidas por " & ") con fallback a
-  `NOMBRE_EMPRESA`. *Decisión pendiente*: se muestra en MAYÚSCULAS (así lo guarda el catálogo) — confirmar si
-  se quiere en formato normal.
+  `NOMBRE_EMPRESA`. *Decisión (24-jul, confirmada)*: se deja en **MAYÚSCULAS** (así lo guarda el catálogo).
 - **Recepción**: "Crear artículo" ahora **crea las piezas base que falten** (tipo de tela/título/composición/
   acabado) en vez de cortar con "no existe en el catálogo base".
 
