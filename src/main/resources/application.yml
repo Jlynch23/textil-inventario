@@ -73,6 +73,10 @@ documentos:
 
 app:
   nombre-empresa: ${NOMBRE_EMPRESA:Laura & Clemente}
+  # Etiqueta del entorno (ej. "BETA"). Vacia en produccion; el stack de dev
+  # (docker-compose.dev.yml) la pone en "BETA" para distinguir el login de
+  # staging del de produccion de un vistazo. Ver login.html.
+  entorno-etiqueta: ${ENTORNO_ETIQUETA:}
   # Clave que firma la cookie "recordar sesion" (remember-me). Debe fijarse por
   # instancia (valor unico y secreto) y NO cambiar entre despliegues, o los
   # usuarios quedan deslogueados en cada reinicio. El default es solo para dev.
