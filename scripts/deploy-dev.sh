@@ -55,7 +55,16 @@ DB_PASSWORD_SQL=${DB_PASSWORD//\'/\'\'}
 docker exec -e MYSQL_PWD="$MYSQL_ROOT_PASSWORD" textil_mysql_dev \
     mysql -uroot -e "ALTER USER 'textil_user'@'%' IDENTIFIED BY '${DB_PASSWORD_SQL}'; FLUSH PRIVILEGES;"
 
-# 5. Reconstruir y levantar el stack dev (app_dev toma el codigo de develop).
+# 5. La app corre como appuser (uid 999). Si el bind mount ./documentos-dev
+#    quedo con otro dueño (root al crearse), appuser NO puede escribir y las
+#    guias/facturas fallan al archivarse con "Permission denied" (500). Un
+#    contenedor efimero (root) le pone el dueño correcto, sin sudo del host.
+#    Idempotente: no borra nada, solo ajusta el owner.
+echo "Asegurando permisos de ./documentos-dev (uid 999 = appuser)..."
+mkdir -p documentos-dev
+docker run --rm -v "$PWD/documentos-dev:/d" alpine chown -R 999:999 /d
+
+# 6. Reconstruir y levantar el stack dev (app_dev toma el codigo de develop).
 echo "Reconstruyendo y levantando el stack dev..."
 docker compose --env-file .env.dev -f docker-compose.dev.yml up -d --build
 
