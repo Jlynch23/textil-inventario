@@ -449,10 +449,13 @@
             }
         });
 
-        document.getElementById('btnGuardarTipoTelaPrograma').addEventListener('click', async () => {
+        document.getElementById('btnGuardarTipoTelaPrograma').addEventListener('click', async (ev) => {
+            const boton = ev.currentTarget;
             const nombre = document.getElementById('modalTipoTelaNombre').value.trim();
             const errorDiv = document.getElementById('modalTipoTelaError');
             if (!nombre) { errorDiv.textContent = 'El nombre es obligatorio.'; return; }
+            if (boton.disabled) return;
+            boton.disabled = true;
             try {
                 const resp = await fetchConCsrf('/catalogo/tipos-tela/crear-rapido', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -460,7 +463,9 @@
                 });
                 const data = await resp.json();
                 if (!resp.ok) { errorDiv.textContent = data.error || 'Error al crear.'; return; }
-                tiposTelaData.push({ id: data.id, nombre: data.nombre });
+                if (!tiposTelaData.some(t => t.id === data.id)) {
+                    tiposTelaData.push({ id: data.id, nombre: data.nombre });
+                }
                 document.querySelectorAll('.select-tipo-tela').forEach(sel => {
                     const idPreseleccionar = sel === selectTipoTelaActual ? data.id : null;
                     const valorActual = sel.value;
@@ -468,13 +473,20 @@
                     if (!idPreseleccionar && valorActual) sel.value = valorActual;
                 });
                 bootstrap.Modal.getInstance(document.getElementById('modalTipoTelaPrograma')).hide();
-            } catch (e) { errorDiv.textContent = 'Error de conexión: ' + e.message; }
+            } catch (e) {
+                errorDiv.textContent = 'Error de conexión: ' + e.message;
+            } finally {
+                boton.disabled = false;
+            }
         });
 
-        document.getElementById('btnGuardarTituloPrograma').addEventListener('click', async () => {
+        document.getElementById('btnGuardarTituloPrograma').addEventListener('click', async (ev) => {
+            const boton = ev.currentTarget;
             const valor = document.getElementById('modalTituloValor').value.trim();
             const errorDiv = document.getElementById('modalTituloError');
             if (!valor) { errorDiv.textContent = 'El valor es obligatorio.'; return; }
+            if (boton.disabled) return;
+            boton.disabled = true;
             try {
                 const resp = await fetchConCsrf('/catalogo/titulos/crear-rapido', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -482,7 +494,9 @@
                 });
                 const data = await resp.json();
                 if (!resp.ok) { errorDiv.textContent = data.error || 'Error al crear.'; return; }
-                titulosData.push({ id: data.id, valor: data.valor });
+                if (!titulosData.some(t => t.id === data.id)) {
+                    titulosData.push({ id: data.id, valor: data.valor });
+                }
                 document.querySelectorAll('.select-titulo').forEach(sel => {
                     const idPreseleccionar = sel === selectTituloActual ? data.id : null;
                     const valorActual = sel.value;
@@ -490,13 +504,20 @@
                     if (!idPreseleccionar && valorActual) sel.value = valorActual;
                 });
                 bootstrap.Modal.getInstance(document.getElementById('modalTituloPrograma')).hide();
-            } catch (e) { errorDiv.textContent = 'Error de conexión: ' + e.message; }
+            } catch (e) {
+                errorDiv.textContent = 'Error de conexión: ' + e.message;
+            } finally {
+                boton.disabled = false;
+            }
         });
 
-        document.getElementById('btnGuardarComposicionPrograma').addEventListener('click', async () => {
+        document.getElementById('btnGuardarComposicionPrograma').addEventListener('click', async (ev) => {
+            const boton = ev.currentTarget;
             const nombre = document.getElementById('modalComposicionNombre').value.trim();
             const errorDiv = document.getElementById('modalComposicionError');
             if (!nombre) { errorDiv.textContent = 'El nombre es obligatorio.'; return; }
+            if (boton.disabled) return;
+            boton.disabled = true;
             try {
                 const resp = await fetchConCsrf('/catalogo/composiciones/crear-rapido', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -504,7 +525,9 @@
                 });
                 const data = await resp.json();
                 if (!resp.ok) { errorDiv.textContent = data.error || 'Error al crear.'; return; }
-                composicionesData.push({ id: data.id, nombre: data.nombre });
+                if (!composicionesData.some(c => c.id === data.id)) {
+                    composicionesData.push({ id: data.id, nombre: data.nombre });
+                }
                 document.querySelectorAll('.select-composicion').forEach(sel => {
                     const idPreseleccionar = sel === selectComposicionActual ? data.id : null;
                     const valorActual = sel.value;
@@ -512,7 +535,11 @@
                     if (!idPreseleccionar && valorActual) sel.value = valorActual;
                 });
                 bootstrap.Modal.getInstance(document.getElementById('modalComposicionPrograma')).hide();
-            } catch (e) { errorDiv.textContent = 'Error de conexión: ' + e.message; }
+            } catch (e) {
+                errorDiv.textContent = 'Error de conexión: ' + e.message;
+            } finally {
+                boton.disabled = false;
+            }
         });
     </script>
 </section>

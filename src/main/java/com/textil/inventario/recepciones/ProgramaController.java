@@ -145,6 +145,20 @@ public class ProgramaController {
         }
     }
 
+    @PostMapping("/{id}/eliminar")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
+    public String eliminar(@PathVariable Long id, RedirectAttributes ra) {
+        try {
+            programaService.eliminarPrograma(id);
+            ra.addFlashAttribute("mensaje", "Programa eliminado.");
+        } catch (IllegalStateException e) {
+            ra.addFlashAttribute("error", e.getMessage());
+        } catch (DataIntegrityViolationException e) {
+            ra.addFlashAttribute("error", "No se puede borrar: el programa tiene datos asociados.");
+        }
+        return "redirect:/programas";
+    }
+
     private <T> List<T> listaOVacia(List<T> lista) {
         return lista != null ? lista : List.of();
     }
