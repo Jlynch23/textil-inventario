@@ -254,4 +254,21 @@ class RecepcionServiceTest {
 
         verify(stockActualRepository, never()).save(any());
     }
+
+    @Test
+    void confirmarRecepcion_yaConfirmada_lanzaYNoTocaStock() {
+        // Idempotencia (auditoria P0-1, C1): una recepcion ya confirmada no se
+        // vuelve a confirmar; un doble-click no debe re-sumar el stock ni duplicar
+        // el kardex.
+        Recepcion recepcion = recepcionDePrueba();
+        recepcion.setEstado(Recepcion.EstadoRecepcion.CONFIRMADA);
+        when(recepcionRepository.findById(1L)).thenReturn(Optional.of(recepcion));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                service.confirmarRecepcion(1L, List.of(100L), List.of(14), List.of(""))
+        ).isInstanceOf(IllegalStateException.class);
+
+        verify(stockActualRepository, never()).save(any());
+        verify(kardexRepository, never()).save(any());
+    }
 }

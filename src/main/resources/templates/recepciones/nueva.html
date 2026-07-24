@@ -444,10 +444,18 @@
                     const fd = new FormData();
                     fd.append('file', fileInput.files[0]);
                     try {
-                        await fetchConCsrf('/recepciones/' + data.id + '/guardar-documento-guia', { method: 'POST', body: fd });
+                        const respDoc = await fetchConCsrf('/recepciones/' + data.id + '/guardar-documento-guia', { method: 'POST', body: fd });
+                        if (!respDoc.ok) {
+                            let msg = 'HTTP ' + respDoc.status;
+                            try { const ed = await respDoc.json(); if (ed && ed.error) msg = ed.error; } catch (e) {}
+                            alert('La recepción se creó, pero NO se pudo archivar el PDF de la guía:\n' + msg +
+                                  '\n\nPodés volver a subirlo desde el detalle de la recepción.');
+                        }
                     } catch (err) {
-                        console.error('No se pudo archivar copia del PDF:', err);
+                        alert('La recepción se creó, pero NO se pudo archivar el PDF de la guía (error de red):\n' + err.message);
                     }
+                } else {
+                    alert('Aviso: la recepción se creó SIN adjuntar el PDF de la guía porque no había ningún archivo seleccionado en el campo de subida.');
                 }
                 window.location.href = data.redirectUrl;
             } else {

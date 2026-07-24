@@ -56,6 +56,8 @@ services:
       DB_URL: jdbc:mysql://db:3306/textil_inventario?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Lima
       DB_USERNAME: textil_user
       DB_PASSWORD: ${DB_PASSWORD}
+      # Clave de firma del remember-me: obligatoria y única por cliente (A2).
+      REMEMBER_ME_KEY: ${REMEMBER_ME_KEY}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       DOCUMENTOS_PATH: /app/documentos
       MAX_UPLOAD_SIZE: ${MAX_UPLOAD_SIZE:-25MB}

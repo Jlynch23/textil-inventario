@@ -119,7 +119,7 @@ public class RecepcionController {
                              RedirectAttributes ra) {
         try {
             recepcionService.confirmarRecepcion(id, detalleIds, rollosRecibidos, observacionesDetalle);
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | IllegalStateException e) {
             ra.addFlashAttribute("error", e.getMessage());
             return "redirect:/recepciones/" + id + "/confirmar";
         }

@@ -175,6 +175,7 @@ class TransferenciaServiceTest {
         Ubicacion praderas = praderasDePrueba();
         Ubicacion tienda = tiendaDePrueba();
         Transferencia t = transferenciaDePrueba(praderas);
+        t.setEstado(Transferencia.EstadoTransferencia.CONFIRMADA_SALIDA); // precondicion: salida ya confirmada
 
         TransferenciaDetalle d = new TransferenciaDetalle();
         d.setId(100L);
@@ -208,6 +209,7 @@ class TransferenciaServiceTest {
     void confirmarLlegada_conDiferencia_marcaEstadoConDiferencia() {
         Ubicacion praderas = praderasDePrueba();
         Transferencia t = transferenciaDePrueba(praderas);
+        t.setEstado(Transferencia.EstadoTransferencia.CONFIRMADA_SALIDA); // precondicion: salida ya confirmada
 
         TransferenciaDetalle d = new TransferenciaDetalle();
         d.setId(100L);
@@ -224,6 +226,61 @@ class TransferenciaServiceTest {
         service.confirmarLlegada(1L, Map.of());
 
         assertThat(t.getEstado()).isEqualTo(Transferencia.EstadoTransferencia.CON_DIFERENCIA);
+        verify(stockActualRepository, never()).save(any());
+    }
+
+    // --- Idempotencia / guards de estado (auditoria P0-1) ---
+
+    @Test
+    void confirmarSalida_yaConfirmada_lanzaYNoTocaStock() {
+        // C2: la salida solo se confirma desde BORRADOR; reenviar no descuenta 2 veces.
+        Transferencia t = transferenciaDePrueba(praderasDePrueba());
+        t.setEstado(Transferencia.EstadoTransferencia.CONFIRMADA_SALIDA);
+        when(transferenciaRepository.findById(1L)).thenReturn(Optional.of(t));
+
+        assertThatThrownBy(() ->
+                service.confirmarSalida(1L, List.of(100L), List.of(10), List.of("")))
+                .isInstanceOf(IllegalStateException.class);
+
+        verify(stockActualRepository, never()).save(any());
+        verify(kardexRepository, never()).save(any());
+    }
+
+    @Test
+    void confirmarLlegada_sinSalidaConfirmada_lanzaYNoTocaStock() {
+        // C3: no se puede confirmar llegada de una transferencia en BORRADOR
+        // (crearia stock en destino sin haberlo descontado del origen).
+        Transferencia t = transferenciaDePrueba(praderasDePrueba()); // queda en BORRADOR
+        when(transferenciaRepository.findById(1L)).thenReturn(Optional.of(t));
+
+        assertThatThrownBy(() ->
+                service.confirmarLlegada(1L, Map.of(100L, Map.of(2L, 10))))
+                .isInstanceOf(IllegalStateException.class);
+
+        verify(stockActualRepository, never()).save(any());
+    }
+
+    @Test
+    void confirmarLlegada_repartoMayorQueSalida_lanzaYNoTocaStock() {
+        // C4: no se puede recibir mas de lo despachado en la salida.
+        Transferencia t = transferenciaDePrueba(praderasDePrueba());
+        t.setEstado(Transferencia.EstadoTransferencia.CONFIRMADA_SALIDA);
+
+        TransferenciaDetalle d = new TransferenciaDetalle();
+        d.setId(100L);
+        d.setArticulo(articuloDePrueba());
+        d.setColor(colorDePrueba());
+        d.setCantidadSolicitada(10);
+        d.setCantidadConfirmadaSalida(10); // salieron 10
+
+        when(transferenciaRepository.findById(1L)).thenReturn(Optional.of(t));
+        when(detalleRepository.findByTransferenciaId(1L)).thenReturn(List.of(d));
+
+        // Se reparten 12 (6 + 6) contra una salida de 10 -> debe rechazarse.
+        assertThatThrownBy(() ->
+                service.confirmarLlegada(1L, Map.of(100L, Map.of(2L, 6, 3L, 6))))
+                .isInstanceOf(IllegalArgumentException.class);
+
         verify(stockActualRepository, never()).save(any());
     }
 }

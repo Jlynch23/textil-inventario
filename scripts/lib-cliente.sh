@@ -53,9 +53,10 @@ mc_generar_env() {
 
     mkdir -p "$dir_cliente/documentos"
     # openssl rand -hex: secretos aleatorios; cada cliente tiene los suyos.
-    local db_pass root_pass
+    local db_pass root_pass rememberme
     db_pass="$(openssl rand -hex 24)"
     root_pass="$(openssl rand -hex 24)"
+    rememberme="$(openssl rand -hex 32)"   # clave de firma del remember-me (A2), unica por cliente
 
     # umask 077: el .env con credenciales queda solo-lectura del dueño (600).
     umask 077
@@ -65,6 +66,7 @@ CLIENTE_SLUG=$slug
 NOMBRE_EMPRESA=$nombre
 DB_PASSWORD=$db_pass
 MYSQL_ROOT_PASSWORD=$root_pass
+REMEMBER_ME_KEY=$rememberme
 ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
 MAX_UPLOAD_SIZE=${MAX_UPLOAD_SIZE:-25MB}
 DOCUMENTOS_DIR=$dir_cliente/documentos

@@ -89,7 +89,7 @@ public class TransferenciaController {
                                    RedirectAttributes ra) {
         try {
             transferenciaService.confirmarSalida(id, detalleIds, cantidades, observacionesDetalle);
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | IllegalStateException e) {
             ra.addFlashAttribute("error", e.getMessage());
             return "redirect:/transferencias/" + id + "/confirmar-salida";
         }
@@ -131,7 +131,12 @@ public class TransferenciaController {
             repartoPorDetalle.computeIfAbsent(detalleId, k -> new HashMap<>()).put(ubicacionId, cantidad);
         }
 
-        transferenciaService.confirmarLlegada(id, repartoPorDetalle);
+        try {
+            transferenciaService.confirmarLlegada(id, repartoPorDetalle);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            ra.addFlashAttribute("error", e.getMessage());
+            return "redirect:/transferencias/" + id + "/confirmar-llegada";
+        }
         ra.addFlashAttribute("mensaje", "Llegada confirmada. Stock repartido y actualizado en destino(s).");
         return "redirect:/transferencias";
     }
