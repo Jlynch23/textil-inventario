@@ -227,7 +227,13 @@ public class RecepcionService {
         Recepcion r = recepcionRepository.findById(recepcionId).orElseThrow();
         boolean tieneDiferencias = false;
 
-        Ubicacion praderas = ubicacionRepository.findByEsPrincipalTrue().orElseThrow();
+        // La tela recibida entra al almacen PRINCIPAL. En una instancia nueva
+        // (catalogo vacio) todavia no hay ninguna marcada como principal: en vez
+        // de reventar con un NoSuchElementException criptico, se avisa que hacer.
+        Ubicacion praderas = ubicacionRepository.findByEsPrincipalTrue().orElseThrow(() ->
+                new IllegalArgumentException(
+                        "No hay una ubicación marcada como principal. Andá a Catálogo → Ubicaciones, "
+                        + "creá el almacén principal y marcá \"Es almacén principal\" antes de confirmar recepciones."));
 
         for (int i = 0; i < detalleIds.size(); i++) {
             RecepcionDetalle d = detalleRepository.findById(detalleIds.get(i)).orElseThrow();
