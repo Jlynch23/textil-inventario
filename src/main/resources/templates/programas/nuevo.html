@@ -339,6 +339,29 @@
         });
 
         document.getElementById('formPrograma').addEventListener('submit', (e) => {
+            // Cada linea con ALGO cargado debe estar COMPLETA. Sin esto, el backend
+            // descartaba en silencio las lineas incompletas (ej. sin composicion) y
+            // se perdian colores al guardar. Aca se avisa y NO se envia hasta corregir.
+            const filas = document.querySelectorAll('.linea-color');
+            for (let idx = 0; idx < filas.length; idx++) {
+                const f = filas[idx];
+                const tt = f.querySelector('.select-tipo-tela').value;
+                const ti = f.querySelector('.select-titulo').value;
+                const co = f.querySelector('.select-composicion').value;
+                const ac = f.querySelector('.select-acabado').value;
+                const col = f.querySelector('.select-color').value;
+                const cant = f.querySelector('.input-cantidad').value;
+                const tieneAlgo = tt || ti || co || ac || col || cant;
+                const completa = tt && ti && co && ac && col && cant && parseInt(cant) > 0;
+                if (tieneAlgo && !completa) {
+                    e.preventDefault();
+                    f.style.outline = '2px solid #dc3545';
+                    f.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    alert('La línea ' + (idx + 1) + ' está incompleta. Completá tipo de tela, título, composición, acabado, color y cantidad — o quitá esa línea antes de guardar.');
+                    return;
+                }
+                f.style.outline = '';
+            }
             let suma = 0;
             document.querySelectorAll('.input-cantidad').forEach(inp => { suma += parseInt(inp.value) || 0; });
             const totalEsperado = parseInt(document.getElementById('inputTotalRollos').value) || 0;

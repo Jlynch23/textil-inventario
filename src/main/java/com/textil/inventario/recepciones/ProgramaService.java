@@ -61,6 +61,25 @@ public class ProgramaService {
                                    Integer totalRollos,
                                    List<Long> tipoTelaIds, List<Long> tituloIds, List<Long> composicionIds,
                                    List<Long> acabadoIds, List<Long> colorIds, List<Integer> cantidades) {
+        // Validacion ANTES de guardar nada: una linea con ALGO cargado debe estar
+        // COMPLETA. Antes, el loop de guardado hacia `continue` si faltaba algun
+        // campo (ej. la composicion), descartando la linea EN SILENCIO: el
+        // programa quedaba con menos lineas que las cargadas y el total no
+        // cuadraba, sin ningun aviso -> se perdian colores. Ahora se avisa cual
+        // linea completar (una linea totalmente vacia si se ignora, es normal).
+        for (int i = 0; i < cantidades.size(); i++) {
+            boolean vacia = lineaVacia(i, tipoTelaIds, tituloIds, composicionIds, acabadoIds, colorIds, cantidades);
+            if (vacia) continue;
+            boolean completa = tipoTelaIds.get(i) != null && tituloIds.get(i) != null
+                    && composicionIds.get(i) != null && acabadoIds.get(i) != null
+                    && colorIds.get(i) != null && cantidades.get(i) != null && cantidades.get(i) > 0;
+            if (!completa) {
+                throw new IllegalArgumentException(
+                        "La línea " + (i + 1) + " está incompleta: falta tipo de tela, título, " +
+                        "composición, acabado, color o cantidad. Completala o quítala antes de guardar.");
+            }
+        }
+
         int suma = cantidades.stream().mapToInt(c -> c != null ? c : 0).sum();
         if (totalRollos == null || !totalRollos.equals(suma)) {
             throw new IllegalArgumentException(
@@ -77,9 +96,9 @@ public class ProgramaService {
         p = programaRepository.save(p);
 
         for (int i = 0; i < cantidades.size(); i++) {
-            if (tipoTelaIds.get(i) == null || tituloIds.get(i) == null
-                    || composicionIds.get(i) == null || acabadoIds.get(i) == null
-                    || colorIds.get(i) == null) continue;
+            // Solo se saltan las lineas TOTALMENTE vacias; las incompletas ya
+            // fueron rechazadas arriba, asi que aca todo lo no-vacio esta completo.
+            if (lineaVacia(i, tipoTelaIds, tituloIds, composicionIds, acabadoIds, colorIds, cantidades)) continue;
 
             Articulo articulo = resolverOCrearArticulo(tipoTelaIds.get(i), tituloIds.get(i), composicionIds.get(i), acabadoIds.get(i));
             Color color = colorRepository.findById(colorIds.get(i)).orElseThrow();
@@ -94,6 +113,17 @@ public class ProgramaService {
         }
 
         return p;
+    }
+
+    /** Una linea esta "totalmente vacia" (el usuario no cargo nada en ella) si
+     *  no tiene ningun campo seleccionado ni cantidad. Esas se ignoran; las que
+     *  tienen algo cargado deben estar completas (ver crearPrograma). */
+    private boolean lineaVacia(int i, List<Long> tipoTelaIds, List<Long> tituloIds,
+                               List<Long> composicionIds, List<Long> acabadoIds,
+                               List<Long> colorIds, List<Integer> cantidades) {
+        return tipoTelaIds.get(i) == null && tituloIds.get(i) == null
+                && composicionIds.get(i) == null && acabadoIds.get(i) == null
+                && colorIds.get(i) == null && (cantidades.get(i) == null || cantidades.get(i) == 0);
     }
 
     /**
