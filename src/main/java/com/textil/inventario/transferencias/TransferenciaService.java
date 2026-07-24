@@ -74,6 +74,15 @@ public class TransferenciaService {
     public void confirmarSalida(Long transferenciaId, List<Long> detalleIds,
                                  List<Integer> cantidadesConfirmadas, List<String> observaciones) {
         Transferencia t = transferenciaRepository.findById(transferenciaId).orElseThrow();
+        // Idempotencia (auditoria P0-1, C2): la salida solo se confirma desde
+        // BORRADOR. Sin este guard, reenviar el formulario descuenta el stock de
+        // origen dos veces (pudiendo dejarlo negativo) y duplica el kardex
+        // TRANSFERENCIA_OUT.
+        if (t.getEstado() != Transferencia.EstadoTransferencia.BORRADOR) {
+            throw new IllegalStateException(
+                    "La transferencia " + t.getNumero() + " ya tiene la salida confirmada (estado "
+                    + t.getEstado() + "); no se puede confirmar la salida de nuevo.");
+        }
 
         for (int i = 0; i < detalleIds.size(); i++) {
             TransferenciaDetalle d = detalleRepository.findById(detalleIds.get(i)).orElseThrow();
@@ -139,6 +148,16 @@ public class TransferenciaService {
     @Transactional
     public void confirmarLlegada(Long transferenciaId, Map<Long, Map<Long, Integer>> repartoPorDetalle) {
         Transferencia t = transferenciaRepository.findById(transferenciaId).orElseThrow();
+        // Idempotencia (auditoria P0-1, C3): la llegada solo se confirma tras una
+        // salida confirmada. Sin este guard se podria (a) confirmar llegada sin
+        // salida -> sumar stock al destino sin haberlo descontado del origen
+        // (rollos de la nada, con peso 0), o (b) reenviar el formulario ->
+        // duplicar el stock en destino y el kardex TRANSFERENCIA_IN.
+        if (t.getEstado() != Transferencia.EstadoTransferencia.CONFIRMADA_SALIDA) {
+            throw new IllegalStateException(
+                    "La transferencia " + t.getNumero() + " no está lista para confirmar la llegada (estado "
+                    + t.getEstado() + "; primero hay que confirmar la salida).");
+        }
         List<TransferenciaDetalle> detalles = detalleRepository.findByTransferenciaId(transferenciaId);
         boolean tieneDiferencias = false;
 
@@ -146,6 +165,16 @@ public class TransferenciaService {
             Map<Long, Integer> reparto = repartoPorDetalle.getOrDefault(d.getId(), Map.of());
 
             int totalRepartido = reparto.values().stream().mapToInt(Integer::intValue).sum();
+            // Auditoria P0-1 (C4): no se puede recibir mas de lo que salio. Sin
+            // este tope, repartir mas que lo despachado sumaba rollos de la nada
+            // al destino (la transferencia solo quedaba etiquetada CON_DIFERENCIA,
+            // pero el stock global ya estaba inflado).
+            int despachado = d.getCantidadConfirmadaSalida() != null ? d.getCantidadConfirmadaSalida() : 0;
+            if (totalRepartido > despachado) {
+                throw new IllegalArgumentException(
+                        "El reparto de una línea (" + totalRepartido + " rollos) supera lo despachado en la salida ("
+                        + despachado + "). No se puede recibir más de lo que salió.");
+            }
             d.setCantidadConfirmadaLlegada(totalRepartido);
             detalleRepository.save(d);
 

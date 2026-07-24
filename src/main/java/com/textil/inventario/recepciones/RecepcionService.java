@@ -225,6 +225,16 @@ public class RecepcionService {
     public void confirmarRecepcion(Long recepcionId, List<Long> detalleIds,
                                     List<Integer> rollosRecibidos, List<String> observaciones) {
         Recepcion r = recepcionRepository.findById(recepcionId).orElseThrow();
+        // Idempotencia (auditoria P0-1, C1): solo se confirma una recepcion
+        // PENDIENTE. Sin este guard, un doble-click / reenvio del formulario /
+        // reintento de POST vuelve a correr el metodo: suma el stock otra vez,
+        // duplica los movimientos de kardex INGRESO y la cantidadRecibida del
+        // programa, inflando el inventario en silencio.
+        if (r.getEstado() != Recepcion.EstadoRecepcion.PENDIENTE) {
+            throw new IllegalStateException(
+                    "La recepción " + r.getNumeroGuia() + " ya fue confirmada (estado " + r.getEstado()
+                    + "); no se puede volver a confirmar.");
+        }
         boolean tieneDiferencias = false;
 
         // La tela recibida entra al almacen PRINCIPAL. En una instancia nueva
