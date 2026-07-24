@@ -76,7 +76,7 @@ app:
   # Clave que firma la cookie "recordar sesion" (remember-me). Debe fijarse por
   # instancia (valor unico y secreto) y NO cambiar entre despliegues, o los
   # usuarios quedan deslogueados en cada reinicio. El default es solo para dev.
-  remember-me-key: ${REMEMBER_ME_KEY:texcontrol-remember-me-dev}
+  remember-me-key: ${REMEMBER_ME_KEY}
 ---
 spring:
   config:

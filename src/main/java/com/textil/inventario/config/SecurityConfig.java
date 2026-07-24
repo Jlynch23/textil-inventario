@@ -27,9 +27,10 @@ public class SecurityConfig {
     // Clave que firma la cookie "recordar sesion" (remember-me). DEBE ser
     // estable entre reinicios/despliegues: si cambia, todas las cookies
     // persistentes se invalidan y los usuarios (sobre todo en el celular)
-    // quedan deslogueados. Se fija por instancia via REMEMBER_ME_KEY; el
-    // default solo sirve para desarrollo local.
-    @org.springframework.beans.factory.annotation.Value("${app.remember-me-key:texcontrol-remember-me-dev}")
+    // quedan deslogueados. Es OBLIGATORIA y única por instancia, SIN default:
+    // el arranque falla si falta o está vacía (A2), para no firmar las cookies
+    // con una clave pública igual en todas las copias.
+    @org.springframework.beans.factory.annotation.Value("${app.remember-me-key}")
     private String rememberMeKey;
 
     @Bean
@@ -39,6 +40,15 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        // A2 (auditoria): la clave de firma del remember-me DEBE ser un secreto
+        // único por instancia. Se valida presente y no vacía en el arranque:
+        // antes caía a un default público del repo y todas las copias firmaban
+        // las cookies con la misma clave.
+        if (rememberMeKey == null || rememberMeKey.isBlank()) {
+            throw new IllegalStateException(
+                "REMEMBER_ME_KEY es obligatoria (clave única y secreta por instancia). " +
+                "Generala con: openssl rand -hex 32");
+        }
         http
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/login", "/logout", "/css/**", "/js/**", "/img/**").permitAll()
