@@ -57,6 +57,9 @@ public class CatalogoService {
     // UBICACIONES
     public List<Ubicacion> listarUbicaciones() { return ubicacionRepository.findByActivoTrue(); }
     public Ubicacion guardarUbicacion(Ubicacion u) {
+        // El codigo tambien va normalizado: es UNIQUE, y sin esto "praderas" y
+        // "PRADERAS" serian dos ubicaciones distintas segun la collation.
+        u.setCodigo(normalizar(u.getCodigo()));
         u.setNombre(normalizar(u.getNombre()));
         return ubicacionRepository.save(u);
     }
