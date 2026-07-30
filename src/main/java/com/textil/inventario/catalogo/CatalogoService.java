@@ -61,19 +61,23 @@ public class CatalogoService {
         // "PRADERAS" serian dos ubicaciones distintas segun la collation.
         u.setCodigo(normalizar(u.getCodigo()));
         u.setNombre(normalizar(u.getNombre()));
-        Ubicacion guardada = ubicacionRepository.save(u);
         // Principal UNICA: al marcar una, se le quita la estrella a las demas.
-        // Sin esto quedaban varias principales a la vez y el flujo de recepcion
-        // no tiene forma de decidir a cual entra la mercaderia.
-        if (Boolean.TRUE.equals(guardada.getEsPrincipal())) {
+        // El orden importa y es al reves de lo intuitivo: PRIMERO se desmarcan
+        // las otras y recien despues se guarda esta. Si se guardara primero,
+        // el indice unico uq_ubicacion_principal (V37) rechazaria el INSERT por
+        // haber dos principales a la vez, antes de llegar a desmarcar nada.
+        // flush() fuerza que los UPDATE lleguen a la base antes del save final.
+        if (Boolean.TRUE.equals(u.getEsPrincipal())) {
             for (Ubicacion otra : ubicacionRepository.findAll()) {
-                if (!otra.getId().equals(guardada.getId()) && Boolean.TRUE.equals(otra.getEsPrincipal())) {
+                boolean esLaMisma = u.getId() != null && u.getId().equals(otra.getId());
+                if (!esLaMisma && Boolean.TRUE.equals(otra.getEsPrincipal())) {
                     otra.setEsPrincipal(false);
                     ubicacionRepository.save(otra);
                 }
             }
+            ubicacionRepository.flush();
         }
-        return guardada;
+        return ubicacionRepository.save(u);
     }
     public Ubicacion buscarUbicacion(Long id) { return ubicacionRepository.findById(id).orElseThrow(); }
 
