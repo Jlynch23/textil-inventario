@@ -8,6 +8,10 @@
         <span th:text="${mensaje}"></span>
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
+    <div th:if="${advertencia}" class="alert alert-warning alert-dismissible fade show">
+        <span th:text="${advertencia}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
     <div th:if="${error}" class="alert alert-danger alert-dismissible fade show">
         <span th:text="${error}"></span>
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>

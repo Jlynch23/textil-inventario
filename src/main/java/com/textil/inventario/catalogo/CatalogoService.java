@@ -61,7 +61,19 @@ public class CatalogoService {
         // "PRADERAS" serian dos ubicaciones distintas segun la collation.
         u.setCodigo(normalizar(u.getCodigo()));
         u.setNombre(normalizar(u.getNombre()));
-        return ubicacionRepository.save(u);
+        Ubicacion guardada = ubicacionRepository.save(u);
+        // Principal UNICA: al marcar una, se le quita la estrella a las demas.
+        // Sin esto quedaban varias principales a la vez y el flujo de recepcion
+        // no tiene forma de decidir a cual entra la mercaderia.
+        if (Boolean.TRUE.equals(guardada.getEsPrincipal())) {
+            for (Ubicacion otra : ubicacionRepository.findAll()) {
+                if (!otra.getId().equals(guardada.getId()) && Boolean.TRUE.equals(otra.getEsPrincipal())) {
+                    otra.setEsPrincipal(false);
+                    ubicacionRepository.save(otra);
+                }
+            }
+        }
+        return guardada;
     }
     public Ubicacion buscarUbicacion(Long id) { return ubicacionRepository.findById(id).orElseThrow(); }
 
@@ -218,12 +230,12 @@ public class CatalogoService {
     public void eliminarArticulo(Long id) { articuloRepository.deleteById(id); }
     @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public void eliminarUbicacion(Long id) {
-        Ubicacion u = ubicacionRepository.findById(id).orElseThrow();
-        if (Boolean.TRUE.equals(u.getEsPrincipal())) {
-            throw new IllegalStateException(
-                "No se puede eliminar \"" + u.getNombre() + "\": es la ubicación principal del sistema. " +
-                "Toda confirmación de recepción depende de que exista una ubicación marcada como principal.");
-        }
+        // Se permite borrar cualquier ubicacion, incluida la principal: una
+        // instancia nueva arranca sin ninguna, asi que bloquear el borrado no
+        // garantizaba que existiera una principal, solo dejaba trabado al
+        // usuario con una ubicacion mal creada. El controlador avisa si se
+        // borro la ultima principal. La integridad real (stock, transferencias)
+        // la sigue cubriendo la FK -> DataIntegrityViolationException.
         ubicacionRepository.deleteById(id);
     }
 }

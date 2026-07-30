@@ -584,7 +584,14 @@ public class CatalogoController {
     public String eliminarUbicacion(@PathVariable Long id, RedirectAttributes ra) {
         try {
             catalogoService.eliminarUbicacion(id);
-            ra.addFlashAttribute("mensaje", "Ubicación eliminada correctamente.");
+            boolean quedaPrincipal = catalogoService.listarUbicaciones().stream()
+                    .anyMatch(x -> Boolean.TRUE.equals(x.getEsPrincipal()));
+            if (quedaPrincipal) {
+                ra.addFlashAttribute("mensaje", "Ubicación eliminada correctamente.");
+            } else {
+                ra.addFlashAttribute("advertencia", "Ubicación eliminada. Ya no hay ninguna ubicación "
+                        + "marcada como principal: designá una antes de confirmar recepciones.");
+            }
         } catch (DataIntegrityViolationException e) {
             ra.addFlashAttribute("error", "No se puede eliminar: esta ubicación tiene stock o transferencias asociadas.");
         } catch (IllegalStateException e) {
