@@ -18,8 +18,10 @@
         <div class="col-md-4" sec:authorize="hasAnyRole('ADMIN','SUPERADMIN')">
             <div class="card">
                 <div class="card-body p-4">
-                    <h6 class="fw-bold mb-3">Nuevo Artículo</h6>
+                    <h6 class="fw-bold mb-3"
+                        th:text="${articulo.id != null} ? 'Editar Artículo' : 'Nuevo Artículo'">Nuevo Artículo</h6>
                     <form th:action="@{/catalogo/articulos/guardar}" method="post">
+                        <input type="hidden" name="id" th:value="${articulo.id}">
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Tipo de Tela</label>
                             <div class="input-group">
@@ -27,6 +29,7 @@
                                     <option value="">Seleccionar...</option>
                                     <option th:each="t : ${tiposTela}"
                                             th:value="${t.id}"
+                                            th:selected="${articulo.tipoTela != null and articulo.tipoTela.id == t.id}"
                                             th:text="${t.nombre}"></option>
                                 </select>
                                 <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalTipoTelaNuevo" title="Crear tipo de tela nuevo"><i class="bi bi-plus-lg"></i></button>
@@ -39,6 +42,7 @@
                                     <option value="">Seleccionar...</option>
                                     <option th:each="t : ${titulos}"
                                             th:value="${t.id}"
+                                            th:selected="${articulo.titulo != null and articulo.titulo.id == t.id}"
                                             th:text="${t.valor}"></option>
                                 </select>
                                 <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalTituloNuevo" title="Crear título nuevo"><i class="bi bi-plus-lg"></i></button>
@@ -51,6 +55,7 @@
                                     <option value="">Seleccionar...</option>
                                     <option th:each="c : ${composiciones}"
                                             th:value="${c.id}"
+                                            th:selected="${articulo.composicion != null and articulo.composicion.id == c.id}"
                                             th:text="${c.nombre}"></option>
                                 </select>
                                 <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalComposicionNueva" title="Crear composición nueva"><i class="bi bi-plus-lg"></i></button>
@@ -63,6 +68,7 @@
                                     <option value="">Seleccionar...</option>
                                     <option th:each="ac : ${acabados}"
                                             th:value="${ac.id}"
+                                            th:selected="${articulo.acabado != null and articulo.acabado.id == ac.id}"
                                             th:text="${ac.nombre}"></option>
                                 </select>
                                 <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalAcabadoNuevo" title="Crear acabado nuevo"><i class="bi bi-plus-lg"></i></button>
@@ -71,6 +77,8 @@
                         <button type="submit" class="btn btn-primary w-100">
                             <i class="bi bi-save me-2"></i>Guardar Artículo
                         </button>
+                        <a th:if="${articulo.id != null}" th:href="@{/catalogo/articulos}"
+                           class="btn btn-light w-100 mt-2">Cancelar</a>
                     </form>
                 </div>
             </div>
@@ -104,6 +112,10 @@
                                     <td th:text="${a.composicion.nombre}"></td>
                                     <td th:text="${a.acabado.nombre}"></td>
                                     <td sec:authorize="hasAnyRole('ADMIN','SUPERADMIN')">
+                                        <a th:href="@{/catalogo/articulos/editar/{id}(id=${a.id})}"
+                                           class="btn btn-sm btn-outline-primary" title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
                                         <form th:action="@{/catalogo/articulos/eliminar/{id}(id=${a.id})}" method="post" style="display:inline">
                                             <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar definitivamente"
                                                     onclick="return confirm('¿ELIMINAR este artículo de forma permanente? Esta acción no se puede deshacer. Si tiene stock o movimientos, el sistema lo bloqueará.')">

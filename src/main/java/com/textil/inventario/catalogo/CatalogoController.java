@@ -608,6 +608,18 @@ public class CatalogoController {
         return "redirect:/catalogo/articulos";
     }
 
+    @GetMapping("/articulos/editar/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
+    public String editarArticulo(@PathVariable Long id, Model model) {
+        model.addAttribute("articulos", catalogoService.listarArticulos());
+        model.addAttribute("articulo", catalogoService.buscarArticulo(id));
+        model.addAttribute("tiposTela", catalogoService.listarTiposTela());
+        model.addAttribute("titulos", catalogoService.listarTitulos());
+        model.addAttribute("composiciones", catalogoService.listarComposiciones());
+        model.addAttribute("acabados", catalogoService.listarAcabados());
+        return "catalogo/articulos";
+    }
+
     @PostMapping("/articulos/eliminar/{id}")
     public String eliminarArticulo(@PathVariable Long id, RedirectAttributes ra) {
         try {
