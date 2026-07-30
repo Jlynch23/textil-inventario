@@ -148,6 +148,17 @@ public class CatalogoController {
         return "redirect:/catalogo/tipos-tela";
     }
 
+    @PostMapping("/tipos-tela/eliminar/{id}")
+    public String eliminarTipoTela(@PathVariable Long id, RedirectAttributes ra) {
+        try {
+            catalogoService.eliminarTipoTela(id);
+            ra.addFlashAttribute("mensaje", "Tipo de tela eliminado correctamente.");
+        } catch (DataIntegrityViolationException e) {
+            ra.addFlashAttribute("error", "No se puede eliminar: este tipo de tela está en uso por uno o más artículos. Usa \"Inactivar\" en su lugar.");
+        }
+        return "redirect:/catalogo/tipos-tela";
+    }
+
     // ─── TITULOS ─────────────────────────────────────────────
     @GetMapping("/titulos")
     @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
