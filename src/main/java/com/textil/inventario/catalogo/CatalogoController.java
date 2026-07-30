@@ -569,6 +569,13 @@ public class CatalogoController {
         return "catalogo/ubicaciones";
     }
 
+    @GetMapping("/ubicaciones/editar/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
+    public String editarUbicacion(@PathVariable Long id, Model model) {
+        model.addAttribute("ubicaciones", catalogoService.listarUbicaciones());
+        model.addAttribute("ubicacion", catalogoService.buscarUbicacion(id));
+        return "catalogo/ubicaciones";
+    }
     @PostMapping("/ubicaciones/guardar")
     public String guardarUbicacion(@Valid @ModelAttribute Ubicacion ubicacion, BindingResult bindingResult, RedirectAttributes ra) {
         if (bindingResult.hasErrors()) {
