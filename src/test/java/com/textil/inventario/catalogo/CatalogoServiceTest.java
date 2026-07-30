@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -91,34 +90,33 @@ class CatalogoServiceTest {
         assertThat(resultado).contains(masReciente);
     }
 
-    // --- eliminarUbicacion: proteccion de la ubicacion principal ---
+    // --- eliminarUbicacion: borra cualquier ubicacion (incluida la principal).
+    // Ya NO se bloquea el borrado de la principal: una instancia nueva arranca
+    // sin ninguna, asi que bloquear no garantizaba tener una y solo dejaba
+    // trabado al usuario. El controlador avisa si se borro la ultima principal,
+    // y la integridad real (stock, transferencias) la cubre la FK. ---
 
     @Test
-    void eliminarUbicacion_esPrincipal_lanzaExcepcionYNoLlegaABorrar() {
-        Ubicacion praderas = new Ubicacion();
-        praderas.setId(1L);
-        praderas.setNombre("Praderas");
-        praderas.setEsPrincipal(true);
-        when(ubicacionRepository.findById(1L)).thenReturn(Optional.of(praderas));
+    void eliminarUbicacion_principal_seBorraSinBloqueo() {
+        service.eliminarUbicacion(1L);
 
-        assertThatThrownBy(() -> service.eliminarUbicacion(1L))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("Praderas");
-
-        verify(ubicacionRepository, never()).deleteById(any());
+        verify(ubicacionRepository).deleteById(1L);
     }
 
     @Test
-    void eliminarUbicacion_noEsPrincipal_borraNormal() {
-        Ubicacion tienda = new Ubicacion();
-        tienda.setId(2L);
-        tienda.setNombre("Tienda Centro");
-        tienda.setEsPrincipal(false);
-        when(ubicacionRepository.findById(2L)).thenReturn(Optional.of(tienda));
-
+    void eliminarUbicacion_noPrincipal_seBorra() {
         service.eliminarUbicacion(2L);
 
         verify(ubicacionRepository).deleteById(2L);
+    }
+
+    // --- eliminarTipoTela: borrado real; la FK bloquea si esta en uso ---
+
+    @Test
+    void eliminarTipoTela_delegaEnRepositorio() {
+        service.eliminarTipoTela(7L);
+
+        verify(tipoTelaRepository).deleteById(7L);
     }
 
     // --- generarCodigoInterno: evita colisiones entre variantes del mismo tipo de tela ---
