@@ -205,6 +205,18 @@ public class CatalogoController {
         return "redirect:/catalogo/titulos";
     }
 
+    @PostMapping("/titulos/eliminar/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
+    public String eliminarTitulo(@PathVariable Long id, RedirectAttributes ra) {
+        try {
+            catalogoService.eliminarTitulo(id);
+            ra.addFlashAttribute("mensaje", "Título eliminado correctamente.");
+        } catch (DataIntegrityViolationException e) {
+            ra.addFlashAttribute("error", "No se puede eliminar: este título está en uso por uno o más artículos. Usa \"Inactivar\" en su lugar.");
+        }
+        return "redirect:/catalogo/titulos";
+    }
+
     // ─── COMPOSICIONES ───────────────────────────────────────
     @GetMapping("/composiciones")
     @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
@@ -246,6 +258,18 @@ public class CatalogoController {
         return "redirect:/catalogo/composiciones";
     }
 
+    @PostMapping("/composiciones/eliminar/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
+    public String eliminarComposicion(@PathVariable Long id, RedirectAttributes ra) {
+        try {
+            catalogoService.eliminarComposicion(id);
+            ra.addFlashAttribute("mensaje", "Composición eliminada correctamente.");
+        } catch (DataIntegrityViolationException e) {
+            ra.addFlashAttribute("error", "No se puede eliminar: esta composición está en uso por uno o más artículos. Usa \"Inactivar\" en su lugar.");
+        }
+        return "redirect:/catalogo/composiciones";
+    }
+
     // ─── ACABADOS ────────────────────────────────────────────
     @GetMapping("/acabados")
     @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
@@ -284,6 +308,18 @@ public class CatalogoController {
         a.setActivo(false);
         catalogoService.guardarAcabado(a);
         ra.addFlashAttribute("mensaje", "Acabado inactivado.");
+        return "redirect:/catalogo/acabados";
+    }
+
+    @PostMapping("/acabados/eliminar/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
+    public String eliminarAcabado(@PathVariable Long id, RedirectAttributes ra) {
+        try {
+            catalogoService.eliminarAcabado(id);
+            ra.addFlashAttribute("mensaje", "Acabado eliminado correctamente.");
+        } catch (DataIntegrityViolationException e) {
+            ra.addFlashAttribute("error", "No se puede eliminar: este acabado está en uso por uno o más artículos. Usa \"Inactivar\" en su lugar.");
+        }
         return "redirect:/catalogo/acabados";
     }
 
@@ -336,6 +372,18 @@ public class CatalogoController {
         e.setActivo(true);
         catalogoService.guardarEmpresa(e);
         ra.addFlashAttribute("mensaje", "Empresa reactivada.");
+        return "redirect:/catalogo/empresas";
+    }
+
+    @PostMapping("/empresas/eliminar/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
+    public String eliminarEmpresa(@PathVariable Long id, RedirectAttributes ra) {
+        try {
+            catalogoService.eliminarEmpresa(id);
+            ra.addFlashAttribute("mensaje", "Empresa eliminada correctamente.");
+        } catch (DataIntegrityViolationException e) {
+            ra.addFlashAttribute("error", "No se puede eliminar: esta empresa tiene recepciones u otros registros asociados. Usa \"Inactivar\" en su lugar.");
+        }
         return "redirect:/catalogo/empresas";
     }
 

@@ -86,6 +86,13 @@
                                                 <i class="bi bi-eye"></i>
                                             </button>
                                         </form>
+                                        <!-- Borrado permanente (bloqueado si tiene registros asociados) -->
+                                        <form th:action="@{/catalogo/empresas/eliminar/{id}(id=${e.id})}" method="post" style="display:inline">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar definitivamente"
+                                                    onclick="return confirm('¿ELIMINAR esta empresa de forma permanente? Esta acción no se puede deshacer. Si tiene recepciones u otros registros asociados, el sistema lo bloqueará.')">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
                                     </td>
                                 </tr>
                             </tbody>

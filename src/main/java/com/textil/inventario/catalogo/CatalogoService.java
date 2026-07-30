@@ -233,6 +233,14 @@ public class CatalogoService {
     @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public void eliminarTipoTela(Long id) { tipoTelaRepository.deleteById(id); }
     @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
+    public void eliminarTitulo(Long id) { tituloRepository.deleteById(id); }
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
+    public void eliminarComposicion(Long id) { composicionRepository.deleteById(id); }
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
+    public void eliminarAcabado(Long id) { acabadoRepository.deleteById(id); }
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
+    public void eliminarEmpresa(Long id) { empresaRepository.deleteById(id); }
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public void eliminarArticulo(Long id) { articuloRepository.deleteById(id); }
     @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public void eliminarUbicacion(Long id) {
