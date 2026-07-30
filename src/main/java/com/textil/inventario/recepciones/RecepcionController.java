@@ -67,7 +67,7 @@ public class RecepcionController {
     public String nueva(Model model) {
         model.addAttribute("empresas", empresaRepository.findByActivoTrue());
         model.addAttribute("articulos", articuloRepository.findByActivoTrue());
-        model.addAttribute("colores", colorRepository.findByActivoTrue());
+        model.addAttribute("colores", colorRepository.findByActivoTrueOrderByNombreOficialAsc());
         return "recepciones/nueva";
     }
 
@@ -92,7 +92,7 @@ public class RecepcionController {
     public String detalle(@PathVariable Long id, Model model) {
         model.addAttribute("recepcion", recepcionService.buscarRecepcion(id));
         model.addAttribute("articulos", articuloRepository.findByActivoTrue());
-        model.addAttribute("colores", colorRepository.findByActivoTrue());
+        model.addAttribute("colores", colorRepository.findByActivoTrueOrderByNombreOficialAsc());
         return "recepciones/detalle";
     }
 

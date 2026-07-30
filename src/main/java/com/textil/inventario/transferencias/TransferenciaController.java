@@ -58,7 +58,7 @@ public class TransferenciaController {
     public String detalle(@PathVariable Long id, Model model) {
         model.addAttribute("transferencia", transferenciaService.buscarTransferencia(id));
         model.addAttribute("articulos", articuloRepository.findByActivoTrue());
-        model.addAttribute("colores", colorRepository.findByActivoTrue());
+        model.addAttribute("colores", colorRepository.findByActivoTrueOrderByNombreOficialAsc());
         return "transferencias/detalle";
     }
 

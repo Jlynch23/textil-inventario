@@ -61,7 +61,7 @@ public class StockController {
         model.addAttribute("ubicaciones", ubicacionRepository.findByActivoTrue());
         model.addAttribute("tiposTela", tipoTelaRepository.findByActivoTrue());
         model.addAttribute("titulos", tituloRepository.findByActivoTrue());
-        model.addAttribute("colores", colorRepository.findByActivoTrue());
+        model.addAttribute("colores", colorRepository.findByActivoTrueOrderByNombreOficialAsc());
 
         model.addAttribute("filtroUbicacionId", ubicacionId);
         model.addAttribute("filtroTipoTelaId", tipoTelaId);

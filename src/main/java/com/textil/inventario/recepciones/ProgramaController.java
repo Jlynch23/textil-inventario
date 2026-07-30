@@ -43,7 +43,7 @@ public class ProgramaController {
     @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public String nuevo(Model model) {
         model.addAttribute("empresas", empresaRepository.findByActivoTrue());
-        model.addAttribute("colores", colorRepository.findByActivoTrue());
+        model.addAttribute("colores", colorRepository.findByActivoTrueOrderByNombreOficialAsc());
         model.addAttribute("composiciones", composicionRepository.findByActivoTrue());
         model.addAttribute("tiposTela", tipoTelaRepository.findByActivoTrue());
         model.addAttribute("titulos", tituloRepository.findByActivoTrue());
@@ -104,7 +104,7 @@ public class ProgramaController {
         }
         model.addAttribute("programa", programa);
         model.addAttribute("empresas", empresaRepository.findByActivoTrue());
-        model.addAttribute("colores", colorRepository.findByActivoTrue());
+        model.addAttribute("colores", colorRepository.findByActivoTrueOrderByNombreOficialAsc());
         model.addAttribute("composiciones", composicionRepository.findByActivoTrue());
         model.addAttribute("tiposTela", tipoTelaRepository.findByActivoTrue());
         model.addAttribute("titulos", tituloRepository.findByActivoTrue());
