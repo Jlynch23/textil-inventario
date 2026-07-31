@@ -83,8 +83,9 @@
                                 </div>
                                 <div class="col-md-2">
                                     <select class="form-select select-acabado" name="acabadoId">
+                                        <option value="">Acabado...</option>
                                         <option th:each="ab : ${acabados}" th:value="${ab.id}"
-                                                th:text="${ab.nombre}" th:selected="${ab.nombre == 'LISO'}"></option>
+                                                th:text="${ab.nombre}"></option>
                                     </select>
                                 </div>
                                 <div class="col-md-2">
@@ -322,10 +323,12 @@
         }
 
         function opcionesAcabado(seleccionarId) {
-            let options = '';
+            // Arranca vacio ("Acabado...") igual que los demas selects. El
+            // acabado se rellena solo (LISO/ACANALADO) al elegir Tipo de Tela o
+            // Titulo, ver aplicarDefaultsPorTitulo.
+            let options = '<option value="">Acabado...</option>';
             acabadosData.forEach(a => {
-                const sel = seleccionarId ? (a.id === seleccionarId ? ' selected' : '')
-                                          : (a.nombre === 'LISO' ? ' selected' : '');
+                const sel = seleccionarId && a.id === seleccionarId ? ' selected' : '';
                 options += '<option value="' + a.id + '"' + sel + '>' + a.nombre + '</option>';
             });
             return options;

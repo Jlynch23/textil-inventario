@@ -33,7 +33,7 @@ public class ProgramaService {
     }
 
     public List<Programa> listarProgramas() {
-        return programaRepository.findAllByOrderByFechaDesc();
+        return programaRepository.findAllOrdenadoCronologico();
     }
 
     public Programa buscarPrograma(Long id) {
