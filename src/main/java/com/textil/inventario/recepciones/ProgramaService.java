@@ -87,8 +87,17 @@ public class ProgramaService {
                     ") no coincide con la suma de las cantidades de las líneas (" + suma + ").");
         }
 
+        // El numero de programa es UNICO. Se valida ANTES de guardar para dar un
+        // mensaje claro ("ya existe el numero X") en vez de que reviente como
+        // DataIntegrityViolationException / error del sistema.
+        String numeroNormalizado = normalizar(numero);
+        if (programaRepository.findByNumero(numeroNormalizado).isPresent()) {
+            throw new IllegalArgumentException(
+                    "Ya existe un programa con el número «" + numeroNormalizado + "». Usa otro número.");
+        }
+
         Programa p = new Programa();
-        p.setNumero(normalizar(numero));
+        p.setNumero(numeroNormalizado);
         p.setEmpresa(empresaRepository.findById(empresaId).orElseThrow());
         p.setFecha(fecha);
         p.setObservaciones(observaciones);
@@ -190,7 +199,15 @@ public class ProgramaService {
                     ") no coincide con la suma de las cantidades de las líneas (" + sumaTotal + ").");
         }
 
-        p.setNumero(normalizar(numero));
+        // Numero UNICO: si el usuario cambio el numero a uno que YA usa OTRO
+        // programa, se avisa claro en vez de reventar con DataIntegrity/error.
+        String numeroNormalizado = normalizar(numero);
+        programaRepository.findByNumero(numeroNormalizado)
+                .filter(otro -> !otro.getId().equals(programaId))
+                .ifPresent(otro -> { throw new IllegalArgumentException(
+                        "Ya existe otro programa con el número «" + numeroNormalizado + "». Usa otro número."); });
+
+        p.setNumero(numeroNormalizado);
         p.setEmpresa(empresaRepository.findById(empresaId).orElseThrow());
         p.setFecha(fecha);
         p.setObservaciones(observaciones);

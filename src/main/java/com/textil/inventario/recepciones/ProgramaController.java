@@ -69,6 +69,12 @@ public class ProgramaController {
                     tipoTelaIds, tituloIds, composicionIds, acabadoIds, colorIds, cantidades);
             ra.addFlashAttribute("mensaje", "Programa creado correctamente.");
             return "redirect:/programas/" + p.getId();
+        } catch (DataIntegrityViolationException e) {
+            // Red de seguridad: si dos altas con el mismo numero corren casi a la
+            // vez, la validacion previa puede pasarlas y salta el constraint UNIQUE.
+            ra.addFlashAttribute("error",
+                    "Ya existe un programa con el número «" + numero + "». Usa otro número.");
+            return "redirect:/programas/nuevo";
         } catch (IllegalArgumentException e) {
             ra.addFlashAttribute("error", e.getMessage());
             return "redirect:/programas/nuevo";
