@@ -211,11 +211,11 @@
             <div class="nav-group">
                 <div class="nav-section">Operaciones</div>
                 <div class="nav-items">
-                    <a th:href="@{/recepciones}" th:classappend="${rutaMenuActiva == '/recepciones'} ? ' active'" class="nav-link" title="Recepciones"><i class="bi bi-truck"></i><span class="nav-text">Recepciones</span></a>
-                    <a th:href="@{/recepciones/facturar}" th:classappend="${rutaMenuActiva == '/recepciones/facturar'} ? ' active'" sec:authorize="hasAnyRole('ADMIN','SUPERADMIN')" class="nav-link" title="Facturar Guías"><i class="bi bi-receipt"></i><span class="nav-text">Facturar Guías</span></a>
-                    <a th:href="@{/almacen/revision}" th:classappend="${rutaMenuActiva == '/almacen/revision'} ? ' active'" sec:authorize="hasAnyRole('ADMIN','SUPERADMIN')" class="nav-link" title="Revisión Almacén"><i class="bi bi-camera"></i><span class="nav-text">Revisión Almacén</span></a>
+                    <a th:href="@{/recepciones}" th:classappend="${rutaMenuActiva == '/recepciones'} ? ' active'" class="nav-link" title="Entradas"><i class="bi bi-truck"></i><span class="nav-text">Entradas</span></a>
+                    <a th:href="@{/recepciones/facturar}" th:classappend="${rutaMenuActiva == '/recepciones/facturar'} ? ' active'" sec:authorize="hasAnyRole('ADMIN','SUPERADMIN')" class="nav-link" title="Facturación"><i class="bi bi-receipt"></i><span class="nav-text">Facturación</span></a>
+                    <a th:href="@{/almacen/revision}" th:classappend="${rutaMenuActiva == '/almacen/revision'} ? ' active'" sec:authorize="hasAnyRole('ADMIN','SUPERADMIN')" class="nav-link" title="Revisión de Movimientos"><i class="bi bi-camera"></i><span class="nav-text">Revisión de Movimientos</span></a>
                     <a th:href="@{/programas}" th:classappend="${rutaMenuActiva == '/programas'} ? ' active'" class="nav-link" title="Programas"><i class="bi bi-list-check"></i><span class="nav-text">Programas</span></a>
-                    <a th:href="@{/transferencias}" th:classappend="${rutaMenuActiva == '/transferencias'} ? ' active'" class="nav-link" title="Transferencias"><i class="bi bi-arrow-left-right"></i><span class="nav-text">Transferencias</span></a>
+                    <a th:href="@{/transferencias}" th:classappend="${rutaMenuActiva == '/transferencias'} ? ' active'" class="nav-link" title="Traslados"><i class="bi bi-arrow-left-right"></i><span class="nav-text">Traslados</span></a>
                     <a th:href="@{/documentos}" th:classappend="${rutaMenuActiva == '/documentos'} ? ' active'" class="nav-link" title="Documentos"><i class="bi bi-file-earmark-pdf"></i><span class="nav-text">Documentos</span></a>
                 </div>
             </div>
