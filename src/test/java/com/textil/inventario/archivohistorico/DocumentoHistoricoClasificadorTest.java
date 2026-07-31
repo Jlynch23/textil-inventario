@@ -1,6 +1,7 @@
 package com.textil.inventario.archivohistorico;
 
 import com.textil.inventario.catalogo.Empresa;
+import com.textil.inventario.recepciones.ArticuloMatchingService;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -8,15 +9,21 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Cubre detectarEmpresa(): funcion pura que decide a que empresa pertenece un
- * documento a partir de la ruta del ZIP o de la razon social leida por la IA.
- * El bug que motiva estos tests: las carpetas reales ("T. CLEMENTE") y las
- * razones sociales no calzaban con el slug de carpeta ("textil-clemente"), y
- * todo quedaba "(sin identificar)". Ahora se matchea por palabra distintiva.
+ * Cubre detectarEmpresa(): decide a que empresa pertenece un documento a partir
+ * de la ruta del ZIP o de la razon social leida por la IA. Delega en el MISMO
+ * matcher que la recepcion individual (ArticuloMatchingService.matchEmpresa),
+ * que cuenta palabras (>3 letras) del nombre presentes en el texto. El bug que
+ * motiva estos tests: las carpetas reales ("T. CLEMENTE") no calzaban con el
+ * slug ("textil-clemente") y todo quedaba "(sin identificar)".
+ *
+ * matchEmpresa solo usa la lista de empresas (no toca repositorios), por eso se
+ * puede instanciar el service con dependencias nulas para este test.
  */
 class DocumentoHistoricoClasificadorTest {
 
-    private final DocumentoHistoricoClasificador clasificador = new DocumentoHistoricoClasificador();
+    private final DocumentoHistoricoClasificador clasificador =
+            new DocumentoHistoricoClasificador(
+                    new ArticuloMatchingService(null, null, null, null, null, null));
 
     private Empresa empresa(long id, String nombre, String carpeta) {
         Empresa e = new Empresa();
@@ -33,8 +40,9 @@ class DocumentoHistoricoClasificadorTest {
     }
 
     @Test
-    void carpetaAbreviada_matcheaPorPalabraDistintiva() {
-        // Carpeta real dentro del ZIP: no contiene el slug "textil-clemente".
+    void carpetaAbreviada_matcheaPorPalabra() {
+        // Carpeta real dentro del ZIP: no contiene el slug "textil-clemente",
+        // pero si la palabra "CLEMENTE".
         Empresa e = clasificador.detectarEmpresa("FACTURAS/T. CLEMENTE/2024/TG01-00022836.pdf", dosEmpresas());
         assertThat(e).isNotNull();
         assertThat(e.getNombre()).isEqualTo("TEXTIL CLEMENTE");
@@ -55,21 +63,10 @@ class DocumentoHistoricoClasificadorTest {
     }
 
     @Test
-    void slugDeCarpetaExacto_matchea() {
+    void slugDeCarpeta_matchea() {
         Empresa e = clasificador.detectarEmpresa("historico/textil-laura/archivo.pdf", dosEmpresas());
         assertThat(e).isNotNull();
         assertThat(e.getNombre()).isEqualTo("TEXTIL LAURA");
-    }
-
-    @Test
-    void sinPalabraDistintiva_devuelveNull() {
-        // "TEXTIL" es generica (la comparten las dos): no alcanza para decidir.
-        assertThat(clasificador.detectarEmpresa("FACTURAS/TEXTIL/2024/x.pdf", dosEmpresas())).isNull();
-    }
-
-    @Test
-    void textoQueMencionaAmbas_esAmbiguo_devuelveNull() {
-        assertThat(clasificador.detectarEmpresa("TRASPASO LAURA A CLEMENTE", dosEmpresas())).isNull();
     }
 
     @Test

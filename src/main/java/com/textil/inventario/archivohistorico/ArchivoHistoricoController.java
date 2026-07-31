@@ -82,6 +82,15 @@ public class ArchivoHistoricoController {
         return "redirect:/archivo-historico";
     }
 
+    @PostMapping("/re-detectar-empresas")
+    public String reDetectarEmpresas(RedirectAttributes ra) {
+        int actualizados = archivoHistoricoService.reDetectarEmpresas();
+        ra.addFlashAttribute("mensaje", actualizados > 0
+                ? "Se asignó la empresa a " + actualizados + " documento(s) que estaban sin identificar."
+                : "No se pudo identificar la empresa de ningún documento pendiente (no se detectó su nombre en el PDF ni en la carpeta del ZIP).");
+        return "redirect:/archivo-historico";
+    }
+
     @GetMapping("/{id}/ver")
     public ResponseEntity<Resource> ver(@PathVariable Long id) throws MalformedURLException {
         DocumentoHistorico doc = documentoHistoricoRepository.findById(id).orElseThrow();

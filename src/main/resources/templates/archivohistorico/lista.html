@@ -110,6 +110,13 @@
         </div>
     </form>
 
+    <form method="post" th:action="@{/archivo-historico/re-detectar-empresas}" class="mb-2">
+        <button type="submit" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-repeat"></i> Re-detectar empresas faltantes
+        </button>
+        <small class="text-muted ms-2">Reintenta identificar la empresa de los documentos "(sin identificar)" usando lo que ya se leyó (no vuelve a leer el PDF).</small>
+    </form>
+
     <form method="post" th:action="@{/archivo-historico/eliminar-seleccionados}" id="formSeleccionados">
         <div class="mb-2">
             <button type="submit" class="btn btn-danger btn-sm" id="btnEliminarSeleccionados" disabled

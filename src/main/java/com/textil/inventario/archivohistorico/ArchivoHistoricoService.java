@@ -125,6 +125,31 @@ public class ArchivoHistoricoService {
     }
 
     /**
+     * Re-intenta detectar la empresa de los documentos que quedaron "(sin
+     * identificar)", SIN volver a leer el PDF: reutiliza la razon social que ya
+     * leyo la IA y la ruta del ZIP, y las pasa por el MISMO matcher que la
+     * recepcion individual (ver DocumentoHistoricoClasificador.detectarEmpresa).
+     * Sirve para arreglar en bloque los documentos viejos tras mejorar la
+     * deteccion. Devuelve cuantos se pudieron asignar.
+     */
+    public int reDetectarEmpresas() {
+        List<Empresa> empresas = empresaRepository.findByActivoTrue();
+        int actualizados = 0;
+        for (DocumentoHistorico doc : documentoHistoricoRepository.findByEmpresaIsNull()) {
+            String razon = doc.getRazonSocialDetectada() != null ? doc.getRazonSocialDetectada() : "";
+            String ruta = doc.getRutaRelativaZip() != null ? doc.getRutaRelativaZip() : "";
+            Empresa e = clasificador.detectarEmpresa((razon + " " + ruta).trim(), empresas);
+            if (e != null) {
+                // Mueve el PDF a la carpeta de la empresa y actualiza empresa+ruta.
+                fileManager.moverArchivoSiEmpresaCambio(doc, e);
+                documentoHistoricoRepository.save(doc);
+                actualizados++;
+            }
+        }
+        return actualizados;
+    }
+
+    /**
      * Procesa todos los documentos PENDIENTE con la IA, en lotes, corriendo en
      * un hilo aparte para no bloquear la petición HTTP que subió el ZIP.
      */

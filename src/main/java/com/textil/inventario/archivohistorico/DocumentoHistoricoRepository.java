@@ -38,4 +38,8 @@ public interface DocumentoHistoricoRepository extends JpaRepository<DocumentoHis
     // se trae todo el tipo y la comparacion normalizada se hace en Java
     // (ver ArchivoHistoricoService.normalizarNumeroGuia).
     List<DocumentoHistorico> findByTipoDocumento(DocumentoHistorico.TipoDocumentoHistorico tipoDocumento);
+
+    // Documentos que quedaron sin empresa asignada (deteccion fallida en su
+    // momento). Se usan para re-intentar la deteccion sin re-leer el PDF.
+    List<DocumentoHistorico> findByEmpresaIsNull();
 }
