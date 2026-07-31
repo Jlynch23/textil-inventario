@@ -153,6 +153,9 @@ public class ArchivoHistoricoService {
                 razonSocialDetectada = r.razonSocialDetectada();
                 if (r.advertencia() != null) doc.setObservacion(r.advertencia());
 
+                // Dedup: si esta factura ya fue importada antes, no se reprocesa.
+                if (marcarSiEsDuplicado(doc)) return;
+
                 // La empresa se resuelve ANTES de la vinculacion factura-guia,
                 // para que quede consistente con el resto del documento.
                 fileManager.resolverEmpresaYMoverArchivo(doc, razonSocialDetectada);
@@ -186,6 +189,11 @@ public class ArchivoHistoricoService {
                 doc.setRazonSocialDetectada(r.razonSocialDetectada());
                 razonSocialDetectada = r.razonSocialDetectada();
                 if (r.advertencia() != null) doc.setObservacion(r.advertencia());
+
+                // Dedup: si esta guia ya fue importada antes (misma N de guia), no
+                // se vuelve a enriquecer el catalogo ni a crear Recepcion; se marca
+                // como duplicada. Asi, aunque se escanee/suba otra vez, no entra doble.
+                if (marcarSiEsDuplicado(doc)) return;
 
                 // La empresa se resuelve ANTES de enriquecer el catalogo y crear
                 // la Recepcion, porque crear una Recepcion requiere empresaId.
@@ -228,6 +236,52 @@ public class ArchivoHistoricoService {
             doc.setObservacion("Error al procesar: " + e.getMessage());
         }
         documentoHistoricoRepository.save(doc);
+    }
+
+    /**
+     * Evita importar dos veces la misma guia/factura, aunque se vuelva a
+     * escanear o subir. Si ya existe OTRO documento PROCESADO con el mismo
+     * numero (guia por N de guia normalizado, factura por N de factura), marca
+     * ESTE como DUPLICADO con una nota, lo guarda y devuelve true para que el
+     * proceso se corte antes de enriquecer el catalogo o crear una Recepcion.
+     */
+    private boolean marcarSiEsDuplicado(DocumentoHistorico doc) {
+        DocumentoHistorico original = buscarYaImportado(doc);
+        if (original == null) return false;
+
+        String numero = doc.getTipoDocumento() == DocumentoHistorico.TipoDocumentoHistorico.FACTURA
+                ? doc.getNumeroFactura() : doc.getNumeroGuia();
+        doc.setEstadoProceso(DocumentoHistorico.EstadoProceso.DUPLICADO);
+        String nota = "Documento duplicado: «" + (numero != null ? numero.trim() : "") +
+                "» ya fue importado antes (documento #" + original.getId() + "). No se creó nada nuevo.";
+        doc.setObservacion(doc.getObservacion() == null ? nota : doc.getObservacion() + "\n" + nota);
+        doc.setProcesadoAt(LocalDateTime.now());
+        documentoHistoricoRepository.save(doc);
+        return true;
+    }
+
+    /** Busca otro documento ya PROCESADO con el mismo numero (guia o factura). */
+    private DocumentoHistorico buscarYaImportado(DocumentoHistorico doc) {
+        boolean esFactura = doc.getTipoDocumento() == DocumentoHistorico.TipoDocumentoHistorico.FACTURA;
+        String numero = esFactura ? doc.getNumeroFactura() : doc.getNumeroGuia();
+        if (numero == null || numero.isBlank()) return null;
+
+        DocumentoHistorico.TipoDocumentoHistorico tipo = esFactura
+                ? DocumentoHistorico.TipoDocumentoHistorico.FACTURA
+                : DocumentoHistorico.TipoDocumentoHistorico.GUIA;
+        String norm = esFactura ? numero.trim().toUpperCase() : normalizarNumeroGuia(numero);
+
+        return documentoHistoricoRepository.findByTipoDocumento(tipo).stream()
+                .filter(d -> !d.getId().equals(doc.getId()))
+                .filter(d -> d.getEstadoProceso() == DocumentoHistorico.EstadoProceso.PROCESADO)
+                .filter(d -> {
+                    String otro = esFactura ? d.getNumeroFactura() : d.getNumeroGuia();
+                    if (otro == null || otro.isBlank()) return false;
+                    return esFactura ? otro.trim().equalsIgnoreCase(norm)
+                                     : normalizarNumeroGuia(otro).equals(norm);
+                })
+                .findFirst()
+                .orElse(null);
     }
 
     private record LineaParaRecepcion(Articulo articulo, Color color, ProductoExtraido producto) {}

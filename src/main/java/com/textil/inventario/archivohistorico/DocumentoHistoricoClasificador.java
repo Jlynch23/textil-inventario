@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -46,39 +47,88 @@ public class DocumentoHistoricoClasificador {
     }
 
     public Empresa detectarEmpresaPorRuta(String rutaEntrada, List<Empresa> empresas) {
-        String ruta = rutaEntrada.toUpperCase();
-        for (Empresa e : empresas) {
-            if (e.getCarpeta() != null && !e.getCarpeta().isBlank()
-                    && ruta.contains(e.getCarpeta().toUpperCase())) {
-                return e;
-            }
-        }
-        return null;
+        return detectarEmpresa(rutaEntrada, empresas);
     }
 
     /**
      * Detecta la empresa a partir de texto REAL leido por la IA (razon social
      * de la guia/factura), en vez de la ruta del ZIP. Permite subir un ZIP
      * sin organizar por carpetas de empresa: la IA decide, no la ruta.
-     * Primero intenta con la palabra distintiva de "carpeta" (ej. LAURA,
-     * CLEMENTE); si no matchea, intenta con el nombre completo de la empresa.
      */
     public Empresa detectarEmpresaPorTexto(String razonSocialDetectada, List<Empresa> empresas) {
-        if (razonSocialDetectada == null || razonSocialDetectada.isBlank()) return null;
-        String normalizado = razonSocialDetectada.toUpperCase();
+        return detectarEmpresa(razonSocialDetectada, empresas);
+    }
+
+    // Palabras que aparecen en casi cualquier razon social textil y NO sirven
+    // para distinguir una empresa de otra (las dos son "TEXTIL ..."). Se
+    // ignoran al buscar la palabra distintiva (LAURA, CLEMENTE, ...).
+    private static final Set<String> PALABRAS_GENERICAS = Set.of(
+            "TEXTIL", "TEXTILES", "SAC", "SA", "SRL", "EIRL", "SOCIEDAD", "ANONIMA",
+            "CERRADA", "COMERCIAL", "COMERCIALIZADORA", "INDUSTRIA", "INDUSTRIAS",
+            "INDUSTRIAL", "EMPRESA", "GRUPO", "CORPORACION", "COMPANIA", "CIA",
+            "DEL", "LOS", "LAS", "FACTURAS", "GUIAS", "GUIA", "FACTURA");
+
+    /**
+     * Detecta la empresa buscando su nombre dentro de un texto (la ruta del ZIP
+     * o la razon social leida por la IA). Va de lo mas estricto a lo mas
+     * tolerante:
+     *   1) el slug de carpeta exacto (ej. "textil-clemente"),
+     *   2) el nombre completo (ej. "TEXTIL CLEMENTE"),
+     *   3) la palabra distintiva (ej. "CLEMENTE", "LAURA"), que tolera carpetas
+     *      tipo "T. CLEMENTE" o razones sociales "... CLEMENTE SAC".
+     * En (3), si dos empresas empatan se devuelve null (ambiguo): mejor dejar
+     * "sin identificar" que adivinar la empresa equivocada.
+     */
+    public Empresa detectarEmpresa(String texto, List<Empresa> empresas) {
+        if (texto == null || texto.isBlank() || empresas == null) return null;
+        String t = normalizar(texto);
 
         for (Empresa e : empresas) {
             if (e.getCarpeta() != null && !e.getCarpeta().isBlank()
-                    && normalizado.contains(e.getCarpeta().toUpperCase())) {
+                    && t.contains(normalizar(e.getCarpeta()))) {
                 return e;
             }
         }
         for (Empresa e : empresas) {
-            if (e.getNombre() != null && normalizado.contains(e.getNombre().toUpperCase())) {
+            if (e.getNombre() != null && !e.getNombre().isBlank()
+                    && t.contains(normalizar(e.getNombre()))) {
                 return e;
             }
         }
-        return null;
+
+        String tTokens = " " + t.replaceAll("[^A-Z0-9]+", " ").trim() + " ";
+        Empresa mejor = null;
+        int mejorScore = 0;
+        boolean empate = false;
+        for (Empresa e : empresas) {
+            int score = 0;
+            for (String palabra : palabrasDistintivas(e.getNombre())) {
+                if (tTokens.contains(" " + palabra + " ")) score++;
+            }
+            if (score > mejorScore) {
+                mejorScore = score; mejor = e; empate = false;
+            } else if (score > 0 && score == mejorScore) {
+                empate = true;
+            }
+        }
+        return (mejorScore > 0 && !empate) ? mejor : null;
+    }
+
+    /** Palabras >=4 letras del nombre que NO son genericas (LAURA, CLEMENTE). */
+    private List<String> palabrasDistintivas(String nombre) {
+        List<String> res = new ArrayList<>();
+        if (nombre == null) return res;
+        for (String w : normalizar(nombre).split("[^A-Z0-9]+")) {
+            if (w.length() >= 4 && !PALABRAS_GENERICAS.contains(w)) res.add(w);
+        }
+        return res;
+    }
+
+    /** Mayusculas y sin tildes, para comparar sin que acentos/ñ estorben. */
+    private String normalizar(String s) {
+        return java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .toUpperCase();
     }
 
     public LocalDate parseFecha(String fechaTexto) {

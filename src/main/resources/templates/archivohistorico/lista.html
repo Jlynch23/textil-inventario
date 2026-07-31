@@ -10,7 +10,7 @@
     <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
 
     <div class="row g-3 mb-4">
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card text-white bg-secondary">
                 <div class="card-body">
                     <h6 class="card-title">Pendientes de leer</h6>
@@ -18,7 +18,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card text-white bg-success">
                 <div class="card-body">
                     <h6 class="card-title">Procesados</h6>
@@ -26,7 +26,15 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
+            <div class="card text-dark bg-warning">
+                <div class="card-body">
+                    <h6 class="card-title">Duplicados</h6>
+                    <p class="display-6 mb-0" th:text="${totalDuplicados}">0</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
             <div class="card text-white bg-danger">
                 <div class="card-body">
                     <h6 class="card-title">Con error</h6>
@@ -129,6 +137,7 @@
                 <td>
                     <span th:if="${d.estadoProceso.name() == 'PENDIENTE'}" class="badge bg-secondary">Pendiente</span>
                     <span th:if="${d.estadoProceso.name() == 'PROCESADO'}" class="badge bg-success">Procesado</span>
+                    <span th:if="${d.estadoProceso.name() == 'DUPLICADO'}" class="badge bg-warning text-dark" th:title="${d.observacion}">Duplicado</span>
                     <span th:if="${d.estadoProceso.name() == 'ERROR'}" class="badge bg-danger" th:title="${d.observacion}">Error</span>
                 </td>
                 <td th:text="${d.tipoDocumento}"></td>

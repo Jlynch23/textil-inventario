@@ -53,6 +53,7 @@ public class ArchivoHistoricoController {
         model.addAttribute("totalPendientes", documentoHistoricoRepository.countByEstadoProceso(DocumentoHistorico.EstadoProceso.PENDIENTE));
         model.addAttribute("totalProcesados", documentoHistoricoRepository.countByEstadoProceso(DocumentoHistorico.EstadoProceso.PROCESADO));
         model.addAttribute("totalErrores", documentoHistoricoRepository.countByEstadoProceso(DocumentoHistorico.EstadoProceso.ERROR));
+        model.addAttribute("totalDuplicados", documentoHistoricoRepository.countByEstadoProceso(DocumentoHistorico.EstadoProceso.DUPLICADO));
 
         return "archivohistorico/lista";
     }

@@ -89,6 +89,6 @@ public class DocumentoHistorico {
     }
 
     public enum EstadoProceso {
-        PENDIENTE, PROCESADO, ERROR
+        PENDIENTE, PROCESADO, ERROR, DUPLICADO
     }
 }
