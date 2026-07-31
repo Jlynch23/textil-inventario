@@ -214,42 +214,74 @@
         let composicionesData = /*[[${composiciones}]]*/ [];
         const acabadosData = /*[[${acabados}]]*/ [];
 
-        // Auto-relleno de Titulo segun el Tipo de Tela elegido: en la
-        // practica, RIB 2x1 casi siempre va con 24/1 y RIB Acanalado casi
-        // siempre con 30/1. Solo se aplica si el Titulo de esa fila esta
-        // vacio todavia (nunca pisa una eleccion manual del usuario).
-        // Se puede ampliar esta lista si aparecen mas patrones consistentes.
-        const AUTO_TITULO_POR_TIPO = [
-            { patron: /2X1/, tituloValor: '24/1' },
-            { patron: /ACANALADO/, tituloValor: '30/1' }
+        // ─── Autocompletado de la linea segun Tipo de Tela / Titulo ──────────
+        // Reglas de negocio (la tela RIB siempre es de ALGODON):
+        //   - Al elegir el Tipo de Tela se rellena el Titulo mas comun
+        //     (RIB 2X1 -> 24/1) y de ahi se derivan Composicion y Acabado.
+        //   - El Acabado sale del Titulo: 24/1 -> LISO, 30/1 -> ACANALADO.
+        //   - La Composicion siempre queda en ALGODON.
+        // Se RECALCULA al cambiar el Tipo de Tela o el Titulo (pisa los campos
+        // derivados), pero el usuario puede reajustar cualquier campo despues a
+        // mano. Ampliar los mapas de abajo si aparecen mas patrones consistentes.
+        const TITULO_POR_TIPO = [
+            { patron: /2X1/, titulo: '24/1' }
         ];
+        const ACABADO_POR_TITULO = { '24/1': 'LISO', '30/1': 'ACANALADO' };
+        const COMPOSICION_DEFAULT = 'ALGODON';
+
+        const normTxt = s => (s || '').trim().toUpperCase();
         function tituloIdPorValor(valor) {
-            const t = titulosData.find(ti => ti.valor === valor);
+            const t = titulosData.find(ti => normTxt(ti.valor) === normTxt(valor));
             return t ? t.id : null;
         }
+        function valorTituloPorId(id) {
+            const t = titulosData.find(ti => String(ti.id) === String(id));
+            return t ? t.valor : null;
+        }
+        function composicionIdPorNombre(nombre) {
+            const c = composicionesData.find(x => normTxt(x.nombre) === normTxt(nombre));
+            return c ? c.id : null;
+        }
+        function acabadoIdPorNombre(nombre) {
+            const a = acabadosData.find(x => normTxt(x.nombre) === normTxt(nombre));
+            return a ? a.id : null;
+        }
+        // Con el Titulo ya definido en la fila, deja Composicion = ALGODON y el
+        // Acabado que corresponde a ese titulo.
+        function aplicarDefaultsPorTitulo(fila) {
+            if (!fila) return;
+            const selTitulo = fila.querySelector('.select-titulo');
+            const selComp = fila.querySelector('.select-composicion');
+            const selAcab = fila.querySelector('.select-acabado');
+            const idComp = composicionIdPorNombre(COMPOSICION_DEFAULT);
+            if (idComp && selComp) selComp.value = idComp;
+            if (selTitulo && selTitulo.value) {
+                const nombreAcab = ACABADO_POR_TITULO[normTxt(valorTituloPorId(selTitulo.value))];
+                if (nombreAcab) {
+                    const idAcab = acabadoIdPorNombre(nombreAcab);
+                    if (idAcab && selAcab) selAcab.value = idAcab;
+                }
+            }
+        }
+        // Al cambiar el Tipo de Tela: rellena el Titulo mas comun de ese tipo y
+        // recalcula Composicion + Acabado.
         document.getElementById('lineasContainer').addEventListener('change', function (e) {
             if (!e.target.classList.contains('select-tipo-tela')) return;
-            const opcionSeleccionada = e.target.options[e.target.selectedIndex];
-            const nombreTipo = (opcionSeleccionada ? opcionSeleccionada.text : '').toUpperCase();
             const fila = e.target.closest('.linea-color');
-            const selectTitulo = fila ? fila.querySelector('.select-titulo') : null;
-            if (!selectTitulo || selectTitulo.value) return;
-
-            const regla = AUTO_TITULO_POR_TIPO.find(r => r.patron.test(nombreTipo));
-            if (!regla) return;
-            const idTitulo = tituloIdPorValor(regla.tituloValor);
-            if (idTitulo) selectTitulo.value = idTitulo;
+            if (!fila) return;
+            const nombreTipo = normTxt((e.target.options[e.target.selectedIndex] || {}).text);
+            const regla = TITULO_POR_TIPO.find(r => r.patron.test(nombreTipo));
+            if (regla) {
+                const idTitulo = tituloIdPorValor(regla.titulo);
+                const selTitulo = fila.querySelector('.select-titulo');
+                if (idTitulo && selTitulo) selTitulo.value = idTitulo;
+            }
+            aplicarDefaultsPorTitulo(fila);
         });
-        // El acabado ACANALADO en la practica siempre va con titulo 30/1
+        // Al cambiar el Titulo a mano: recalcula Composicion + Acabado.
         document.getElementById('lineasContainer').addEventListener('change', function (e) {
-            if (!e.target.classList.contains('select-acabado')) return;
-            const texto = (e.target.options[e.target.selectedIndex] || {}).text || '';
-            if (!/ACANALADO/.test(texto.toUpperCase())) return;
-            const fila = e.target.closest('.linea-color');
-            const selectTitulo = fila ? fila.querySelector('.select-titulo') : null;
-            if (!selectTitulo || selectTitulo.value) return;
-            const idTitulo = tituloIdPorValor('30/1');
-            if (idTitulo) selectTitulo.value = idTitulo;
+            if (!e.target.classList.contains('select-titulo')) return;
+            aplicarDefaultsPorTitulo(e.target.closest('.linea-color'));
         });
         let selectColorActual = null;
         let selectComposicionActual = null;
