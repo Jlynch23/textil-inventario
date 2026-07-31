@@ -38,10 +38,10 @@
                         <tr th:each="p : ${programas}" style="cursor:pointer;"
                             th:onclick="'window.location=\'' + @{/programas/{id}(id=${p.id})} + '\''">
                             <td>
-                                <span class="fs-5 fw-bold" th:text="${p.numero}"></span>
+                                <span class="fs-4 fw-bold" th:text="${p.numero}"></span>
                             </td>
-                            <td th:text="${p.empresa.nombre}"></td>
-                            <td th:text="${p.fecha}"></td>
+                            <td class="fs-5 fw-semibold" th:text="${p.empresa.nombre}"></td>
+                            <td th:text="${#temporals.format(p.fecha, 'dd/MM/yyyy')}"></td>
                             <td>
                                 <div class="d-flex align-items-center gap-2">
                                     <div class="progress flex-grow-1" style="height: 8px; min-width: 100px;">
