@@ -140,7 +140,23 @@ public class AnthropicOcrService {
         return mapper.readValue(jsonLimpio, ExtraccionGuiaResponse.class);
     }
 
+    // #4 (auditoria): tope de OCR concurrentes. Cada OCR mantiene en RAM el PDF +
+    // byte[] + Base64 + JSON a la vez; sin limite, varias subidas simultaneas
+    // (recepcion sincrona + archivo historico) pueden agotar la memoria. 2 permisos
+    // = a lo sumo 2 tareas de OCR a la vez; el resto espera su turno.
+    private static final java.util.concurrent.Semaphore OCR_PERMITS =
+            new java.util.concurrent.Semaphore(2);
+
     private String llamarClaude(byte[] pdfBytes, String systemPrompt, String textoUsuario, int maxTokens) throws IOException {
+        try {
+            if (!OCR_PERMITS.tryAcquire(2, java.util.concurrent.TimeUnit.MINUTES)) {
+                throw new IOException("El OCR está ocupado procesando otros documentos. Espera unos segundos y vuelve a intentar.");
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("El procesamiento de OCR fue interrumpido.");
+        }
+        try {
         String base64Pdf = Base64.getEncoder().encodeToString(pdfBytes);
 
         Map<String, Object> requestBody = Map.of(
@@ -214,5 +230,8 @@ public class AnthropicOcrService {
             jsonLimpio = jsonLimpio.replaceAll("^```(json)?", "").replaceAll("```$", "").trim();
         }
         return jsonLimpio;
+        } finally {
+            OCR_PERMITS.release();
+        }
     }
 }

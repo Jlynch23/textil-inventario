@@ -28,6 +28,13 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       DOCUMENTOS_PATH: /app/documentos
       MAX_UPLOAD_SIZE: ${MAX_UPLOAD_SIZE:-25MB}
+      # #4 (auditoria): limite EXPLICITO de memoria de la JVM. Sin esto, en un
+      # contenedor la JVM toma hasta 1/4 de la RAM del host y el OCR (PDF+byte[]+
+      # Base64+JSON en RAM) puede dispararla. ExitOnOutOfMemoryError hace que el
+      # contenedor MUERA y reinicie (restart: unless-stopped) en vez de quedar
+      # "vivo pero roto". Se puede ajustar por servidor via JAVA_OPTS en el .env:
+      # OJO no poner -Xmx1024m en un VPS de 1GB. Default pensado para el VPS de 4GB.
+      JAVA_TOOL_OPTIONS: ${JAVA_OPTS:--Xms256m -Xmx1024m -XX:+UseG1GC -XX:+ExitOnOutOfMemoryError}
       # Auditoria (multi-tenant): SIN default de cliente. Antes el default
       # "Laura & Clemente" hacia que una copia recien entregada a OTRO cliente
       # mostrara ese nombre. El subtitulo real sale de las empresas activas del
