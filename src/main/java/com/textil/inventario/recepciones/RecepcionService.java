@@ -262,6 +262,13 @@ public class RecepcionService {
 
         for (int i = 0; i < detalleIds.size(); i++) {
             RecepcionDetalle d = detalleRepository.findById(detalleIds.get(i)).orElseThrow();
+            // M1 (auditoria): el detalle DEBE pertenecer a esta recepcion. Sin el
+            // chequeo, un POST manipulado con un detalleId de OTRA recepcion movia
+            // stock ajeno.
+            if (d.getRecepcion() == null || !d.getRecepcion().getId().equals(recepcionId)) {
+                throw new IllegalArgumentException(
+                        "La línea de detalle " + detalleIds.get(i) + " no pertenece a esta recepción.");
+            }
             Integer rollosRecibidosLinea = i < rollosRecibidos.size() ? rollosRecibidos.get(i) : d.getRollosGuia();
             // Auditoria (rigurosidad, jul-2026): un valor negativo aca nunca es
             // legitimo -- "rollos recibidos" es una cantidad fisica contada, y

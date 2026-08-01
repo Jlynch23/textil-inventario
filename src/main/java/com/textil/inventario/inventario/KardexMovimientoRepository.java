@@ -14,6 +14,9 @@ public interface KardexMovimientoRepository extends JpaRepository<KardexMovimien
     // cargar la tabla completa en memoria; se acota a los mas recientes.
     List<KardexMovimiento> findTop500ByOrderByFechaDesc();
 
-    Optional<KardexMovimiento> findFirstByTransferenciaIdAndArticuloIdAndTipoMovimiento(
-            Long transferenciaId, Long articuloId, KardexMovimiento.TipoMovimiento tipoMovimiento);
+    // M3 (auditoria): incluye colorId. Dos lineas del mismo articulo con distinto
+    // color en la misma transferencia tomaban el peso de la primera salida OUT,
+    // dejando mal el peso_kg de una de las lineas al confirmar la llegada.
+    Optional<KardexMovimiento> findFirstByTransferenciaIdAndArticuloIdAndColorIdAndTipoMovimiento(
+            Long transferenciaId, Long articuloId, Long colorId, KardexMovimiento.TipoMovimiento tipoMovimiento);
 }

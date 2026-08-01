@@ -143,6 +143,7 @@ class RecepcionServiceTest {
 
         RecepcionDetalle detalle = new RecepcionDetalle();
         detalle.setId(100L);
+        detalle.setRecepcion(recepcion);
         detalle.setArticulo(articulo);
         detalle.setColor(color);
         detalle.setRollosGuia(14);
@@ -180,6 +181,7 @@ class RecepcionServiceTest {
 
         RecepcionDetalle detalle = new RecepcionDetalle();
         detalle.setId(100L);
+        detalle.setRecepcion(recepcion);
         detalle.setArticulo(articulo);
         detalle.setColor(color);
         detalle.setRollosGuia(14);
@@ -210,6 +212,7 @@ class RecepcionServiceTest {
 
         RecepcionDetalle detalle = new RecepcionDetalle();
         detalle.setId(100L);
+        detalle.setRecepcion(recepcion);
         detalle.setArticulo(articulo);
         detalle.setColor(color);
         detalle.setRollosGuia(0);
@@ -239,6 +242,7 @@ class RecepcionServiceTest {
 
         RecepcionDetalle detalle = new RecepcionDetalle();
         detalle.setId(100L);
+        detalle.setRecepcion(recepcion);
         detalle.setArticulo(articulo);
         detalle.setColor(color);
         detalle.setRollosGuia(14);
@@ -267,6 +271,29 @@ class RecepcionServiceTest {
         org.assertj.core.api.Assertions.assertThatThrownBy(() ->
                 service.confirmarRecepcion(1L, List.of(100L), List.of(14), List.of(""))
         ).isInstanceOf(IllegalStateException.class);
+
+        verify(stockActualRepository, never()).save(any());
+        verify(kardexRepository, never()).save(any());
+    }
+
+    @Test
+    void confirmarRecepcion_detalleDeOtraRecepcion_lanzaYNoTocaStock() {
+        // M1 (auditoria): un POST manipulado con un detalleId que pertenece a OTRA
+        // recepcion no debe mover stock de esta.
+        Recepcion recepcion = recepcionDePrueba(); // id 1
+        Recepcion otra = new Recepcion();
+        otra.setId(999L);
+        RecepcionDetalle detalleAjeno = new RecepcionDetalle();
+        detalleAjeno.setId(100L);
+        detalleAjeno.setRecepcion(otra); // pertenece a la 999, no a la 1
+
+        when(recepcionRepository.findById(1L)).thenReturn(Optional.of(recepcion));
+        when(ubicacionRepository.findByEsPrincipalTrue()).thenReturn(Optional.of(praderasDePrueba()));
+        when(detalleRepository.findById(100L)).thenReturn(Optional.of(detalleAjeno));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                service.confirmarRecepcion(1L, List.of(100L), List.of(14), List.of(""))
+        ).isInstanceOf(IllegalArgumentException.class);
 
         verify(stockActualRepository, never()).save(any());
         verify(kardexRepository, never()).save(any());

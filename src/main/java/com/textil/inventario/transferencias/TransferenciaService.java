@@ -105,6 +105,12 @@ public class TransferenciaService {
 
         for (int i = 0; i < detalleIds.size(); i++) {
             TransferenciaDetalle d = detalleRepository.findById(detalleIds.get(i)).orElseThrow();
+            // M1 (auditoria): el detalle DEBE pertenecer a esta transferencia,
+            // para que un POST manipulado no descuente stock de otra.
+            if (d.getTransferencia() == null || !d.getTransferencia().getId().equals(transferenciaId)) {
+                throw new IllegalArgumentException(
+                        "La línea de detalle " + detalleIds.get(i) + " no pertenece a esta transferencia.");
+            }
             Integer cantidad = i < cantidadesConfirmadas.size() ? cantidadesConfirmadas.get(i) : d.getCantidadSolicitada();
             // Auditoria (rigurosidad, jul-2026): sin este guardado, una cantidad
             // negativa pasa la comprobacion de stock insuficiente de abajo
@@ -209,8 +215,8 @@ public class TransferenciaService {
             // Peso unitario de referencia según lo despachado en la salida de esta transferencia
             // (antes: kardexRepository.findAll() completo + filtro en memoria con String.contains())
             BigDecimal pesoUnitario = kardexRepository
-                .findFirstByTransferenciaIdAndArticuloIdAndTipoMovimiento(
-                        t.getId(), d.getArticulo().getId(), KardexMovimiento.TipoMovimiento.TRANSFERENCIA_OUT)
+                .findFirstByTransferenciaIdAndArticuloIdAndColorIdAndTipoMovimiento(
+                        t.getId(), d.getArticulo().getId(), d.getColor().getId(), KardexMovimiento.TipoMovimiento.TRANSFERENCIA_OUT)
                 .map(km -> km.getRollos() > 0
                         ? km.getPesoKg().divide(new BigDecimal(km.getRollos()), 4, RoundingMode.HALF_UP)
                         : BigDecimal.ZERO)

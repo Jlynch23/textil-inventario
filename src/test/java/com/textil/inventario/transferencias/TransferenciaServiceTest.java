@@ -131,6 +131,7 @@ class TransferenciaServiceTest {
         Transferencia t = transferenciaDePrueba(praderasDePrueba());
         TransferenciaDetalle d = new TransferenciaDetalle();
         d.setId(100L);
+        d.setTransferencia(t);
         d.setArticulo(articuloDePrueba());
         d.setColor(colorDePrueba());
         d.setCantidadSolicitada(10);
@@ -159,6 +160,7 @@ class TransferenciaServiceTest {
         Transferencia t = transferenciaDePrueba(praderasDePrueba());
         TransferenciaDetalle d = new TransferenciaDetalle();
         d.setId(100L);
+        d.setTransferencia(t);
         d.setArticulo(articuloDePrueba());
         d.setColor(colorDePrueba());
         d.setCantidadSolicitada(10);
@@ -178,6 +180,7 @@ class TransferenciaServiceTest {
         Transferencia t = transferenciaDePrueba(praderasDePrueba());
         TransferenciaDetalle d = new TransferenciaDetalle();
         d.setId(100L);
+        d.setTransferencia(t);
         d.setArticulo(articuloDePrueba());
         d.setColor(colorDePrueba());
         d.setCantidadSolicitada(10);
@@ -206,6 +209,7 @@ class TransferenciaServiceTest {
 
         TransferenciaDetalle d = new TransferenciaDetalle();
         d.setId(100L);
+        d.setTransferencia(t);
         d.setArticulo(articuloDePrueba());
         d.setColor(colorDePrueba());
         d.setCantidadSolicitada(10);
@@ -215,8 +219,8 @@ class TransferenciaServiceTest {
 
         when(transferenciaRepository.findById(1L)).thenReturn(Optional.of(t));
         when(detalleRepository.findByTransferenciaId(1L)).thenReturn(List.of(d));
-        when(kardexRepository.findFirstByTransferenciaIdAndArticuloIdAndTipoMovimiento(
-                eq(1L), eq(10L), any()))
+        when(kardexRepository.findFirstByTransferenciaIdAndArticuloIdAndColorIdAndTipoMovimiento(
+                eq(1L), eq(10L), eq(20L), any()))
                 .thenReturn(Optional.empty());
         when(ubicacionRepository.findById(2L)).thenReturn(Optional.of(tienda));
         when(stockActualRepository.findByArticuloIdAndUbicacionIdAndColorId(10L, 2L, 20L))
@@ -240,6 +244,7 @@ class TransferenciaServiceTest {
 
         TransferenciaDetalle d = new TransferenciaDetalle();
         d.setId(100L);
+        d.setTransferencia(t);
         d.setArticulo(articuloDePrueba());
         d.setColor(colorDePrueba());
         d.setCantidadSolicitada(10);
@@ -295,6 +300,7 @@ class TransferenciaServiceTest {
 
         TransferenciaDetalle d = new TransferenciaDetalle();
         d.setId(100L);
+        d.setTransferencia(t);
         d.setArticulo(articuloDePrueba());
         d.setColor(colorDePrueba());
         d.setCantidadSolicitada(10);
