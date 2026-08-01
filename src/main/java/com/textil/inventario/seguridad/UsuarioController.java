@@ -26,6 +26,7 @@ public class UsuarioController {
     private final AuditLogService auditLogService;
     private final UsuarioActualService usuarioActualService;
     private final GeneradorUsername generadorUsername;
+    private final GestorSesiones gestorSesiones;
 
     /**
      * ¿El usuario autenticado es el proveedor (SUPERADMIN)? Se resuelve de las
@@ -146,6 +147,9 @@ public class UsuarioController {
             u.setPasswordHash(passwordEncoder.encode(password));
         }
 
+        // R-A1: el username actual es el que lleva la sesion viva del usuario;
+        // se guarda ANTES de regenerarlo para poder expirar esa sesion.
+        String usernameAnterior = u.getUsername();
         u.setNombre(nombre.trim());
         u.setRol(rol);
         // Regenera el username del nuevo nombre, excluyendo al propio usuario.
@@ -153,6 +157,9 @@ public class UsuarioController {
         usuarioRepository.save(u);
         auditLogService.registrar("EDITAR", "Usuario", u.getId(),
                 "Edito el usuario: ahora " + u.getUsername() + " (" + u.getRol().getNombre() + ")");
+        // Cambio de rol / contraseña / username: la sesion vieja quedaria con las
+        // authorities anteriores. Se expira para forzar re-autenticacion.
+        gestorSesiones.cerrarSesionesDe(usernameAnterior);
 
         ra.addFlashAttribute("mensaje", "Usuario actualizado: " + u.getUsername());
         return "redirect:/usuarios";
@@ -178,6 +185,9 @@ public class UsuarioController {
         usuarioRepository.save(u);
         auditLogService.registrar("RESETEAR_PASSWORD", "Usuario", u.getId(),
                 "Reseteo la contraseña de " + u.getUsername());
+        // R-A1: si la cuenta estaba comprometida, resetear la clave debe expulsar
+        // tambien la sesion viva del atacante, no solo invalidar el remember-me.
+        gestorSesiones.cerrarSesionesDe(u.getUsername());
 
         ra.addFlashAttribute("mensaje", "Contraseña de " + u.getNombre() + " actualizada correctamente.");
         return "redirect:/usuarios";
@@ -193,6 +203,9 @@ public class UsuarioController {
         u.setActivo(false);
         usuarioRepository.save(u);
         auditLogService.registrar("INACTIVAR", "Usuario", u.getId(), "Inactivo el usuario " + u.getUsername());
+        // R-A1: inactivar debe cortar la sesion abierta del usuario en el acto,
+        // no dejarlo operar hasta que expire (hasta 8 h).
+        gestorSesiones.cerrarSesionesDe(u.getUsername());
         ra.addFlashAttribute("mensaje", "Usuario inactivado.");
         return "redirect:/usuarios";
     }
@@ -238,6 +251,8 @@ public class UsuarioController {
         try {
             usuarioRepository.deleteById(id);
             auditLogService.registrar("ELIMINAR", "Usuario", id, "Elimino el usuario " + u.getUsername());
+            // R-A1: cortar cualquier sesion viva del usuario eliminado.
+            gestorSesiones.cerrarSesionesDe(u.getUsername());
             ra.addFlashAttribute("mensaje", "Usuario eliminado correctamente.");
         } catch (DataIntegrityViolationException e) {
             ra.addFlashAttribute("error",

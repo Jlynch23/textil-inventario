@@ -38,6 +38,20 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
+    // R-A1: registro de sesiones activas por principal. Lo consume GestorSesiones
+    // para expirar en el acto las sesiones de un usuario que se inactiva/degrada.
+    @Bean
+    public org.springframework.security.core.session.SessionRegistry sessionRegistry() {
+        return new org.springframework.security.core.session.SessionRegistryImpl();
+    }
+
+    // Propaga el ciclo de vida de la HttpSession al SessionRegistry (necesario
+    // para que las sesiones destruidas se limpien del registro).
+    @Bean
+    public org.springframework.security.web.session.HttpSessionEventPublisher httpSessionEventPublisher() {
+        return new org.springframework.security.web.session.HttpSessionEventPublisher();
+    }
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         // A2 (auditoria): la clave de firma del remember-me DEBE ser un secreto
@@ -115,6 +129,17 @@ public class SecurityConfig {
                         "/documentos/descargar-zip"
                 ).hasAnyRole("GERENTE", "ADMIN", "SUPERADMIN")
                 .anyRequest().hasAnyRole("ADMIN", "SUPERADMIN")
+            )
+            // Registro de sesiones (auditoria red-team R-A1): sin esto, inactivar,
+            // degradar o resetear a un usuario NO cortaba su sesion viva -- las
+            // authorities se cachean en la HttpSession (8h) y solo se releen al
+            // loguear. Con el SessionRegistry, UsuarioController puede expirar las
+            // sesiones del usuario afectado (SessionInformation.expireNow) y el
+            // ConcurrentSessionFilter la invalida en su siguiente request.
+            // maximumSessions(-1) = sin limite de sesiones, solo se usa el registro.
+            .sessionManagement(session -> session
+                .maximumSessions(-1)
+                .sessionRegistry(sessionRegistry())
             )
             .formLogin(form -> form
                 .loginPage("/login")
