@@ -31,6 +31,19 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Void> manejarRecursoNoEncontrado(NoResourceFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
+
+    // R-B5 (red-team): una denegacion de @PreAuthorize lanza AuthorizationDenied
+    // Exception (subclase de AccessDeniedException). Sin este handler, caia en el
+    // catch de Exception -> HTTP 500 + un falso ERROR_SISTEMA que ensuciaba el
+    // Reporte de Errores del SUPERADMIN con denegaciones de permiso legitimas.
+    // Ahora se responde 403 limpio y NO se registra como error del sistema.
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public String manejarAccesoDenegado(org.springframework.security.access.AccessDeniedException ex,
+                                        HttpServletRequest request) {
+        log.warn("Acceso denegado en {}: {}", request.getRequestURI(), ex.getMessage());
+        return "error";
+    }
     // SEC-01 (auditoría 17-jul-2026): sin @ResponseStatus, Spring MVC responde
     // HTTP 200 en este handler aunque haya ocurrido una excepción no controlada,
     // lo que rompe cualquier monitoreo/health-check basado en código HTTP.
