@@ -30,15 +30,25 @@ public class ColorController {
                 .collect(Collectors.joining(" "));
     }
 
+    // #7: mapea la entidad al DTO para poblar el form en edicion.
+    private ColorForm aColorForm(Color c) {
+        ColorForm f = new ColorForm();
+        f.setId(c.getId());
+        f.setNombreOficial(c.getNombreOficial());
+        f.setCodigoFastDye(c.getCodigoFastDye());
+        f.setApodo(c.getApodo());
+        return f;
+    }
+
     @GetMapping("/colores")
     public String listarColores(Model model) {
         model.addAttribute("colores", catalogoService.listarColores());
-        model.addAttribute("color", new Color());
+        model.addAttribute("color", new ColorForm());
         return "catalogo/colores";
     }
 
     @PostMapping("/colores/guardar")
-    public String guardarColor(@Valid @ModelAttribute Color color, BindingResult bindingResult, RedirectAttributes ra) {
+    public String guardarColor(@Valid @ModelAttribute("color") ColorForm color, BindingResult bindingResult, RedirectAttributes ra) {
         if (bindingResult.hasErrors()) {
             ra.addFlashAttribute("error", primerError(bindingResult));
             return "redirect:/catalogo/colores";
@@ -52,7 +62,7 @@ public class ColorController {
     @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public String editarColor(@PathVariable Long id, Model model) {
         model.addAttribute("colores", catalogoService.listarColores());
-        model.addAttribute("color", catalogoService.buscarColor(id));
+        model.addAttribute("color", aColorForm(catalogoService.buscarColor(id)));
         return "catalogo/colores";
     }
 

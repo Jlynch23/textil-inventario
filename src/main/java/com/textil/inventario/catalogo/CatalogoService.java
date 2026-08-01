@@ -121,6 +121,17 @@ public class CatalogoService {
         c.setApodo(normalizar(c.getApodo()));
         return colorRepository.save(c);
     }
+
+    // #7 (auditoria): alta/edicion desde el FORM va por DTO. Se carga la entidad
+    // existente (o se crea) y se setean SOLO los campos del form; 'activo',
+    // version y timestamps nunca los toca el binding.
+    public Color guardarColor(ColorForm form) {
+        Color c = (form.getId() == null) ? new Color() : buscarColor(form.getId());
+        c.setNombreOficial(form.getNombreOficial());
+        c.setCodigoFastDye(form.getCodigoFastDye());
+        c.setApodo(form.getApodo());
+        return guardarColor(c); // reutiliza la normalizacion + save
+    }
     public Color buscarColor(Long id) { return colorRepository.findById(id).orElseThrow(); }
 
     // ARTÍCULOS
