@@ -53,13 +53,13 @@
                             </td>
                             <td>
                                 <a th:href="@{/recepciones/{id}/detalle(id=${r.id})}"
-                                   class="btn btn-sm btn-outline-primary">
+                                   class="btn btn-sm btn-outline-primary" title="Ver detalle" aria-label="Ver detalle">
                                     <i class="bi bi-eye"></i>
                                 </a>
                                 <a th:if="${r.estado.name() == 'PENDIENTE'}"
                                    th:href="@{/recepciones/{id}/confirmar(id=${r.id})}"
                                    sec:authorize="hasAnyRole('ADMIN','SUPERADMIN')"
-                                   class="btn btn-sm btn-outline-success">
+                                   class="btn btn-sm btn-outline-success" title="Confirmar recepción" aria-label="Confirmar recepción">
                                     <i class="bi bi-check-lg"></i>
                                 </a>
                                 <form th:if="${r.estado.name() == 'PENDIENTE'}" sec:authorize="hasAnyRole('ADMIN','SUPERADMIN')" th:action="@{/recepciones/{id}/eliminar(id=${r.id})}" method="post" style="display:inline">

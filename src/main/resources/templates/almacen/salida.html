@@ -33,13 +33,13 @@
             <i class="bi bi-camera-fill" style="font-size: 3rem; color: #ffc107;"></i>
             <p class="fw-bold mt-2 mb-0">Tomar Foto de los Rollos</p>
             <small class="text-muted">Toca para abrir la cámara</small>
-            <img id="preview" alt="preview">
+            <img id="preview" alt="Vista previa de la foto de los rollos">
         </label>
         <input type="file" id="fotoInput" name="foto" accept="image/*" capture="environment" required style="display:none;">
 
         <div class="mb-4">
-            <label class="form-label fw-bold fs-5">Cantidad de Rollos</label>
-            <input type="number" name="cantidad" class="form-control form-control-lg" required min="1">
+            <label for="cantidad" class="form-label fw-bold fs-5">Cantidad de Rollos</label>
+            <input type="number" id="cantidad" name="cantidad" class="form-control form-control-lg" required min="1">
         </div>
 
 

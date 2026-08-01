@@ -84,7 +84,7 @@
                                     <td><code class="codigo-fast-dye" th:text="${c.codigoFastDye}"></code></td>
                                     <td sec:authorize="hasAnyRole('ADMIN','SUPERADMIN')">
                                         <a th:href="@{/catalogo/colores/editar/{id}(id=${c.id})}"
-                                           class="btn btn-sm btn-outline-primary">
+                                           class="btn btn-sm btn-outline-primary" title="Editar" aria-label="Editar">
                                             <i class="bi bi-pencil"></i>
                                         </a>
                                         <form th:action="@{/catalogo/colores/inactivar/{id}(id=${c.id})}" method="post" style="display:inline">

@@ -63,7 +63,7 @@
                                     <td th:text="${c.descripcion}"></td>
                                     <td>
                                         <a th:href="@{/catalogo/composiciones/editar/{id}(id=${c.id})}"
-                                           class="btn btn-sm btn-outline-primary">
+                                           class="btn btn-sm btn-outline-primary" title="Editar" aria-label="Editar">
                                             <i class="bi bi-pencil"></i>
                                         </a>
                                         <form th:action="@{/catalogo/composiciones/inactivar/{id}(id=${c.id})}" method="post" style="display:inline">
