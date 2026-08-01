@@ -165,7 +165,10 @@ public class SecurityConfig {
                 .userDetailsService(usuarioDetailsService)
             )
             .logout(logout -> logout
-                .logoutRequestMatcher(new AntPathRequestMatcher("/logout", "GET"))
+                // Auditoria: logout por POST (con token CSRF), no GET. Con GET, una
+                // pagina externa con <img src=".../logout"> podia cerrarte la sesion
+                // sin tu intervencion (CSRF de logout). El POST + CSRF lo impide.
+                .logoutRequestMatcher(new AntPathRequestMatcher("/logout", "POST"))
                 .logoutSuccessHandler(logoutSuccessHandler())
                 // El cierre de sesion explicito SI borra la cookie persistente
                 // (remember-me) ademas de invalidar la sesion.

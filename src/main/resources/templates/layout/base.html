@@ -251,7 +251,10 @@
             </div>
         </nav>
         <div class="logout-box">
-            <a th:href="@{/logout}" class="nav-link text-center" title="Cerrar Sesión"><i class="bi bi-box-arrow-left"></i><span class="nav-text">Cerrar Sesión</span></a>
+            <!-- Auditoria: logout por POST (Thymeleaf agrega el token CSRF al form). -->
+            <form th:action="@{/logout}" method="post" class="m-0">
+                <button type="submit" class="nav-link text-center btn btn-link w-100" title="Cerrar Sesión"><i class="bi bi-box-arrow-left"></i><span class="nav-text">Cerrar Sesión</span></button>
+            </form>
         </div>
     </div>
 
