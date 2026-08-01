@@ -1,5 +1,6 @@
 package com.textil.inventario.inventario;
 import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -17,6 +18,15 @@ public interface StockActualRepository extends JpaRepository<StockActual, Long> 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<StockActual> findByArticuloIdAndUbicacionIdAndColorId(Long articuloId, Long ubicacionId, Long colorId);
     List<StockActual> findByUbicacionId(Long ubicacionId);
+    // M5 (auditoria): @EntityGraph trae las asociaciones to-one en el MISMO
+    // query (LEFT JOINs, sin duplicar filas), en vez de disparar un SELECT por
+    // fila al renderizar el reporte de stock (N+1). Los @ManyToOne siguen EAGER;
+    // esto solo controla COMO se cargan en este listado.
+    @EntityGraph(attributePaths = {
+            "ubicacion", "color",
+            "articulo", "articulo.tipoTela", "articulo.titulo",
+            "articulo.composicion", "articulo.acabado"
+    })
     @Query("SELECT s FROM StockActual s WHERE s.rollos > 0 ORDER BY s.ubicacion.nombre, s.articulo.tipoTela.nombre")
     List<StockActual> findStockDisponible();
 }
