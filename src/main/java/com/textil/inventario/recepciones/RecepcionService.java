@@ -143,7 +143,9 @@ public class RecepcionService {
     }
 
     public Recepcion buscarRecepcion(Long id) {
-        return recepcionRepository.findById(id).orElseThrow();
+        // #9 (OSIV off): con los detalles precargados, para que las vistas de
+        // detalle/confirmacion los rendericen sin sesion abierta.
+        return recepcionRepository.findWithDetallesById(id).orElseThrow();
     }
 
     @Transactional

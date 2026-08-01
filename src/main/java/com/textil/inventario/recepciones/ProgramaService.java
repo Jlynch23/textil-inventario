@@ -32,12 +32,31 @@ public class ProgramaService {
         return (valor == null || valor.isBlank()) ? valor : valor.trim().toUpperCase();
     }
 
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public List<Programa> listarProgramas() {
-        return programaRepository.findAllOrdenadoCronologico();
+        List<Programa> programas = programaRepository.findAllOrdenadoCronologico();
+        // #9 (OSIV off): la lista usa helpers (completo, porcentajeProgreso,
+        // totalDetalles) que iteran getDetalles(). Se fuerza la inicializacion
+        // DENTRO de la transaccion; con default_batch_fetch_size las colecciones
+        // se cargan por lotes (no N+1). Sin esto, al apagar open-in-view el
+        // th:each de la vista reventaria con LazyInitializationException.
+        programas.forEach(p -> p.getDetalles().size());
+        return programas;
     }
 
     public Programa buscarPrograma(Long id) {
-        return programaRepository.findById(id).orElseThrow();
+        // #9 (OSIV off): con las lineas precargadas para render/recorrido posterior.
+        return programaRepository.findWithDetallesById(id).orElseThrow();
+    }
+
+    // #9 (OSIV off): el dashboard solo necesita el CONTEO de programas en proceso.
+    // Se calcula aca dentro de la transaccion (isCompleto() itera detalles), asi
+    // ninguna entidad con colecciones perezosas escapa al render del dashboard.
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public long contarEnProceso() {
+        return programaRepository.findAllByOrderByFechaDesc().stream()
+                .filter(p -> !p.isCompleto())
+                .count();
     }
 
     /**

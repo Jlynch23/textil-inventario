@@ -38,7 +38,8 @@ public class TransferenciaService {
     }
 
     public Transferencia buscarTransferencia(Long id) {
-        return transferenciaRepository.findById(id).orElseThrow();
+        // #9 (OSIV off): con ubicacionOrigen y detalles precargados para render.
+        return transferenciaRepository.findWithDetallesById(id).orElseThrow();
     }
 
     @Transactional

@@ -10,6 +10,12 @@ public interface RecepcionRepository extends JpaRepository<Recepcion, Long> {
     @EntityGraph(attributePaths = "empresa")
     List<Recepcion> findAllByOrderByCreatedAtDesc();
     List<Recepcion> findByEstado(Recepcion.EstadoRecepcion estado);
+
+    // #9 (OSIV off): trae los detalles en el MISMO query. Las vistas de detalle y
+    // confirmacion iteran recepcion.detalles al renderizar; con open-in-view
+    // apagado, sin este fetch la sesion ya estaria cerrada -> LazyInitException.
+    @EntityGraph(attributePaths = "detalles")
+    java.util.Optional<Recepcion> findWithDetallesById(Long id);
     List<Recepcion> findByNumeroFacturaIsNullOrderByFechaGuiaDesc();
     java.util.Optional<Recepcion> findFirstByNumeroGuia(String numeroGuia);
 }

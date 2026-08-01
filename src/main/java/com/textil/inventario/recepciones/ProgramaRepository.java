@@ -10,6 +10,13 @@ public interface ProgramaRepository extends JpaRepository<Programa, Long> {
     Optional<Programa> findByNumero(String numero);
     List<Programa> findAllByOrderByFechaDesc();
 
+    // #9 (OSIV off): trae las lineas (detalles) junto con el programa. Las vistas
+    // de seguimiento/edicion iteran programa.detalles al renderizar, y el
+    // controlador tambien las recorre; sin este fetch reventarian con open-in-view
+    // apagado (sesion ya cerrada).
+    @EntityGraph(attributePaths = "detalles")
+    Optional<Programa> findWithDetallesById(Long id);
+
     // Listado cronologico: del mas antiguo al mas nuevo. Si dos programas son
     // del mismo dia, se desempata por numero de guia de forma NUMERICA (no de
     // texto): se ordena primero por largo y luego por valor, asi "99" va antes

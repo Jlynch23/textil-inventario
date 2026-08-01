@@ -7,8 +7,7 @@ import com.textil.inventario.recepciones.Recepcion;
 import com.textil.inventario.recepciones.RecepcionRepository;
 import com.textil.inventario.recepciones.EntradaRapidaRepository;
 import com.textil.inventario.recepciones.SalidaRapidaRepository;
-import com.textil.inventario.recepciones.Programa;
-import com.textil.inventario.recepciones.ProgramaRepository;
+import com.textil.inventario.recepciones.ProgramaService;
 import com.textil.inventario.transferencias.Transferencia;
 import com.textil.inventario.transferencias.TransferenciaRepository;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +28,7 @@ public class HomeController {
     private final EntradaRapidaRepository entradaRapidaRepository;
     private final SalidaRapidaRepository salidaRapidaRepository;
     private final UbicacionRepository ubicacionRepository;
-    private final ProgramaRepository programaRepository;
+    private final ProgramaService programaService;
 
     private static final int UMBRAL_STOCK_BAJO = 10;
 
@@ -92,9 +91,10 @@ public class HomeController {
         model.addAttribute("totalPorArticulo", totalPorArticulo);
         model.addAttribute("umbralStockBajo", UMBRAL_STOCK_BAJO);
 
-        List<Programa> programas = programaRepository.findAllByOrderByFechaDesc();
-        long programasEnProceso = programas.stream().filter(p -> !p.isCompleto()).count();
-        model.addAttribute("programasEnProceso", programasEnProceso);
+        // #9 (OSIV off): el conteo se calcula en el servicio dentro de una
+        // transaccion (isCompleto() itera detalles), sin exponer entidades con
+        // colecciones perezosas al render del dashboard.
+        model.addAttribute("programasEnProceso", programaService.contarEnProceso());
 
         // GERENTE ve una version simplificada, pensada para celular: tarjetas
         // grandes con lo esencial, en vez del dashboard tecnico completo.

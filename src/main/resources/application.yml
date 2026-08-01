@@ -9,6 +9,16 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
+    # #9 (auditoria): open-in-view APAGADO. Con OSIV, la sesion de Hibernate
+    # quedaba abierta durante TODO el render de la vista, sosteniendo una conexion
+    # del pool mas de lo necesario y escondiendo accesos LAZY mal planificados
+    # (N+1 silenciosos). Apagado, cada request cierra la sesion al terminar la
+    # capa de servicio; las vistas reciben las entidades con lo que necesitan YA
+    # cargado (via @EntityGraph/JOIN FETCH en los finders, o forzando la
+    # inicializacion dentro de @Transactional). Si una pantalla nueva accede a una
+    # asociacion no precargada, fallara de inmediato con LazyInitializationException
+    # (en dev) en vez de degradar el rendimiento en silencio -- eso es deseado.
+    open-in-view: false
     hibernate:
       ddl-auto: validate
     show-sql: false

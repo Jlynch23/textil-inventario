@@ -122,6 +122,26 @@ public class ReporteService {
         return transferencias;
     }
 
+    // #9 (OSIV off): variantes para el Excel, que recorre getDetalles() en el
+    // controlador (fuera de sesion si no se precarga). Se fuerza la inicializacion
+    // aca, dentro de la transaccion; con default_batch_fetch_size las lineas se
+    // traen por lotes. La pagina HTML del reporte sigue usando filtrar* (sin
+    // detalles), asi no carga lo que no muestra.
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public List<Recepcion> filtrarRecepcionesParaExcel(Long empresaId, LocalDate desde, LocalDate hasta) {
+        List<Recepcion> recepciones = filtrarRecepciones(empresaId, desde, hasta);
+        recepciones.forEach(r -> r.getDetalles().size());
+        return recepciones;
+    }
+
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public List<Transferencia> filtrarTransferenciasParaExcel(Long ubicacionOrigenId, Transferencia.EstadoTransferencia estado,
+                                                              LocalDate desde, LocalDate hasta) {
+        List<Transferencia> transferencias = filtrarTransferencias(ubicacionOrigenId, estado, desde, hasta);
+        transferencias.forEach(t -> t.getDetalles().size());
+        return transferencias;
+    }
+
     // ---------- STOCK BAJO / CRITICO ----------
 
     public Map<String, Integer> articulosStockBajo(int umbral) {

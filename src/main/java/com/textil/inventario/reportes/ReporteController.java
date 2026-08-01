@@ -126,7 +126,7 @@ public class ReporteController {
     public ResponseEntity<org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody> recepcionesExcel(@RequestParam(required = false) Long empresaId,
                                                      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
                                                      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) throws IOException {
-        List<Recepcion> recepciones = reporteService.filtrarRecepciones(empresaId, desde, hasta);
+        List<Recepcion> recepciones = reporteService.filtrarRecepcionesParaExcel(empresaId, desde, hasta);
         List<String> encabezados = List.of("N° Guía", "N° Factura", "Proveedor", "Fecha Guía", "Estado", "Rollos Guía", "Rollos Recibidos");
         List<List<Object>> filas = new ArrayList<>();
         for (Recepcion r : recepciones) {
@@ -168,7 +168,7 @@ public class ReporteController {
                                                         @RequestParam(required = false) Transferencia.EstadoTransferencia estado,
                                                         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
                                                         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) throws IOException {
-        List<Transferencia> transferencias = reporteService.filtrarTransferencias(ubicacionOrigenId, estado, desde, hasta);
+        List<Transferencia> transferencias = reporteService.filtrarTransferenciasParaExcel(ubicacionOrigenId, estado, desde, hasta);
         List<String> encabezados = List.of("N° Transferencia", "Origen", "Estado", "Fecha Solicitud", "Fecha Salida", "Fecha Llegada", "Total Rollos Solicitados");
         List<List<Object>> filas = new ArrayList<>();
         for (Transferencia t : transferencias) {
