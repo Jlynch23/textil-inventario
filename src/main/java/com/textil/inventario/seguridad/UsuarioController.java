@@ -182,6 +182,9 @@ public class UsuarioController {
         }
 
         u.setPasswordHash(passwordEncoder.encode(password));
+        // Auditoria: una clave reseteada por el ADMIN es temporal; el dueño de la
+        // cuenta debe cambiarla en su proximo login (igual que la semilla, V39).
+        u.setDebeCambiarPassword(true);
         usuarioRepository.save(u);
         auditLogService.registrar("RESETEAR_PASSWORD", "Usuario", u.getId(),
                 "Reseteo la contraseña de " + u.getUsername());
@@ -198,6 +201,12 @@ public class UsuarioController {
     public String inactivar(@PathVariable Long id, RedirectAttributes ra, Authentication authentication) {
         Usuario u = usuarioRepository.findById(id).orElseThrow();
         if (bloqueadoPorOculto(u, authentication, ra)) {
+            return "redirect:/usuarios";
+        }
+        // Auditoria: evitar auto-bloqueo (mismo criterio que eliminar()): inactivar
+        // tu propia cuenta te cerraria la sesion en el acto (ver cerrarSesionesDe).
+        if (authentication != null && u.getUsername().equalsIgnoreCase(authentication.getName())) {
+            ra.addFlashAttribute("error", "No puedes inactivar tu propio usuario mientras tienes la sesión activa.");
             return "redirect:/usuarios";
         }
         u.setActivo(false);

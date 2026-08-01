@@ -3,10 +3,12 @@ package com.textil.inventario.auditoria;
 import com.textil.inventario.seguridad.Usuario;
 import com.textil.inventario.seguridad.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class AuditLogService {
 
@@ -26,7 +28,7 @@ public class AuditLogService {
             logEventoRepository.save(log);
         } catch (Exception e) {
             // El logging nunca debe romper la operacion principal
-            System.err.println("Error al registrar log: " + e.getMessage());
+            log.error("Error al registrar log de auditoria: {}", e.getMessage(), e);
         }
     }
 
@@ -39,7 +41,7 @@ public class AuditLogService {
             log.setDescripcion("Inicio de sesion: " + username);
             logEventoRepository.save(log);
         } catch (Exception e) {
-            System.err.println("Error al registrar login: " + e.getMessage());
+            log.error("Error al registrar login: {}", e.getMessage(), e);
         }
     }
 
@@ -52,7 +54,7 @@ public class AuditLogService {
             log.setDescripcion("Cierre de sesion: " + username);
             logEventoRepository.save(log);
         } catch (Exception e) {
-            System.err.println("Error al registrar logout: " + e.getMessage());
+            log.error("Error al registrar logout: {}", e.getMessage(), e);
         }
     }
 

@@ -80,8 +80,20 @@ public class TransferenciaService {
     @Transactional
     public TransferenciaDetalle agregarDetalle(Long transferenciaId, Long articuloId, Long colorId,
                                                 Integer cantidadSolicitada, String observaciones) {
+        // Auditoria: solo se agregan lineas mientras la transferencia esta en
+        // BORRADOR; despues de confirmar la salida el detalle ya no debe cambiar.
+        Transferencia t = transferenciaRepository.findById(transferenciaId).orElseThrow();
+        if (t.getEstado() != Transferencia.EstadoTransferencia.BORRADOR) {
+            throw new IllegalStateException(
+                    "Solo se pueden agregar líneas mientras la transferencia está en BORRADOR (estado actual: "
+                    + t.getEstado() + ").");
+        }
+        // Auditoria: la cantidad solicitada debe ser positiva.
+        if (cantidadSolicitada == null || cantidadSolicitada <= 0) {
+            throw new IllegalArgumentException("La cantidad solicitada debe ser mayor que cero.");
+        }
         TransferenciaDetalle d = new TransferenciaDetalle();
-        d.setTransferencia(transferenciaRepository.findById(transferenciaId).orElseThrow());
+        d.setTransferencia(t);
         d.setArticulo(articuloRepository.findById(articuloId).orElseThrow());
         d.setColor(colorRepository.findById(colorId).orElseThrow());
         d.setCantidadSolicitada(cantidadSolicitada);
@@ -234,6 +246,12 @@ public class TransferenciaService {
                 if (cantidad == null || cantidad <= 0) continue;
 
                 Ubicacion destino = ubicacionRepository.findById(ubicacionId).orElseThrow();
+                // Auditoria: el destino del reparto debe ser una ubicacion activa y
+                // NO la principal (la tela sale de la principal hacia tiendas/otras).
+                if (Boolean.FALSE.equals(destino.getActivo()) || Boolean.TRUE.equals(destino.getEsPrincipal())) {
+                    throw new IllegalArgumentException(
+                            "Destino de reparto no válido: " + destino.getNombre() + " (inactiva o es la ubicación principal).");
+                }
                 BigDecimal pesoMovido = pesoUnitario.multiply(new BigDecimal(cantidad)).setScale(2, RoundingMode.HALF_UP);
 
                 TransferenciaDistribucion dist = new TransferenciaDistribucion();

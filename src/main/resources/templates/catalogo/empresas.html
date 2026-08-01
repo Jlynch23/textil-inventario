@@ -22,6 +22,10 @@
                         th:text="${empresa.id != null} ? 'Editar Empresa' : 'Nueva Empresa'">Nueva Empresa</h6>
                     <form th:action="@{/catalogo/empresas/guardar}" th:object="${empresa}" method="post">
                         <input type="hidden" th:field="*{id}">
+                        <!-- Auditoria: se envia el 'activo' cargado para que EDITAR una
+                             empresa inactiva no la reactive en silencio (alta = true por
+                             defecto de la entidad; edicion = el valor real). -->
+                        <input type="hidden" th:field="*{activo}">
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Nombre</label>
                             <input type="text" class="form-control" th:field="*{nombre}"

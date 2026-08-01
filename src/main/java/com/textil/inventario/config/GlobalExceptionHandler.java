@@ -44,6 +44,31 @@ public class GlobalExceptionHandler {
         log.warn("Acceso denegado en {}: {}", request.getRequestURI(), ex.getMessage());
         return "error";
     }
+    // Auditoria: errores de CLIENTE (request malformado) son 4xx, NO errores del
+    // sistema. Sin este handler caian en el catch de Exception -> HTTP 500 + un
+    // falso ERROR_SISTEMA que ensuciaba el Reporte de Errores del SUPERADMIN (ej.
+    // un id no numerico en la URL, un parametro requerido faltante, un body ilegible).
+    @ExceptionHandler({
+            org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class,
+            org.springframework.web.bind.MissingServletRequestParameterException.class,
+            org.springframework.web.bind.MethodArgumentNotValidException.class,
+            org.springframework.validation.BindException.class,
+            org.springframework.http.converter.HttpMessageNotReadableException.class,
+    })
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public String manejarPeticionInvalida(Exception ex, HttpServletRequest request) {
+        log.warn("Petición inválida en {}: {}", request.getRequestURI(), ex.getMessage());
+        return "error";
+    }
+
+    @ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)
+    @ResponseStatus(HttpStatus.METHOD_NOT_ALLOWED)
+    public String manejarMetodoNoSoportado(org.springframework.web.HttpRequestMethodNotSupportedException ex,
+                                           HttpServletRequest request) {
+        log.warn("Método no soportado en {}: {}", request.getRequestURI(), ex.getMessage());
+        return "error";
+    }
+
     // SEC-01 (auditoría 17-jul-2026): sin @ResponseStatus, Spring MVC responde
     // HTTP 200 en este handler aunque haya ocurrido una excepción no controlada,
     // lo que rompe cualquier monitoreo/health-check basado en código HTTP.

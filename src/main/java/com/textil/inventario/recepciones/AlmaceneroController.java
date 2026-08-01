@@ -112,6 +112,11 @@ public class AlmaceneroController {
     }
 
     @PostMapping("/revision/entrada/{id}/marcar")
+    // Auditoria (defensa en profundidad): aprobar la cola de revision es solo
+    // ADMIN/SUPERADMIN (el SUPERVISOR carga entradas/salidas pero NO las aprueba).
+    // A nivel de metodo, NO de clase: este controller tiene escrituras legitimas
+    // del SUPERVISOR (entradaGuardar/salidaGuardar).
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public String marcarEntrada(@PathVariable Long id,
                                  @RequestParam(required = false) Long recepcionId,
                                  @RequestParam(required = false) String observaciones,
@@ -129,6 +134,7 @@ public class AlmaceneroController {
     }
 
     @PostMapping("/revision/salida/{id}/marcar")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public String marcarSalida(@PathVariable Long id,
                                 @RequestParam(required = false) Long transferenciaId,
                                 @RequestParam(required = false) String observaciones,

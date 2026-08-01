@@ -502,7 +502,10 @@ public class ArchivoHistoricoService {
         int guionIdx = limpio.indexOf('-');
         if (guionIdx == -1) return limpio;
         String prefijo = limpio.substring(0, guionIdx);
-        String sufijo = limpio.substring(guionIdx + 1).replaceFirst("^0+(?=\\d)", "");
+        // Auditoria: se quitan TODOS los ceros a la izquierda (igual que el
+        // TRIM LEADING '0' del backfill V40), para que la normalizacion Java y la
+        // SQL coincidan tambien cuando el sufijo es todo ceros.
+        String sufijo = limpio.substring(guionIdx + 1).replaceFirst("^0+", "");
         return prefijo + "-" + sufijo;
     }
 

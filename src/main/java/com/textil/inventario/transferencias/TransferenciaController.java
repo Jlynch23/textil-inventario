@@ -77,8 +77,12 @@ public class TransferenciaController {
                                 @RequestParam Integer cantidadSolicitada,
                                 @RequestParam(required = false) String observaciones,
                                 RedirectAttributes ra) {
-        transferenciaService.agregarDetalle(id, articuloId, colorId, cantidadSolicitada, observaciones);
-        ra.addFlashAttribute("mensaje", "Artículo agregado a la transferencia.");
+        try {
+            transferenciaService.agregarDetalle(id, articuloId, colorId, cantidadSolicitada, observaciones);
+            ra.addFlashAttribute("mensaje", "Artículo agregado a la transferencia.");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            ra.addFlashAttribute("error", e.getMessage());
+        }
         return "redirect:/transferencias/" + id + "/detalle";
     }
 
