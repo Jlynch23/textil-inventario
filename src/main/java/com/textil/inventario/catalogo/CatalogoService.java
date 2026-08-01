@@ -182,6 +182,20 @@ public class CatalogoService {
     // ARTÍCULOS
     public List<Articulo> listarArticulos() { return articuloRepository.findByActivoTrue(); }
     public Articulo guardarArticulo(Articulo a) { return articuloRepository.save(a); }
+    // #7: form de Articulo por DTO. Resuelve las 4 piezas por id (fetch-or-create),
+    // autogenera el codigo interno si es nuevo; no toca activo/version.
+    public Articulo guardarArticulo(ArticuloForm form) {
+        Articulo a = (form.getId() == null) ? new Articulo() : buscarArticulo(form.getId());
+        a.setTipoTela(buscarTipoTela(form.getTipoTelaId()));
+        a.setTitulo(buscarTitulo(form.getTituloId()));
+        a.setComposicion(buscarComposicion(form.getComposicionId()));
+        a.setAcabado(buscarAcabado(form.getAcabadoId()));
+        if (a.getCodigoInterno() == null || a.getCodigoInterno().isBlank()) {
+            a.setCodigoInterno(generarCodigoInterno(
+                    a.getTipoTela(), a.getTitulo(), a.getComposicion(), a.getAcabado()));
+        }
+        return guardarArticulo(a);
+    }
     public Articulo buscarArticulo(Long id) { return articuloRepository.findById(id).orElseThrow(); }
 
     // BÚSQUEDAS PARA MATCHING / CREACIÓN RÁPIDA

@@ -29,7 +29,7 @@
                                     <option value="">Seleccionar...</option>
                                     <option th:each="t : ${tiposTela}"
                                             th:value="${t.id}"
-                                            th:selected="${articulo.tipoTela != null and articulo.tipoTela.id == t.id}"
+                                            th:selected="${articulo.tipoTelaId != null and articulo.tipoTelaId == t.id}"
                                             th:text="${t.nombre}"></option>
                                 </select>
                                 <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalTipoTelaNuevo" title="Crear tipo de tela nuevo"><i class="bi bi-plus-lg"></i></button>
@@ -42,7 +42,7 @@
                                     <option value="">Seleccionar...</option>
                                     <option th:each="t : ${titulos}"
                                             th:value="${t.id}"
-                                            th:selected="${articulo.titulo != null and articulo.titulo.id == t.id}"
+                                            th:selected="${articulo.tituloId != null and articulo.tituloId == t.id}"
                                             th:text="${t.valor}"></option>
                                 </select>
                                 <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalTituloNuevo" title="Crear título nuevo"><i class="bi bi-plus-lg"></i></button>
@@ -55,7 +55,7 @@
                                     <option value="">Seleccionar...</option>
                                     <option th:each="c : ${composiciones}"
                                             th:value="${c.id}"
-                                            th:selected="${articulo.composicion != null and articulo.composicion.id == c.id}"
+                                            th:selected="${articulo.composicionId != null and articulo.composicionId == c.id}"
                                             th:text="${c.nombre}"></option>
                                 </select>
                                 <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalComposicionNueva" title="Crear composición nueva"><i class="bi bi-plus-lg"></i></button>
@@ -68,7 +68,7 @@
                                     <option value="">Seleccionar...</option>
                                     <option th:each="ac : ${acabados}"
                                             th:value="${ac.id}"
-                                            th:selected="${articulo.acabado != null and articulo.acabado.id == ac.id}"
+                                            th:selected="${articulo.acabadoId != null and articulo.acabadoId == ac.id}"
                                             th:text="${ac.nombre}"></option>
                                 </select>
                                 <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalAcabadoNuevo" title="Crear acabado nuevo"><i class="bi bi-plus-lg"></i></button>

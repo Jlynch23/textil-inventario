@@ -106,10 +106,21 @@ public class ArticuloController {
         }
     }
 
+    // #7: entidad -> DTO (ids de las piezas) para poblar el form en edicion.
+    private ArticuloForm aArticuloForm(Articulo a) {
+        ArticuloForm f = new ArticuloForm();
+        f.setId(a.getId());
+        f.setTipoTelaId(a.getTipoTela() != null ? a.getTipoTela().getId() : null);
+        f.setTituloId(a.getTitulo() != null ? a.getTitulo().getId() : null);
+        f.setComposicionId(a.getComposicion() != null ? a.getComposicion().getId() : null);
+        f.setAcabadoId(a.getAcabado() != null ? a.getAcabado().getId() : null);
+        return f;
+    }
+
     @GetMapping("/articulos")
     public String listarArticulos(Model model) {
         model.addAttribute("articulos", catalogoService.listarArticulos());
-        model.addAttribute("articulo", new Articulo());
+        model.addAttribute("articulo", new ArticuloForm());
         model.addAttribute("tiposTela", catalogoService.listarTiposTela());
         model.addAttribute("titulos", catalogoService.listarTitulos());
         model.addAttribute("composiciones", catalogoService.listarComposiciones());
@@ -118,27 +129,12 @@ public class ArticuloController {
     }
 
     @PostMapping("/articulos/guardar")
-    public String guardarArticulo(@ModelAttribute Articulo articulo,
-                                   @RequestParam Long tipoTelaId,
-                                   @RequestParam Long tituloId,
-                                   @RequestParam Long composicionId,
-                                   @RequestParam Long acabadoId,
-                                   RedirectAttributes ra) {
-        articulo.setTipoTela(catalogoService.listarTiposTela().stream()
-            .filter(t -> t.getId().equals(tipoTelaId)).findFirst().orElseThrow());
-        articulo.setTitulo(catalogoService.listarTitulos().stream()
-            .filter(t -> t.getId().equals(tituloId)).findFirst().orElseThrow());
-        articulo.setComposicion(catalogoService.listarComposiciones().stream()
-            .filter(c -> c.getId().equals(composicionId)).findFirst().orElseThrow());
-        articulo.setAcabado(catalogoService.listarAcabados().stream()
-            .filter(a -> a.getId().equals(acabadoId)).findFirst().orElseThrow());
-
-        // Generar código interno automático
-        if (articulo.getCodigoInterno() == null || articulo.getCodigoInterno().isBlank()) {
-            articulo.setCodigoInterno(catalogoService.generarCodigoInterno(
-                    articulo.getTipoTela(), articulo.getTitulo(), articulo.getComposicion(), articulo.getAcabado()));
+    public String guardarArticulo(@Valid @ModelAttribute("articulo") ArticuloForm articulo,
+                                   BindingResult bindingResult, RedirectAttributes ra) {
+        if (bindingResult.hasErrors()) {
+            ra.addFlashAttribute("error", primerError(bindingResult));
+            return "redirect:/catalogo/articulos";
         }
-
         try {
             catalogoService.guardarArticulo(articulo);
             ra.addFlashAttribute("mensaje", "Artículo guardado correctamente.");
@@ -152,7 +148,7 @@ public class ArticuloController {
     @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public String editarArticulo(@PathVariable Long id, Model model) {
         model.addAttribute("articulos", catalogoService.listarArticulos());
-        model.addAttribute("articulo", catalogoService.buscarArticulo(id));
+        model.addAttribute("articulo", aArticuloForm(catalogoService.buscarArticulo(id)));
         model.addAttribute("tiposTela", catalogoService.listarTiposTela());
         model.addAttribute("titulos", catalogoService.listarTitulos());
         model.addAttribute("composiciones", catalogoService.listarComposiciones());
