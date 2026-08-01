@@ -299,6 +299,9 @@ public class ArchivoHistoricoService {
             doc.setEstadoProceso(DocumentoHistorico.EstadoProceso.ERROR);
             doc.setObservacion("Error al procesar: " + e.getMessage());
         }
+        // M6: se persiste el numero normalizado para que el lookup indexado de
+        // duplicados (buscarYaImportado) encuentre este doc en futuras importaciones.
+        doc.setNumeroNormalizado(calcularNumeroNormalizado(doc));
         documentoHistoricoRepository.save(doc);
     }
 
@@ -324,27 +327,37 @@ public class ArchivoHistoricoService {
         return true;
     }
 
-    /** Busca otro documento ya PROCESADO con el mismo numero (guia o factura). */
-    private DocumentoHistorico buscarYaImportado(DocumentoHistorico doc) {
+    /**
+     * Numero normalizado de un documento para dedup: la factura por su numero en
+     * mayusculas/sin espacios; la guia (o cualquier otro tipo) por su numero de
+     * guia sin ceros a la izquierda (normalizarNumeroGuia). Es la MISMA logica que
+     * persiste V40 en la columna numero_normalizado, para que el lookup indexado
+     * coincida con lo comparado en memoria.
+     */
+    String calcularNumeroNormalizado(DocumentoHistorico doc) {
         boolean esFactura = doc.getTipoDocumento() == DocumentoHistorico.TipoDocumentoHistorico.FACTURA;
         String numero = esFactura ? doc.getNumeroFactura() : doc.getNumeroGuia();
         if (numero == null || numero.isBlank()) return null;
+        return esFactura ? numero.trim().toUpperCase() : normalizarNumeroGuia(numero);
+    }
 
-        DocumentoHistorico.TipoDocumentoHistorico tipo = esFactura
-                ? DocumentoHistorico.TipoDocumentoHistorico.FACTURA
-                : DocumentoHistorico.TipoDocumentoHistorico.GUIA;
-        String norm = esFactura ? numero.trim().toUpperCase() : normalizarNumeroGuia(numero);
+    /**
+     * Busca otro documento ya PROCESADO con el mismo numero (guia o factura).
+     * M6: lookup indexado por numero_normalizado en vez de cargar toda la tabla
+     * del tipo y comparar en memoria (O(n^2)).
+     */
+    private DocumentoHistorico buscarYaImportado(DocumentoHistorico doc) {
+        String norm = calcularNumeroNormalizado(doc);
+        if (norm == null || norm.isBlank()) return null;
 
-        return documentoHistoricoRepository.findByTipoDocumento(tipo).stream()
-                .filter(d -> !d.getId().equals(doc.getId()))
-                .filter(d -> d.getEstadoProceso() == DocumentoHistorico.EstadoProceso.PROCESADO)
-                .filter(d -> {
-                    String otro = esFactura ? d.getNumeroFactura() : d.getNumeroGuia();
-                    if (otro == null || otro.isBlank()) return false;
-                    return esFactura ? otro.trim().equalsIgnoreCase(norm)
-                                     : normalizarNumeroGuia(otro).equals(norm);
-                })
-                .findFirst()
+        DocumentoHistorico.TipoDocumentoHistorico tipo =
+                doc.getTipoDocumento() == DocumentoHistorico.TipoDocumentoHistorico.FACTURA
+                        ? DocumentoHistorico.TipoDocumentoHistorico.FACTURA
+                        : DocumentoHistorico.TipoDocumentoHistorico.GUIA;
+
+        return documentoHistoricoRepository
+                .findFirstByTipoDocumentoAndNumeroNormalizadoAndEstadoProcesoAndIdNot(
+                        tipo, norm, DocumentoHistorico.EstadoProceso.PROCESADO, doc.getId())
                 .orElse(null);
     }
 

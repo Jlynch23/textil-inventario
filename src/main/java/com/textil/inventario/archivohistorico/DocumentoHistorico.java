@@ -32,6 +32,12 @@ public class DocumentoHistorico {
     @Column(name = "numero_factura", length = 50)
     private String numeroFactura;
 
+    // M6: numero YA normalizado (guia sin ceros a la izquierda / factura en
+    // mayusculas) para el lookup indexado de duplicados. Lo setea el servicio
+    // con la misma funcion que la comparacion en memoria (normalizarNumeroGuia).
+    @Column(name = "numero_normalizado", length = 60)
+    private String numeroNormalizado;
+
     @Column(name = "fecha_documento")
     private LocalDate fechaDocumento;
 

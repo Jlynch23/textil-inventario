@@ -31,6 +31,15 @@ public interface DocumentoHistoricoRepository extends JpaRepository<DocumentoHis
                                                @Param("anio") Integer anio,
                                                @Param("busqueda") String busqueda);
 
+    // M6: lookup indexado de duplicados (reemplaza el escaneo O(n^2) de
+    // findByTipoDocumento + filtro en memoria). Excluye el propio doc y solo
+    // mira los ya PROCESADOS, igual que buscarYaImportado.
+    java.util.Optional<DocumentoHistorico> findFirstByTipoDocumentoAndNumeroNormalizadoAndEstadoProcesoAndIdNot(
+            DocumentoHistorico.TipoDocumentoHistorico tipoDocumento,
+            String numeroNormalizado,
+            DocumentoHistorico.EstadoProceso estadoProceso,
+            Long id);
+
     // Vinculacion FACTURA <-> GUIAS: la comparacion exacta por numeroGuia no
     // sirve porque la factura suele mencionar el numero SIN ceros a la
     // izquierda (ej. "TG01-21376") mientras la guia lo guarda CON ceros

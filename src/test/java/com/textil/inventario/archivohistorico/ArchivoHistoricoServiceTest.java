@@ -55,4 +55,30 @@ class ArchivoHistoricoServiceTest {
     void normalizarNumeroGuia_null_devuelveVacio() {
         assertThat(service.normalizarNumeroGuia(null)).isEqualTo("");
     }
+
+    // M6: calcularNumeroNormalizado es la funcion que persiste V40 en la columna
+    // numero_normalizado y con la que se hace el lookup indexado de duplicados.
+    // Debe coincidir con la normalizacion del backfill SQL.
+    @Test
+    void calcularNumeroNormalizado_guia_usaNormalizacionDeGuia() {
+        DocumentoHistorico guia = new DocumentoHistorico();
+        guia.setTipoDocumento(DocumentoHistorico.TipoDocumentoHistorico.GUIA);
+        guia.setNumeroGuia("tg01-00021376");
+        assertThat(service.calcularNumeroNormalizado(guia)).isEqualTo("TG01-21376");
+    }
+
+    @Test
+    void calcularNumeroNormalizado_factura_mayusculasYTrim() {
+        DocumentoHistorico factura = new DocumentoHistorico();
+        factura.setTipoDocumento(DocumentoHistorico.TipoDocumentoHistorico.FACTURA);
+        factura.setNumeroFactura("  f003-37985 ");
+        assertThat(service.calcularNumeroNormalizado(factura)).isEqualTo("F003-37985");
+    }
+
+    @Test
+    void calcularNumeroNormalizado_sinNumero_devuelveNull() {
+        DocumentoHistorico guia = new DocumentoHistorico();
+        guia.setTipoDocumento(DocumentoHistorico.TipoDocumentoHistorico.GUIA);
+        assertThat(service.calcularNumeroNormalizado(guia)).isNull();
+    }
 }
