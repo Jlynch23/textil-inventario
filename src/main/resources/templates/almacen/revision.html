@@ -14,7 +14,7 @@
         <div class="col-md-4" th:each="e : ${entradas}">
             <div class="card h-100">
                 <a th:href="@{/almacen/revision/entrada/{id}/foto(id=${e.id})}" target="_blank">
-                    <img th:src="@{/almacen/revision/entrada/{id}/foto(id=${e.id})}" class="card-img-top" style="height:220px; object-fit:cover;">
+                    <img th:src="@{/almacen/revision/entrada/{id}/foto(id=${e.id})}" alt="Foto de la entrada registrada por el almacenero" class="card-img-top" style="height:220px; object-fit:cover;">
                 </a>
                 <div class="card-body">
                     <p class="mb-1"><strong>Rollos:</strong> <span th:text="${e.totalRollos}"></span></p>
@@ -52,7 +52,7 @@
         <div class="col-md-4" th:each="s : ${salidas}">
             <div class="card h-100">
                 <a th:href="@{/almacen/revision/salida/{id}/foto(id=${s.id})}" target="_blank">
-                    <img th:src="@{/almacen/revision/salida/{id}/foto(id=${s.id})}" class="card-img-top" style="height:220px; object-fit:cover;">
+                    <img th:src="@{/almacen/revision/salida/{id}/foto(id=${s.id})}" alt="Foto de la salida registrada por el almacenero" class="card-img-top" style="height:220px; object-fit:cover;">
                 </a>
                 <div class="card-body">
                     <p class="mb-1"><strong>Cantidad:</strong> <span th:text="${s.cantidad}"></span></p>
