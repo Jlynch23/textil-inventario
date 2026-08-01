@@ -13,10 +13,10 @@
 -- Los docs nuevos setean esta columna desde Java (misma funcion), asi que para
 -- ellos la normalizacion es exacta; este backfill cubre los ya importados.
 
-ALTER TABLE documento_historico ADD COLUMN numero_normalizado VARCHAR(60);
+ALTER TABLE documentos_historicos ADD COLUMN numero_normalizado VARCHAR(60);
 
 -- GUIAS con guion: se toma el PRIMER guion (LOCATE), igual que indexOf('-') en Java.
-UPDATE documento_historico
+UPDATE documentos_historicos
 SET numero_normalizado = CONCAT(
         SUBSTRING_INDEX(UPPER(TRIM(numero_guia)), '-', 1),
         '-',
@@ -27,18 +27,18 @@ WHERE tipo_documento = 'GUIA'
   AND LOCATE('-', UPPER(TRIM(numero_guia))) > 0;
 
 -- GUIAS sin guion: tal cual, en mayusculas.
-UPDATE documento_historico
+UPDATE documentos_historicos
 SET numero_normalizado = UPPER(TRIM(numero_guia))
 WHERE tipo_documento = 'GUIA'
   AND numero_guia IS NOT NULL AND TRIM(numero_guia) <> ''
   AND LOCATE('-', UPPER(TRIM(numero_guia))) = 0;
 
 -- FACTURAS: numero de factura en mayusculas, sin espacios.
-UPDATE documento_historico
+UPDATE documentos_historicos
 SET numero_normalizado = UPPER(TRIM(numero_factura))
 WHERE tipo_documento = 'FACTURA'
   AND numero_factura IS NOT NULL AND TRIM(numero_factura) <> '';
 
 -- Indice para el lookup de duplicados: (tipo, numero_normalizado, estado).
 CREATE INDEX idx_dh_tipo_norm_estado
-    ON documento_historico (tipo_documento, numero_normalizado, estado_proceso);
+    ON documentos_historicos (tipo_documento, numero_normalizado, estado_proceso);
