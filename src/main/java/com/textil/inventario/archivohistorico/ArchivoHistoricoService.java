@@ -41,18 +41,13 @@ public class ArchivoHistoricoService {
     private String rutaBase;
     private final DocumentoHistoricoRepository documentoHistoricoRepository;
     private final EmpresaRepository empresaRepository;
-    private final TipoTelaRepository tipoTelaRepository;
-    private final TituloRepository tituloRepository;
-    private final ColorRepository colorRepository;
-    private final ComposicionRepository composicionRepository;
-    private final ArticuloRepository articuloRepository;
     private final AnthropicOcrService ocrService;
     private final RecepcionService recepcionService;
     private final UsuarioRepository usuarioRepository;
-    private final com.textil.inventario.catalogo.CatalogoService catalogoService;
     private final DocumentoHistoricoClasificador clasificador;
     private final DocumentoHistoricoFileManager fileManager;
     private final ZipSeguroExtractor zipExtractor;
+    private final DocumentoHistoricoEnriquecedor enriquecedor;
     /**
      * Descomprime el ZIP subido, guarda cada PDF en disco y crea un registro
      * PENDIENTE por documento. NO llama a la IA aquí (eso es rápido y se hace
@@ -212,7 +207,7 @@ public class ArchivoHistoricoService {
                 if (r.productos() != null) {
                     for (ProductoExtraido p : r.productos()) {
                         productos++;
-                        EnriquecimientoResultado resultado = intentarEnriquecerCatalogo(p);
+                        DocumentoHistoricoEnriquecedor.Resultado resultado = enriquecedor.enriquecer(p);
                         coloresCreados += resultado.colorCreado();
                         articulosCreados += resultado.articuloCreado();
                         if (resultado.articulo() != null) {
@@ -468,100 +463,4 @@ public class ArchivoHistoricoService {
         return Optional.empty();
     }
 
-    private record EnriquecimientoResultado(Articulo articulo, Color color, int colorCreado, int articuloCreado) {}
-
-    /**
-     * Resuelve (o crea si hace falta) el Articulo correspondiente al producto
-     * leido, para poder usarlo tanto en el enriquecimiento de catalogo como
-     * en la creacion de la Recepcion automatica. NUNCA toca stock_actual ni
-     * kardex_movimientos directamente (eso solo pasa si crearYConfirmarRecepcionAutomatica
-     * termina llamando a RecepcionService, que es el unico camino permitido).
-     */
-    private EnriquecimientoResultado intentarEnriquecerCatalogo(ProductoExtraido p) {
-        if (p.tipoTela() == null || p.titulo() == null || p.colorCodigo() == null) {
-            return new EnriquecimientoResultado(null, null, 0, 0);
-        }
-
-        Optional<TipoTela> tipoTela = tipoTelaRepository.findByNombreIgnoreCase(p.tipoTela().trim());
-        if (tipoTela.isEmpty()) return new EnriquecimientoResultado(null, null, 0, 0);
-
-        Optional<Titulo> titulo = tituloRepository.findByValorIgnoreCase(p.titulo().trim());
-        if (titulo.isEmpty()) return new EnriquecimientoResultado(null, null, 0, 0);
-
-        // La composicion (ALGODON, MELANGE N%) es obligatoria para poder
-        // identificar/crear el Articulo, ya que este ya no incluye Color
-        // (ver V26). Si el PDF no trajo una composicion reconocible, no se
-        // auto-crea el articulo -- mejor no enriquecer esta linea que
-        // adivinar y dejar datos mal etiquetados en el catalogo.
-        if (p.composicion() == null || p.composicion().isBlank()) {
-            return new EnriquecimientoResultado(null, null, 0, 0);
-        }
-        Optional<Composicion> composicion = composicionRepository.findByNombreIgnoreCase(p.composicion().trim());
-        if (composicion.isEmpty()) return new EnriquecimientoResultado(null, null, 0, 0);
-
-        int colorCreado = 0;
-        Optional<Color> colorOpt = catalogoService.resolverColorPorCodigo(p.colorCodigo().trim(), p.colorNombre());
-        Color color;
-        if (colorOpt.isPresent()) {
-            color = colorOpt.get();
-        } else {
-            String nombreOficial = (p.colorNombre() != null && !p.colorNombre().isBlank())
-                    ? p.colorNombre().trim() : "Color " + p.colorCodigo().trim();
-
-            // Puede que el MISMO color ya exista con otro codigo_fast_dye
-            // (FAST DYE reasigna codigos con el tiempo). Si el nombre ya existe, se reutiliza
-            // en vez de fallar por la restriccion de nombre unico.
-            Optional<Color> porNombre = colorRepository.findByNombreOficialIgnoreCase(nombreOficial);
-            if (porNombre.isPresent()) {
-                color = porNombre.get();
-            } else {
-                try {
-                    Color nuevo = new Color();
-                    nuevo.setNombreOficial(nombreOficial);
-                    nuevo.setCodigoFastDye(p.colorCodigo().trim());
-                    nuevo.setActivo(true);
-                    color = colorRepository.save(nuevo);
-                    colorCreado = 1;
-                } catch (Exception e) {
-                    // choque de datos que no pudimos anticipar: no se puede crear con seguridad.
-                    // R-S1 (auditoria): se LOGUEA antes de degradar; sin esto, las lineas
-                    // perdidas de un import quedaban sin ningun rastro de por que.
-                    log.warn("No se pudo crear el color '{}' (cod '{}') durante el enriquecimiento: {}",
-                            p.colorNombre(), p.colorCodigo(), e.getMessage());
-                    return new EnriquecimientoResultado(null, null, 0, 0);
-                }
-            }
-        }
-
-        int articuloCreado = 0;
-        Articulo articulo;
-        // Importacion legacy: los nombres de archivo historicos no traen acabado
-        // de forma confiable, se asume LISO (defecto).
-        Acabado acabadoLiso = catalogoService.buscarAcabadoPorNombre("LISO").orElseThrow();
-        Optional<Articulo> articuloOpt = articuloRepository.findByTipoTelaIdAndTituloIdAndComposicionIdAndAcabadoId(
-                tipoTela.get().getId(), titulo.get().getId(), composicion.get().getId(), acabadoLiso.getId());
-        if (articuloOpt.isPresent()) {
-            articulo = articuloOpt.get();
-        } else {
-            try {
-                Articulo nuevo = new Articulo();
-                nuevo.setTipoTela(tipoTela.get());
-                nuevo.setTitulo(titulo.get());
-                nuevo.setComposicion(composicion.get());
-                nuevo.setAcabado(acabadoLiso);
-                nuevo.setCodigoInterno(catalogoService.generarCodigoInterno(tipoTela.get(), titulo.get(), composicion.get(), acabadoLiso));
-                nuevo.setActivo(true);
-                articulo = articuloRepository.save(nuevo);
-                articuloCreado = 1;
-            } catch (Exception e) {
-                // R-S1 (auditoria): loguear antes de degradar, para no perder en
-                // silencio la linea que no se pudo enriquecer.
-                log.warn("No se pudo crear el articulo ({}/{}/{}) durante el enriquecimiento: {}",
-                        tipoTela.get().getNombre(), titulo.get().getValor(), composicion.get().getNombre(), e.getMessage());
-                return new EnriquecimientoResultado(null, null, 0, 0);
-            }
-        }
-
-        return new EnriquecimientoResultado(articulo, color, colorCreado, articuloCreado);
-    }
 }
