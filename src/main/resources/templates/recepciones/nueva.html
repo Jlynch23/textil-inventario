@@ -483,7 +483,7 @@
                             let msg = 'HTTP ' + respDoc.status;
                             try { const ed = await respDoc.json(); if (ed && ed.error) msg = ed.error; } catch (e) {}
                             alert('La recepción se creó, pero NO se pudo archivar el PDF de la guía:\n' + msg +
-                                  '\n\nPodés volver a subirlo desde el detalle de la recepción.');
+                                  '\n\nPuedes volver a subirlo desde el detalle de la recepción.');
                         }
                     } catch (err) {
                         alert('La recepción se creó, pero NO se pudo archivar el PDF de la guía (error de red):\n' + err.message);

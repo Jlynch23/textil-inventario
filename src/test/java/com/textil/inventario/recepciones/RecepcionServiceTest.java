@@ -300,6 +300,20 @@ class RecepcionServiceTest {
     }
 
     @Test
+    void confirmarRecepcion_detalleIdRepetido_lanzaYNoTocaStock() {
+        // Auditoria: un detalleId repetido en el POST sumaria el stock dos veces.
+        Recepcion recepcion = recepcionDePrueba();
+        when(recepcionRepository.findById(1L)).thenReturn(Optional.of(recepcion));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                service.confirmarRecepcion(1L, List.of(100L, 100L), List.of(14, 14), List.of("", ""))
+        ).isInstanceOf(IllegalArgumentException.class);
+
+        verify(stockActualRepository, never()).save(any());
+        verify(kardexRepository, never()).save(any());
+    }
+
+    @Test
     void crearRecepcion_guiaDuplicada_lanzaYNoGuarda() {
         // Una guía = una recepción: no se puede registrar dos veces (si no,
         // confirmar ambas duplica el stock y deja el programa en pendiente negativo).

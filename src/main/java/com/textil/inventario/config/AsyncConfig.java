@@ -22,8 +22,15 @@ public class AsyncConfig {
     @Bean(name = "archivoHistoricoTaskExecutor")
     public Executor archivoHistoricoTaskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(2);
-        executor.setMaxPoolSize(4);
+        // Auditoria (concurrencia): UN SOLO worker. procesarPendientesAsync() lee
+        // los PENDIENTE con findTop500(...) y NO los reclama de forma atomica, asi
+        // que dos subidas de ZIP casi simultaneas con 2+ hilos leian las MISMAS
+        // filas y las procesaban dos veces -> doble Recepcion/stock/kardex. Este
+        // pool es exclusivo de ese metodo, asi que serializarlo (1 hilo, resto en
+        // cola) elimina la carrera: la 2da subida corre cuando la 1ra ya dejo los
+        // docs en PROCESADO/DUPLICADO y el dedup los saltea.
+        executor.setCorePoolSize(1);
+        executor.setMaxPoolSize(1);
         executor.setQueueCapacity(20);
         executor.setThreadNamePrefix("archivo-historico-");
         executor.initialize();

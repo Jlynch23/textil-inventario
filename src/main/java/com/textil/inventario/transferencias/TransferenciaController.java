@@ -57,7 +57,7 @@ public class TransferenciaController {
         } catch (org.springframework.dao.DataIntegrityViolationException e) {
             // A5: dos altas casi simultaneas pudieron generar el mismo numero; el
             // UNIQUE lo evita. Se pide reintentar en vez de mostrar un 500.
-            ra.addFlashAttribute("error", "Otra transferencia se creó al mismo tiempo; intentá de nuevo.");
+            ra.addFlashAttribute("error", "Otra transferencia se creó al mismo tiempo; intenta de nuevo.");
             return "redirect:/transferencias";
         }
     }

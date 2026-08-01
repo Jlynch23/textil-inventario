@@ -182,28 +182,28 @@ public class AnthropicOcrService {
         } catch (org.springframework.web.client.HttpStatusCodeException e) {
             int codigo = e.getStatusCode().value();
             if (codigo == 429) {
-                throw new IOException("El servicio de OCR está saturado (límite de solicitudes). Esperá unos segundos y volvé a intentar.");
+                throw new IOException("El servicio de OCR está saturado (límite de solicitudes). Espera unos segundos y vuelve a intentar.");
             }
             if (codigo >= 500) {
-                throw new IOException("El servicio de OCR no está disponible en este momento (código " + codigo + "). Intentá de nuevo en un rato.");
+                throw new IOException("El servicio de OCR no está disponible en este momento (código " + codigo + "). Intenta de nuevo en un rato.");
             }
             throw new IOException("El servicio de OCR rechazó la solicitud (código " + codigo + ").");
         }
 
         if (rawResponse == null || rawResponse.isBlank()) {
-            throw new IOException("El servicio de OCR devolvió una respuesta vacía. Intentá de nuevo.");
+            throw new IOException("El servicio de OCR devolvió una respuesta vacía. Intenta de nuevo.");
         }
 
         JsonNode root = mapper.readTree(rawResponse);
         // Respuesta truncada por max_tokens: el JSON viene incompleto y el
         // readValue posterior reventaria con un error opaco; se avisa claro.
         if ("max_tokens".equals(root.path("stop_reason").asText())) {
-            throw new IOException("El documento es demasiado largo para leerlo de una vez (la lectura se cortó). Probá con menos páginas.");
+            throw new IOException("El documento es demasiado largo para leerlo de una vez (la lectura se cortó). Prueba con menos páginas.");
         }
         JsonNode contenido = root.path("content");
         // Sin este guard, un content vacio hacia .get(0) == null -> NullPointerException.
         if (!contenido.isArray() || contenido.isEmpty() || !contenido.get(0).hasNonNull("text")) {
-            throw new IOException("El servicio de OCR devolvió una respuesta inesperada (sin texto). Intentá de nuevo.");
+            throw new IOException("El servicio de OCR devolvió una respuesta inesperada (sin texto). Intenta de nuevo.");
         }
         String textoExtraido = contenido.get(0).path("text").asText();
 

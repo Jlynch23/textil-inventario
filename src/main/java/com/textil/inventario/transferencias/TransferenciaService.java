@@ -103,6 +103,12 @@ public class TransferenciaService {
                     + t.getEstado() + "); no se puede confirmar la salida de nuevo.");
         }
 
+        // Auditoria (integridad): un detalleId repetido descontaria el stock de
+        // esa linea dos veces. Se rechazan duplicados (complementa el guard M1).
+        if (new java.util.HashSet<>(detalleIds).size() != detalleIds.size()) {
+            throw new IllegalArgumentException("Llegaron líneas de detalle repetidas. Recarga la página e intenta de nuevo.");
+        }
+
         for (int i = 0; i < detalleIds.size(); i++) {
             TransferenciaDetalle d = detalleRepository.findById(detalleIds.get(i)).orElseThrow();
             // M1 (auditoria): el detalle DEBE pertenecer a esta transferencia,

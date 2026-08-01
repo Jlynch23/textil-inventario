@@ -24,7 +24,7 @@ public class ExcelExportService {
         if (filas.size() > MAX_FILAS) {
             throw new IllegalArgumentException(
                     "El reporte tiene " + filas.size() + " filas, supera el máximo exportable de "
-                    + MAX_FILAS + ". Filtrá por un rango de fechas más acotado para descargarlo.");
+                    + MAX_FILAS + ". Filtra por un rango de fechas más acotado para descargarlo.");
         }
 
         SXSSFWorkbook workbook = new SXSSFWorkbook(VENTANA_FILAS_EN_MEMORIA);

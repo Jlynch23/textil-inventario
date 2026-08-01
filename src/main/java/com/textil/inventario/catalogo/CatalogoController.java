@@ -668,7 +668,7 @@ public class CatalogoController {
                 ra.addFlashAttribute("mensaje", "Ubicación eliminada correctamente.");
             } else {
                 ra.addFlashAttribute("advertencia", "Ubicación eliminada. Ya no hay ninguna ubicación "
-                        + "marcada como principal: designá una antes de confirmar recepciones.");
+                        + "marcada como principal: designa una antes de confirmar recepciones.");
             }
         } catch (DataIntegrityViolationException e) {
             ra.addFlashAttribute("error", "No se puede eliminar: esta ubicación tiene stock o transferencias asociadas.");

@@ -61,6 +61,14 @@ public class ProgramaService {
                                    Integer totalRollos,
                                    List<Long> tipoTelaIds, List<Long> tituloIds, List<Long> composicionIds,
                                    List<Long> acabadoIds, List<Long> colorIds, List<Integer> cantidades) {
+        // Auditoria: mismas listas paralelas que actualizarPrograma; hay que
+        // validar que TODAS tengan el mismo largo antes de indexar por posicion,
+        // o un POST desalineado lanza IndexOutOfBounds -> 500 opaco.
+        if (tipoTelaIds.size() != cantidades.size() || tituloIds.size() != cantidades.size()
+                || composicionIds.size() != cantidades.size() || acabadoIds.size() != cantidades.size()
+                || colorIds.size() != cantidades.size()) {
+            throw new IllegalArgumentException("Los datos de las líneas llegaron incompletos. Recarga la página e intenta de nuevo.");
+        }
         // Validacion ANTES de guardar nada: una linea con ALGO cargado debe estar
         // COMPLETA. Antes, el loop de guardado hacia `continue` si faltaba algun
         // campo (ej. la composicion), descartando la linea EN SILENCIO: el
@@ -76,7 +84,7 @@ public class ProgramaService {
             if (!completa) {
                 throw new IllegalArgumentException(
                         "La línea " + (i + 1) + " está incompleta: falta tipo de tela, título, " +
-                        "composición, acabado, color o cantidad. Completala o quítala antes de guardar.");
+                        "composición, acabado, color o cantidad. Complétala o quítala antes de guardar.");
             }
         }
 
@@ -219,7 +227,7 @@ public class ProgramaService {
         // tamano antes de recorrer.
         if (cantidadesExistentes.size() != detalleIdsExistentes.size()) {
             throw new IllegalArgumentException(
-                    "Los datos de las líneas llegaron incompletos. Recargá la página e intentá de nuevo.");
+                    "Los datos de las líneas llegaron incompletos. Recarga la página e intenta de nuevo.");
         }
         for (int i = 0; i < detalleIdsExistentes.size(); i++) {
             ProgramaDetalle pd = programaDetalleRepository.findById(detalleIdsExistentes.get(i)).orElseThrow();
@@ -248,7 +256,7 @@ public class ProgramaService {
                 || nuevosComposicionIds.size() != nuevas || nuevosAcabadoIds.size() != nuevas
                 || nuevosColorIds.size() != nuevas) {
             throw new IllegalArgumentException(
-                    "Los datos de las líneas nuevas llegaron incompletos. Recargá la página e intentá de nuevo.");
+                    "Los datos de las líneas nuevas llegaron incompletos. Recarga la página e intenta de nuevo.");
         }
         for (int i = 0; i < nuevasCantidades.size(); i++) {
             if (nuevosTipoTelaIds.get(i) == null || nuevosTituloIds.get(i) == null
