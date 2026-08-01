@@ -73,7 +73,7 @@ Stock disponible por ubicación en tiempo real e historial completo de movimient
 Entre ubicaciones, con doble confirmación (salida → llegada) y reparto de una misma línea entre múltiples destinos.
 
 ### 📱 Operación móvil para almacenero
-Pantallas de Entrada/Salida rápida con cámara para el personal de almacén, con cola de revisión y aprobación por un SUPERADMIN antes de afectar el stock.
+Pantallas de Entrada/Salida rápida con cámara para el personal de almacén, con cola de revisión y aprobación por el ADMIN (dueño) o el SUPERADMIN antes de afectar el stock.
 
 ### 📈 Dashboard
 Indicadores en tiempo real con acceso directo a cada sección: stock total, stock en almacén principal, transferencias en tránsito, recepciones y revisiones pendientes.
@@ -85,7 +85,7 @@ Stock por ubicación, kardex por rango de fechas, recepciones, transferencias y 
 Importación masiva de guías y facturas antiguas vía ZIP (con subcarpetas por empresa/año), leídas por IA en segundo plano. Enriquece el catálogo de colores y artículos sin afectar el stock actual — borrado individual y masivo incluido.
 
 ### 🔐 Seguridad y Usuarios
-Roles SUPERADMIN, GERENTE (solo lectura) y SUPERVISOR (almacén) con Spring Security, gestión completa de usuarios (alta, inactivación, baja protegida) y registro de auditoría de cada acción relevante. Existe además el rol VENDEDOR, reservado para el futuro módulo de Ventas — hoy no tiene permisos asignados en `SecurityConfig`.
+Jerarquía de roles con Spring Security: **SUPERADMIN** (proveedor, soporte) > **ADMIN** (dueño del negocio, control total operativo) > **GERENTE** (solo lectura) y **SUPERVISOR** (almacén). Gestión completa de usuarios (alta, inactivación, baja protegida) con expiración inmediata de sesión al revocar acceso, y registro de auditoría de cada acción relevante. Existe además el rol VENDEDOR, reservado para el futuro módulo de Ventas — hoy no tiene permisos asignados en `SecurityConfig`.
 
 ---
 
@@ -159,6 +159,7 @@ Las migraciones de Flyway se aplican automáticamente. Disponible en `http://loc
 - ✅ Archivo histórico de documentos con enriquecimiento de catálogo
 - ✅ Auditoría y gestión de usuarios
 - ✅ Despliegue en producción (VPS) — ver [`DEPLOY.md`](DEPLOY.md)
+- ✅ HTTPS con dominio propio y certificado wildcard (`texcontrol.pe`) — ver [`DEPLOY.md`](DEPLOY.md)
 
 ### Próximas versiones
 
@@ -166,7 +167,6 @@ Las migraciones de Flyway se aplican automáticamente. Disponible en `http://loc
 - 🚧 Módulo de Créditos
 - 🚧 Códigos de barras / QR para trazabilidad individual por rollo
 - 🚧 API REST
-- 🚧 HTTPS con dominio propio (pasos ya documentados en `DEPLOY.md`, falta el dominio)
 
 ## 🔐 Variables de entorno
 
@@ -176,10 +176,11 @@ El proyecto usa variables de entorno para credenciales y configuración (nunca h
 DB_USERNAME=textil_user
 DB_PASSWORD=          # obligatoria, sin valor por defecto
 MYSQL_ROOT_PASSWORD=  # obligatoria, distinta de DB_PASSWORD -- solo para docker-compose y backups
+REMEMBER_ME_KEY=      # obligatoria, sin default: clave única por instancia que firma la cookie "recordar sesión" (openssl rand -hex 32). La app NO arranca si falta.
 ANTHROPIC_API_KEY=    # para el OCR de guías/facturas
 DOCUMENTOS_PATH=./documentos
 MAX_UPLOAD_SIZE=25MB
-NOMBRE_EMPRESA=Laura & Clemente  # nombre del negocio, bajo el logo TEXCONTROL (personalizable por cliente)
+NOMBRE_EMPRESA=       # nombre para el manifest de la PWA (app instalable). El subtítulo bajo el logo TEXCONTROL sale de las empresas activas del catálogo, NO de esta variable. Dejar vacío en una copia nueva.
 BIND_IP=              # solo produccion (docker-compose.prod.yml): IP a la que se publica nginx -- ver DEPLOY.md
 ```
 
