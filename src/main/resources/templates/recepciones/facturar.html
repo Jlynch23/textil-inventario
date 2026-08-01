@@ -77,6 +77,15 @@
     </div>
 
     <script>
+        // Seguridad (auditoria A4): los datos de la factura salen del OCR del PDF
+        // (contenido NO confiable). Se escapan antes de inyectarlos en innerHTML
+        // para que una factura con "<img src=x onerror=...>" no ejecute JS.
+        function escapeHtml(valor) {
+            if (valor === null || valor === undefined) return '';
+            return String(valor)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
         document.getElementById('btnExtraerFactura').addEventListener('click', async () => {
             const fileInput = document.getElementById('pdfFactura');
             if (!fileInput.files.length) {
@@ -95,7 +104,7 @@
                 const data = await resp.json();
 
                 if (!resp.ok) {
-                    estadoDiv.innerHTML = '<span class="text-danger">Error: ' + (data.error || 'No se pudo procesar el PDF') + '</span>';
+                    estadoDiv.innerHTML = '<span class="text-danger">Error: ' + escapeHtml(data.error || 'No se pudo procesar el PDF') + '</span>';
                     return;
                 }
 
@@ -128,15 +137,15 @@
                 if (coincidencias > 0) {
                     msg += '<br><span class="text-primary small">' + coincidencias + ' guía(s) marcada(s) automáticamente por coincidencia.</span>';
                 } else if (guiasRef.length > 0) {
-                    msg += '<br><span class="text-warning small">La factura referencia guías (' + guiasRef.join(', ') + ') pero no se encontraron en la lista de pendientes — verifica manualmente.</span>';
+                    msg += '<br><span class="text-warning small">La factura referencia guías (' + guiasRef.map(escapeHtml).join(', ') + ') pero no se encontraron en la lista de pendientes — verifica manualmente.</span>';
                 }
                 if (data.advertencia) {
-                    msg += '<br><span class="text-warning small">' + data.advertencia + '</span>';
+                    msg += '<br><span class="text-warning small">' + escapeHtml(data.advertencia) + '</span>';
                 }
                 estadoDiv.innerHTML = msg;
 
             } catch (e) {
-                estadoDiv.innerHTML = '<span class="text-danger">Error de conexión: ' + e.message + '</span>';
+                estadoDiv.innerHTML = '<span class="text-danger">Error de conexión: ' + escapeHtml(e.message) + '</span>';
             }
         });
 

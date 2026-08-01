@@ -117,6 +117,20 @@
 <script th:inline="javascript">
     const articulos = /*[[${articulos}]]*/ [];
     let lineasExtraidas = [];
+
+    // Seguridad (auditoria A3/A4): los datos del OCR provienen del PDF (contenido
+    // NO confiable). Antes se concatenaban crudos en innerHTML -> una guia con
+    // "<img src=x onerror=...>" ejecutaba JS en la sesion del ADMIN. Todo valor
+    // de origen OCR que se inyecte en HTML pasa por escapeHtml().
+    function escapeHtml(valor) {
+        if (valor === null || valor === undefined) return '';
+        return String(valor)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
     // Se guarda el archivo elegido al hacer OCR, para archivarlo despues de
     // crear la recepcion SIN depender de que el <input file> lo retenga (podia
     // quedar vacio al momento de crear -> la guia se perdia sin archivar).
@@ -149,7 +163,7 @@
 
             if (!resp.ok) {
                 const err = await resp.json();
-                estadoDiv.innerHTML = '<span class="text-danger">Error: ' + (err.error || 'No se pudo procesar el PDF') + '</span>';
+                estadoDiv.innerHTML = '<span class="text-danger">Error: ' + escapeHtml(err.error || 'No se pudo procesar el PDF') + '</span>';
                 return;
             }
 
@@ -162,10 +176,10 @@
             const empresaHint = document.getElementById('empresaHint');
             if (data.empresaIdSugerida) {
                 document.getElementById('empresaId').value = data.empresaIdSugerida;
-                empresaHint.innerHTML = 'Sugerido a partir de: "' + data.empresaNombreDetectado + '" — verifica que sea correcto.';
+                empresaHint.innerHTML = 'Sugerido a partir de: "' + escapeHtml(data.empresaNombreDetectado) + '" — verifica que sea correcto.';
                 empresaHint.className = 'text-warning';
             } else {
-                empresaHint.innerHTML = 'No se pudo sugerir la empresa automáticamente (detectado: "' + (data.empresaNombreDetectado || '-') + '"). Selecciónala manualmente.';
+                empresaHint.innerHTML = 'No se pudo sugerir la empresa automáticamente (detectado: "' + escapeHtml(data.empresaNombreDetectado || '-') + '"). Selecciónala manualmente.';
                 empresaHint.className = 'text-danger';
             }
 
@@ -174,12 +188,12 @@
 
             let mensajeEstado = '<span class="text-success"><i class="bi bi-check-circle me-1"></i>Datos extraídos correctamente.</span>';
             if (data.advertencia) {
-                mensajeEstado += '<br><span class="text-warning small">' + data.advertencia + '</span>';
+                mensajeEstado += '<br><span class="text-warning small">' + escapeHtml(data.advertencia) + '</span>';
             }
             estadoDiv.innerHTML = mensajeEstado;
 
         } catch (e) {
-            estadoDiv.innerHTML = '<span class="text-danger">Error de conexión: ' + e.message + '</span>';
+            estadoDiv.innerHTML = '<span class="text-danger">Error de conexión: ' + escapeHtml(e.message) + '</span>';
         }
     });
 
@@ -197,13 +211,13 @@
             selectHtml += '<option value="">Seleccionar...</option>';
             articulos.forEach(a => {
                 const selected = (linea.articuloId === a.id) ? 'selected' : '';
-                selectHtml += '<option value="' + a.id + '" ' + selected + '>' + articuloLabel(a) + '</option>';
+                selectHtml += '<option value="' + a.id + '" ' + selected + '>' + escapeHtml(articuloLabel(a)) + '</option>';
             });
             selectHtml += '</select>';
 
             if (!linea.matched) {
-                selectHtml += '<br><small class="text-danger">' + linea.motivoNoMatch + '</small>';
-                selectHtml += '<br><small class="text-muted">Tela detectada: ' + linea.tipoTela + ' ' + linea.titulo + ' / Composición: ' + (linea.composicion || '-') + ' / Acabado: ' + (linea.acabado || 'LISO') + '</small>';
+                selectHtml += '<br><small class="text-danger">' + escapeHtml(linea.motivoNoMatch) + '</small>';
+                selectHtml += '<br><small class="text-muted">Tela detectada: ' + escapeHtml(linea.tipoTela) + ' ' + escapeHtml(linea.titulo) + ' / Composición: ' + escapeHtml(linea.composicion || '-') + ' / Acabado: ' + escapeHtml(linea.acabado || 'LISO') + '</small>';
 
                 const motivoEsColor = linea.motivoNoMatch && linea.motivoNoMatch.indexOf('Color') !== -1 && linea.motivoNoMatch.indexOf('no existe') !== -1;
                 // Si la composicion no se pudo identificar o no existe en el catalogo,
@@ -226,7 +240,7 @@
 
             let colorCell = '';
             if (linea.colorNombre) {
-                colorCell = linea.colorNombre;
+                colorCell = escapeHtml(linea.colorNombre);
                 // El boton de crear color solo tiene sentido si el color NO se
                 // resolvio (colorId vacio); si la linea no matchea por otra razon
                 // (ej. falta el articulo), ofrecerlo solo genera duplicados.
@@ -239,10 +253,10 @@
             tr.innerHTML = `
                 <td>${selectHtml}</td>
                 <td class="linea-color-cell">${colorCell}</td>
-                <td><span class="badge bg-light text-dark">${linea.colorCodigo || ''}</span></td>
-                <td><input type="text" class="form-control form-control-sm linea-programa" data-idx="${idx}" value="${linea.programaTenido || ''}"></td>
-                <td><input type="number" class="form-control form-control-sm linea-rollos" data-idx="${idx}" value="${linea.rollosGuia || ''}"></td>
-                <td><input type="number" step="0.01" class="form-control form-control-sm linea-peso" data-idx="${idx}" value="${linea.pesoBrutoKg || ''}"></td>
+                <td><span class="badge bg-light text-dark">${escapeHtml(linea.colorCodigo || '')}</span></td>
+                <td><input type="text" class="form-control form-control-sm linea-programa" data-idx="${idx}" value="${escapeHtml(linea.programaTenido || '')}"></td>
+                <td><input type="number" class="form-control form-control-sm linea-rollos" data-idx="${idx}" value="${escapeHtml(linea.rollosGuia || '')}"></td>
+                <td><input type="number" step="0.01" class="form-control form-control-sm linea-peso" data-idx="${idx}" value="${escapeHtml(linea.pesoBrutoKg || '')}"></td>
             `;
             tbody.appendChild(tr);
         });
