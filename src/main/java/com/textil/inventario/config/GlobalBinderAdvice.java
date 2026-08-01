@@ -6,7 +6,8 @@ import org.springframework.web.bind.annotation.InitBinder;
 
 /**
  * Endurece el binding de formularios contra mass assignment (auditoría red-team
- * R-B4). Varios controllers (sobre todo CatalogoController) hacen
+ * R-B4). Varios controllers (sobre todo los de catálogo: ColorController,
+ * ArticuloController, EmpresaController, etc.) hacen
  * {@code @ModelAttribute <EntidadJPA>} y luego {@code repository.save(...)}: el
  * binder de Spring acepta CUALQUIER propiedad presente en el body, no solo las
  * del formulario. Sin este filtro, un POST manipulado podía setear campos que el
