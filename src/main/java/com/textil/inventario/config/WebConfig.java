@@ -18,6 +18,13 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(cambioPasswordInterceptor);
+        registry.addInterceptor(cambioPasswordInterceptor)
+                // Los RECURSOS ESTATICOS nunca deben pasar por el interceptor: si
+                // se redirigen a mi-cuenta, el CSS/JS no carga y la pantalla de
+                // cambio forzado queda sin estilos. Se excluyen aca (ademas del
+                // allowlist interno), asi es imposible que un estatico sea bloqueado.
+                .excludePathPatterns(
+                        "/webjars/**", "/css/**", "/js/**", "/img/**",
+                        "/favicon.ico", "/manifest.webmanifest", "/sw.js", "/offline.html");
     }
 }
