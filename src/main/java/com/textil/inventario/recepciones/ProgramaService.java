@@ -214,9 +214,27 @@ public class ProgramaService {
         p.setTotalRollos(totalRollos);
         programaRepository.save(p);
 
+        // R-P1 (red-team): las listas paralelas se indexan por posicion; si el POST
+        // viene desalineado, get(i) lanzaba IndexOutOfBounds (500). Se valida el
+        // tamano antes de recorrer.
+        if (cantidadesExistentes.size() != detalleIdsExistentes.size()) {
+            throw new IllegalArgumentException(
+                    "Los datos de las líneas llegaron incompletos. Recargá la página e intentá de nuevo.");
+        }
         for (int i = 0; i < detalleIdsExistentes.size(); i++) {
             ProgramaDetalle pd = programaDetalleRepository.findById(detalleIdsExistentes.get(i)).orElseThrow();
-            pd.setCantidadSolicitada(cantidadesExistentes.get(i));
+            Integer cant = cantidadesExistentes.get(i);
+            // R-P1: sin esto, una cantidad vacia se persistia como NULL (viola
+            // NOT NULL -> 500) y una negativa dejaba la linea incoherente.
+            if (cant == null || cant <= 0) {
+                throw new IllegalArgumentException("La cantidad de cada línea debe ser mayor a cero.");
+            }
+            if (cant < pd.getCantidadRecibida()) {
+                throw new IllegalArgumentException(
+                        "No podés dejar la cantidad solicitada (" + cant + ") por debajo de lo ya recibido ("
+                        + pd.getCantidadRecibida() + ") en una línea.");
+            }
+            pd.setCantidadSolicitada(cant);
             programaDetalleRepository.save(pd);
         }
 
@@ -224,10 +242,21 @@ public class ProgramaService {
             programaDetalleRepository.deleteById(detalleId);
         }
 
+        // R-P1: las listas de lineas nuevas tambien se indexan en paralelo.
+        int nuevas = nuevasCantidades.size();
+        if (nuevosTipoTelaIds.size() != nuevas || nuevosTituloIds.size() != nuevas
+                || nuevosComposicionIds.size() != nuevas || nuevosAcabadoIds.size() != nuevas
+                || nuevosColorIds.size() != nuevas) {
+            throw new IllegalArgumentException(
+                    "Los datos de las líneas nuevas llegaron incompletos. Recargá la página e intentá de nuevo.");
+        }
         for (int i = 0; i < nuevasCantidades.size(); i++) {
             if (nuevosTipoTelaIds.get(i) == null || nuevosTituloIds.get(i) == null
                     || nuevosComposicionIds.get(i) == null || nuevosAcabadoIds.get(i) == null
                     || nuevosColorIds.get(i) == null) continue;
+            // R-P1: fila nueva con ids pero cantidad vacia/<=0 -> se omite (no se
+            // crea con cantidad NULL). Coherente con la validacion de suma de arriba.
+            if (nuevasCantidades.get(i) == null || nuevasCantidades.get(i) <= 0) continue;
             Articulo articulo = resolverOCrearArticulo(nuevosTipoTelaIds.get(i), nuevosTituloIds.get(i), nuevosComposicionIds.get(i), nuevosAcabadoIds.get(i));
             Color color = colorRepository.findById(nuevosColorIds.get(i)).orElseThrow();
 
