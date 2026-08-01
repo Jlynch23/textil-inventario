@@ -88,7 +88,7 @@
         <a class="volver" href="https://texcontrol.pe">&larr; Volver a la página principal</a>
     </div>
 
-    <script>
+    <script th:attr="nonce=${cspNonce}">
         // Cada vez que se llega a esta pantalla (entre una sesion y la
         // siguiente) se limpia la preferencia guardada del sidebar de
         // GERENTE, para que la proxima sesion siempre arranque con el

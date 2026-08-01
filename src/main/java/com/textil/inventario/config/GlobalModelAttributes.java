@@ -43,6 +43,18 @@ public class GlobalModelAttributes {
         return entornoEtiqueta != null ? entornoEtiqueta : "";
     }
 
+    /**
+     * #13: nonce de CSP del request actual (lo genera CspNonceFilter y lo deja como
+     * atributo de request). Se expone al modelo para que las plantillas lo pongan en
+     * sus &lt;script&gt; inline (nonce=${cspNonce}); sin él, la CSP los bloquea.
+     * Thymeleaf 3.1 ya no tiene ${#request}, por eso se puentea aquí.
+     */
+    @ModelAttribute("cspNonce")
+    public String cspNonce(HttpServletRequest request) {
+        Object nonce = request.getAttribute(CspNonceFilter.NONCE_ATTR);
+        return nonce != null ? nonce.toString() : "";
+    }
+
     @ModelAttribute("nombreUsuarioActual")
     public String nombreUsuarioActual() {
         Usuario usuario = usuarioActualService.obtenerUsuarioActualOrNull();

@@ -60,7 +60,7 @@
     </form>
 </section>
 
-<script>
+<script th:attr="nonce=${cspNonce}">
     function recalcularTotales() {
         document.querySelectorAll('.total-detalle').forEach(function(span) {
             var detalleId = span.getAttribute('data-detalle');

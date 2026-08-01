@@ -100,7 +100,7 @@
         </div>
     </div>
 
-    <script>
+    <script th:attr="nonce=${cspNonce}">
         function actualizarBoton() {
             const seleccionados = document.querySelectorAll('.chk-doc:checked').length;
             document.getElementById('btnDescargarZip').disabled = seleccionados === 0;

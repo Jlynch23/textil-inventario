@@ -48,7 +48,7 @@
     </form>
 </div>
 
-<script>
+<script th:attr="nonce=${cspNonce}">
     document.getElementById('fotoInput').addEventListener('change', function() {
         if (this.files && this.files[0]) {
             const reader = new FileReader();

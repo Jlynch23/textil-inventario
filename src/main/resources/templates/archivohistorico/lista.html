@@ -175,7 +175,7 @@
         </table>
     </form>
 
-    <script>
+    <script th:attr="nonce=${cspNonce}">
         const checkTodos = document.getElementById('checkTodos');
         const checksDocumentos = document.querySelectorAll('.checkDocumento');
         const btnEliminar = document.getElementById('btnEliminarSeleccionados');
