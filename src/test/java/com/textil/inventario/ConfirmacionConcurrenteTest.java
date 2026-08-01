@@ -121,6 +121,9 @@ class ConfirmacionConcurrenteTest {
         r.setFechaRecepcion(LocalDate.now());
         r.setEstado(Recepcion.EstadoRecepcion.PENDIENTE);
         r.setUsuario(usuario);
+        // updated_at es NOT NULL y Recepcion solo lo setea en @PreUpdate (no en el
+        // insert); el crearRecepcion real lo pone a mano, el seed tambien debe.
+        r.setUpdatedAt(java.time.LocalDateTime.now());
         r = recepcionRepository.save(r);
         recepcionId = r.getId();
 
