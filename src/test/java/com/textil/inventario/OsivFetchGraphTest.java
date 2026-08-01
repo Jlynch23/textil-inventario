@@ -119,20 +119,31 @@ class OsivFetchGraphTest {
         Acabado acabado = acabadoRepository.findByNombreIgnoreCase("LISO OSIV")
                 .orElseGet(() -> { Acabado a = new Acabado(); a.setNombre("LISO OSIV"); a.setActivo(true); return acabadoRepository.save(a); });
 
-        Articulo articulo = new Articulo();
-        articulo.setCodigoInterno("ART-OSIV-1");
-        articulo.setTipoTela(tipoTela);
-        articulo.setTitulo(titulo);
-        articulo.setComposicion(composicion);
-        articulo.setAcabado(acabado);
-        articulo.setActivo(true);
-        articulo = articuloRepository.save(articulo);
+        // find-or-create: el @BeforeEach corre por cada test y NO limpia el
+        // catalogo (articulo/color quedan por sus FK con kardex/stock/detalles).
+        // Sin reutilizarlos, la 2da corrida chocaba con el unique de codigo_interno.
+        Articulo articulo = articuloRepository
+                .findByTipoTelaIdAndTituloIdAndComposicionIdAndAcabadoId(
+                        tipoTela.getId(), titulo.getId(), composicion.getId(), acabado.getId())
+                .orElseGet(() -> {
+                    Articulo a = new Articulo();
+                    a.setCodigoInterno("ART-OSIV-1");
+                    a.setTipoTela(tipoTela);
+                    a.setTitulo(titulo);
+                    a.setComposicion(composicion);
+                    a.setAcabado(acabado);
+                    a.setActivo(true);
+                    return articuloRepository.save(a);
+                });
 
-        Color color = new Color();
-        color.setNombreOficial("NEGRO OSIV");
-        color.setCodigoFastDye("888888");
-        color.setActivo(true);
-        color = colorRepository.save(color);
+        Color color = colorRepository.findByNombreOficialIgnoreCase("NEGRO OSIV")
+                .orElseGet(() -> {
+                    Color c = new Color();
+                    c.setNombreOficial("NEGRO OSIV");
+                    c.setCodigoFastDye("888888");
+                    c.setActivo(true);
+                    return colorRepository.save(c);
+                });
 
         Usuario usuario = usuarioRepository.findAll().stream().findFirst().orElseThrow(
                 () -> new IllegalStateException("No hay usuarios sembrados por las migraciones."));
