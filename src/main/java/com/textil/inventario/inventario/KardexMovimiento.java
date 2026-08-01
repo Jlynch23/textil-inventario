@@ -25,15 +25,15 @@ public class KardexMovimiento {
     @Column(name = "tipo_movimiento", nullable = false, length = 20)
     private TipoMovimiento tipoMovimiento;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "articulo_id", nullable = false)
     private Articulo articulo;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "color_id", nullable = false)
     private Color color;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "empresa_id")
     private Empresa empresa;
 
@@ -57,7 +57,7 @@ public class KardexMovimiento {
     @Column(name = "transferencia_id")
     private Long transferenciaId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "usuario_id", nullable = false)
     private Usuario usuario;
 

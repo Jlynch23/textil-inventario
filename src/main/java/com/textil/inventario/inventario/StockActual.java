@@ -14,16 +14,21 @@ import java.time.LocalDateTime;
     )
 )
 public class StockActual {
+    // M5 (auditoria): asociaciones LAZY. El stock se carga en masa en los
+    // reportes; el listado usa @EntityGraph (StockActualRepository) para traer lo
+    // que muestra en un solo query, y el resto de accesos ocurre dentro de un
+    // request (open-in-view) o de la transaccion de confirmacion. NO volver a
+    // EAGER: reintroduce el N+1 que esto corrige.
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "articulo_id", nullable = false)
     private Articulo articulo;
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "color_id", nullable = false)
     private Color color;
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ubicacion_id", nullable = false)
     private Ubicacion ubicacion;
     @Column(nullable = false)
