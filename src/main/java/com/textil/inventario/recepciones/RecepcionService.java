@@ -28,6 +28,11 @@ public class RecepcionService {
     private final DocumentoStorageService documentoStorageService;
     private final com.textil.inventario.auditoria.AuditLogService auditLogService;
 
+    // R-C2 (red-team): cota superior por linea. rollos es int; sumar cantidades
+    // enormes a stock.rollos desbordaba en silencio a negativo. Un millon de
+    // rollos en UNA linea es absurdo para el negocio, asi que se rechaza antes.
+    private static final int MAX_ROLLOS_POR_LINEA = 1_000_000;
+
     // Normaliza numeros de guia/factura a mayusculas (recorta espacios) para
     // que el matching guia<->factura y las busquedas por numero no fallen
     // por diferencias de mayus/minus (ej. "tg01-00022558" vs "TG01-00022558").
@@ -266,6 +271,11 @@ public class RecepcionService {
                 throw new IllegalArgumentException(
                         "La cantidad de rollos recibidos no puede ser negativa (línea de detalle " + detalleIds.get(i) + ").");
             }
+            if (rollosRecibidosLinea > MAX_ROLLOS_POR_LINEA) {
+                throw new IllegalArgumentException(
+                        "La cantidad de rollos recibidos (" + rollosRecibidosLinea + ") es demasiado alta "
+                        + "(máx " + MAX_ROLLOS_POR_LINEA + " por línea).");
+            }
             d.setRollosRecibidos(rollosRecibidosLinea);
             d.setObservacion(i < observaciones.size() ? observaciones.get(i) : "");
             detalleRepository.save(d);
@@ -296,13 +306,15 @@ public class RecepcionService {
                     return s;
                 });
 
-            stock.setRollos(stock.getRollos() + rollos);
+            // Math.addExact: si la suma desborda int, lanza ArithmeticException
+            // en vez de envolver a negativo y corromper el stock en silencio.
+            stock.setRollos(Math.addExact(stock.getRollos(), rollos));
             stock.setPesoKg(stock.getPesoKg().add(peso));
             stockActualRepository.save(stock);
 
             if (d.getProgramaDetalle() != null) {
                 ProgramaDetalle pd = d.getProgramaDetalle();
-                pd.setCantidadRecibida(pd.getCantidadRecibida() + rollos);
+                pd.setCantidadRecibida(Math.addExact(pd.getCantidadRecibida(), rollos));
                 programaDetalleRepository.save(pd);
             }
 

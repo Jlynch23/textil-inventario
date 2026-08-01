@@ -28,6 +28,10 @@ public class TransferenciaService {
     private final UbicacionRepository ubicacionRepository;
     private final com.textil.inventario.auditoria.AuditLogService auditLogService;
 
+    // R-C2 (red-team): cota superior por linea para que sumar cantidades enormes
+    // a stock.rollos (int) no desborde en silencio a negativo.
+    private static final int MAX_ROLLOS_POR_LINEA = 1_000_000;
+
     public List<Transferencia> listarTransferencias() {
         return transferenciaRepository.findAllByOrderByFechaSolicitudDesc();
     }
@@ -109,6 +113,11 @@ public class TransferenciaService {
             if (cantidad == null || cantidad < 0) {
                 throw new IllegalArgumentException(
                         "La cantidad confirmada de salida no puede ser negativa (línea de detalle " + detalleIds.get(i) + ").");
+            }
+            if (cantidad > MAX_ROLLOS_POR_LINEA) {
+                throw new IllegalArgumentException(
+                        "La cantidad confirmada de salida (" + cantidad + ") es demasiado alta "
+                        + "(máx " + MAX_ROLLOS_POR_LINEA + " por línea).");
             }
             d.setCantidadConfirmadaSalida(cantidad);
             d.setObservaciones(i < observaciones.size() ? observaciones.get(i) : d.getObservaciones());
@@ -233,7 +242,7 @@ public class TransferenciaService {
                         return s;
                     });
 
-                stockDestino.setRollos(stockDestino.getRollos() + cantidad);
+                stockDestino.setRollos(Math.addExact(stockDestino.getRollos(), cantidad));
                 stockDestino.setPesoKg(stockDestino.getPesoKg().add(pesoMovido));
                 stockActualRepository.save(stockDestino);
 
