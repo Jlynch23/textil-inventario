@@ -20,7 +20,11 @@ public interface TransferenciaRepository extends JpaRepository<Transferencia, Lo
     // #9 (OSIV off): trae ubicacionOrigen (LAZY) y las lineas (detalles) junto con
     // la transferencia. Las vistas de detalle/confirmacion navegan ambas al
     // renderizar; sin este fetch, con la sesion cerrada, darian LazyInitException.
-    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"ubicacionOrigen", "detalles"})
+    // type = LOAD: ambas asociaciones van listadas (se cargan), y las EAGER que no
+    // liste no se degradan a proxy (que es lo que hace el grafo FETCH por defecto).
+    @org.springframework.data.jpa.repository.EntityGraph(
+            attributePaths = {"ubicacionOrigen", "detalles"},
+            type = org.springframework.data.jpa.repository.EntityGraph.EntityGraphType.LOAD)
     java.util.Optional<Transferencia> findWithDetallesById(Long id);
 
     // A5: el numero se deriva del MAXIMO existente, NO de count(). Con count(),

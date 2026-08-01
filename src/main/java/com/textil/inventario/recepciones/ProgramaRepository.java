@@ -13,8 +13,9 @@ public interface ProgramaRepository extends JpaRepository<Programa, Long> {
     // #9 (OSIV off): trae las lineas (detalles) junto con el programa. Las vistas
     // de seguimiento/edicion iteran programa.detalles al renderizar, y el
     // controlador tambien las recorre; sin este fetch reventarian con open-in-view
-    // apagado (sesion ya cerrada).
-    @EntityGraph(attributePaths = "detalles")
+    // apagado (sesion ya cerrada). type = LOAD para que empresa (EAGER) NO se
+    // degrade a proxy perezoso (el grafo FETCH por defecto la volveria LAZY).
+    @EntityGraph(attributePaths = "detalles", type = EntityGraph.EntityGraphType.LOAD)
     Optional<Programa> findWithDetallesById(Long id);
 
     // Listado cronologico: del mas antiguo al mas nuevo. Si dos programas son
