@@ -100,6 +100,12 @@ public class TransferenciaController {
         } catch (IllegalArgumentException | IllegalStateException e) {
             ra.addFlashAttribute("error", e.getMessage());
             return "redirect:/transferencias/" + id + "/confirmar-salida";
+        } catch (org.springframework.dao.DataIntegrityViolationException
+                 | org.springframework.dao.OptimisticLockingFailureException e) {
+            // A6 / R-C1: colision con otra confirmacion sobre el mismo stock.
+            ra.addFlashAttribute("error",
+                    "Otra operación modificó este stock al mismo tiempo. Vuelve a intentar.");
+            return "redirect:/transferencias/" + id + "/confirmar-salida";
         }
         ra.addFlashAttribute("mensaje", "Salida confirmada. Stock descontado de Praderas.");
         return "redirect:/transferencias";
@@ -143,6 +149,12 @@ public class TransferenciaController {
             transferenciaService.confirmarLlegada(id, repartoPorDetalle);
         } catch (IllegalArgumentException | IllegalStateException e) {
             ra.addFlashAttribute("error", e.getMessage());
+            return "redirect:/transferencias/" + id + "/confirmar-llegada";
+        } catch (org.springframework.dao.DataIntegrityViolationException
+                 | org.springframework.dao.OptimisticLockingFailureException e) {
+            // A6 / R-C1: colision con otra confirmacion sobre el mismo stock destino.
+            ra.addFlashAttribute("error",
+                    "Otra operación modificó este stock al mismo tiempo. Vuelve a intentar.");
             return "redirect:/transferencias/" + id + "/confirmar-llegada";
         }
         ra.addFlashAttribute("mensaje", "Llegada confirmada. Stock repartido y actualizado en destino(s).");

@@ -127,6 +127,14 @@ public class RecepcionController {
         } catch (IllegalArgumentException | IllegalStateException e) {
             ra.addFlashAttribute("error", e.getMessage());
             return "redirect:/recepciones/" + id + "/confirmar";
+        } catch (org.springframework.dao.DataIntegrityViolationException
+                 | org.springframework.dao.OptimisticLockingFailureException e) {
+            // A6 / R-C1: dos confirmaciones simultaneas sobre el mismo stock. El
+            // UNIQUE (articulo+ubicacion+color) y el @Version evitan la corrupcion;
+            // aca se traduce la colision a un mensaje reintentable en vez de un 500.
+            ra.addFlashAttribute("error",
+                    "Otra operación modificó este stock al mismo tiempo. Vuelve a intentar.");
+            return "redirect:/recepciones/" + id + "/confirmar";
         }
         ra.addFlashAttribute("mensaje", "Recepción confirmada. Stock actualizado.");
         return "redirect:/recepciones";
