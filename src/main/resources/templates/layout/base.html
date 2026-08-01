@@ -6,6 +6,8 @@
     <title th:text="${titulo} + ' - TEXCONTROL'">TEXCONTROL</title>
     <meta name="_csrf" th:content="${_csrf.token}"/>
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <!-- #13: helper CSRF compartido, definido antes que cualquier script de página. -->
+    <script src="/js/fetch-csrf.js"></script>
 
     <!-- PWA: app movil instalable (agregar a pantalla de inicio, modo standalone) -->
     <link rel="manifest" href="/manifest.webmanifest">
@@ -285,17 +287,7 @@
 
     <script src="/webjars/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
     <script th:inline="javascript">
-        // Wrapper de fetch() que agrega automáticamente el token CSRF como
-        // header (ver AUDIT.md, hallazgo SEC-10). Usar en vez de fetch()
-        // directo para cualquier llamada AJAX que mute datos (POST/PUT/DELETE).
-        function fetchConCsrf(url, options) {
-            options = options || {};
-            const token = document.querySelector('meta[name="_csrf"]').content;
-            const header = document.querySelector('meta[name="_csrf_header"]').content;
-            options.headers = options.headers || {};
-            options.headers[header] = token;
-            return fetch(url, options);
-        }
+        // fetchConCsrf() vive ahora en /js/fetch-csrf.js (cargado en el <head>).
 
         // Boton para ocultar/mostrar el sidebar (util en monitores chicos).
         // La preferencia se guarda en localStorage para que se mantenga
