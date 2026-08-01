@@ -361,7 +361,7 @@ public class CatalogoController {
         Empresa e = catalogoService.buscarEmpresa(id);
         e.setActivo(false);
         catalogoService.guardarEmpresa(e);
-        ra.addFlashAttribute("mensaje", "Empresa inactivada. Sigue en la lista (marcada como inactiva); podés reactivarla cuando quieras.");
+        ra.addFlashAttribute("mensaje", "Empresa inactivada. Sigue en la lista (marcada como inactiva); puedes reactivarla cuando quieras.");
         return "redirect:/catalogo/empresas";
     }
 

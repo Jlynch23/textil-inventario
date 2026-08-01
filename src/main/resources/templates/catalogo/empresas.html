@@ -76,7 +76,7 @@
                                         <!-- Activa: botón para inactivar -->
                                         <form th:if="${e.activo}" th:action="@{/catalogo/empresas/inactivar/{id}(id=${e.id})}" method="post" style="display:inline">
                                             <button type="submit" class="btn btn-sm btn-outline-warning" title="Inactivar (reversible)"
-                                                    onclick="return confirm('¿Inactivar esta empresa? Dejará de aparecer en los formularios, pero queda en la lista y podés reactivarla cuando quieras.')">
+                                                    onclick="return confirm('¿Inactivar esta empresa? Dejará de aparecer en los formularios, pero queda en la lista y puedes reactivarla cuando quieras.')">
                                                 <i class="bi bi-eye-slash"></i>
                                             </button>
                                         </form>

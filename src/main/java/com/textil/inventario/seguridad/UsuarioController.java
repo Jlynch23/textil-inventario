@@ -265,8 +265,10 @@ public class UsuarioController {
     // Valida una contraseña nueva. Devuelve el mensaje de error, o null si es válida.
     // SEC-04: BCrypt trunca en 72 bytes UTF-8, por eso se valida en bytes.
     private String validarPassword(String password) {
-        if (password == null || password.length() < 6) {
-            return "La contraseña debe tener al menos 6 caracteres.";
+        // R-A3 (auditoria): minimo subido de 6 a 8. Con app publica y sin lockout
+        // fuerte, 6 (o "el DNI", 8 digitos publicos) era adivinable por fuerza bruta.
+        if (password == null || password.length() < 8) {
+            return "La contraseña debe tener al menos 8 caracteres.";
         }
         if (password.getBytes(java.nio.charset.StandardCharsets.UTF_8).length > 72) {
             return "La contraseña no puede superar los 72 caracteres (limite tecnico de BCrypt).";

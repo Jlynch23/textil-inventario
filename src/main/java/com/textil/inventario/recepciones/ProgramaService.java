@@ -231,7 +231,7 @@ public class ProgramaService {
             }
             if (cant < pd.getCantidadRecibida()) {
                 throw new IllegalArgumentException(
-                        "No podés dejar la cantidad solicitada (" + cant + ") por debajo de lo ya recibido ("
+                        "No puedes dejar la cantidad solicitada (" + cant + ") por debajo de lo ya recibido ("
                         + pd.getCantidadRecibida() + ") en una línea.");
             }
             pd.setCantidadSolicitada(cant);
