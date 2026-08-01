@@ -56,7 +56,7 @@ public class ReporteController {
     }
 
     @GetMapping("/stock/excel")
-    public ResponseEntity<byte[]> stockExcel(@RequestParam(required = false) Long ubicacionId,
+    public ResponseEntity<org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody> stockExcel(@RequestParam(required = false) Long ubicacionId,
                                               @RequestParam(required = false) Long tipoTelaId) throws IOException {
         List<StockActual> stock = reporteService.filtrarStock(ubicacionId, tipoTelaId);
         List<String> encabezados = List.of("Ubicación", "Tipo Tela", "Título", "Color", "Rollos", "Peso (kg)");
@@ -87,7 +87,7 @@ public class ReporteController {
     }
 
     @GetMapping("/kardex/excel")
-    public ResponseEntity<byte[]> kardexExcel(@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+    public ResponseEntity<org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody> kardexExcel(@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
                                                @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) throws IOException {
         List<KardexMovimiento> movimientos = reporteService.filtrarKardex(desde, hasta);
         List<String> encabezados = List.of("Fecha", "Tipo", "Artículo", "Origen", "Destino", "Rollos", "Peso (kg)", "Usuario");
@@ -123,7 +123,7 @@ public class ReporteController {
     }
 
     @GetMapping("/recepciones/excel")
-    public ResponseEntity<byte[]> recepcionesExcel(@RequestParam(required = false) Long empresaId,
+    public ResponseEntity<org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody> recepcionesExcel(@RequestParam(required = false) Long empresaId,
                                                      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
                                                      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) throws IOException {
         List<Recepcion> recepciones = reporteService.filtrarRecepciones(empresaId, desde, hasta);
@@ -164,7 +164,7 @@ public class ReporteController {
     }
 
     @GetMapping("/transferencias/excel")
-    public ResponseEntity<byte[]> transferenciasExcel(@RequestParam(required = false) Long ubicacionOrigenId,
+    public ResponseEntity<org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody> transferenciasExcel(@RequestParam(required = false) Long ubicacionOrigenId,
                                                         @RequestParam(required = false) Transferencia.EstadoTransferencia estado,
                                                         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
                                                         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) throws IOException {
@@ -197,7 +197,7 @@ public class ReporteController {
     }
 
     @GetMapping("/stock-bajo/excel")
-    public ResponseEntity<byte[]> stockBajoExcel(@RequestParam(required = false) Integer umbral) throws IOException {
+    public ResponseEntity<org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody> stockBajoExcel(@RequestParam(required = false) Integer umbral) throws IOException {
         int umbralFinal = umbral != null ? umbral : UMBRAL_STOCK_BAJO_DEFECTO;
         List<String> encabezados = List.of("Tipo Tela", "Título", "Color", "Total Rollos (todas las ubicaciones)");
         List<List<Object>> filas = new ArrayList<>();
@@ -218,11 +218,19 @@ public class ReporteController {
 
     // ---------- HELPER EXCEL ----------
 
-    private ResponseEntity<byte[]> excelResponse(String hoja, List<String> encabezados, List<List<Object>> filas, String nombreArchivo) throws IOException {
-        byte[] excel = excelExportService.generarExcel(hoja, encabezados, filas);
+    private ResponseEntity<org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody> excelResponse(String hoja, List<String> encabezados, List<List<Object>> filas, String nombreArchivo) {
+        // #10: el tope de filas se valida ANTES de mandar headers (si se pasa,
+        // lanza y no se llega a escribir nada al stream). Luego el Excel se
+        // transmite directo a la respuesta, sin materializarlo en un byte[].
+        if (filas.size() > ExcelExportService.MAX_FILAS) {
+            throw new IllegalArgumentException(
+                    "El reporte tiene " + filas.size() + " filas, supera el máximo exportable de "
+                    + ExcelExportService.MAX_FILAS + ". Filtra por un rango de fechas más acotado para descargarlo.");
+        }
+        org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody cuerpo = out -> excelExportService.escribir(hoja, encabezados, filas, out);
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + nombreArchivo + "\"")
-                .body(excel);
+                .body(cuerpo);
     }
 }

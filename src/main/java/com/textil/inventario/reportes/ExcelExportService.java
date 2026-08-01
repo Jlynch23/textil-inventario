@@ -4,8 +4,8 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.springframework.stereotype.Service;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.List;
 
 @Service
@@ -17,10 +17,15 @@ public class ExcelExportService {
     // Ahora: (a) SXSSFWorkbook mantiene solo una ventana de filas en memoria y
     // vuelca el resto a disco; (b) si el dataset supera este tope, se corta con
     // un mensaje claro pidiendo filtrar, en vez de tumbar la instancia.
-    private static final int MAX_FILAS = 100_000;
+    public static final int MAX_FILAS = 100_000;
     private static final int VENTANA_FILAS_EN_MEMORIA = 100;
 
-    public byte[] generarExcel(String nombreHoja, List<String> encabezados, List<List<Object>> filas) throws IOException {
+    // #10 (auditoria): streaming REAL. Antes se escribia a un ByteArrayOutputStream
+    // y se devolvia byte[] -> el archivo entero quedaba en heap al final. Ahora se
+    // escribe DIRECTO al OutputStream de la respuesta HTTP; con SXSSF, solo una
+    // ventana de filas vive en memoria y el resto va a disco temporal.
+    public void escribir(String nombreHoja, List<String> encabezados, List<List<Object>> filas,
+                         OutputStream out) throws IOException {
         if (filas.size() > MAX_FILAS) {
             throw new IllegalArgumentException(
                     "El reporte tiene " + filas.size() + " filas, supera el máximo exportable de "
@@ -66,9 +71,7 @@ public class ExcelExportService {
                 }
             }
 
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
             workbook.write(out);
-            return out.toByteArray();
         } finally {
             // Libera los archivos temporales que SXSSF vuelca a disco.
             workbook.dispose();
