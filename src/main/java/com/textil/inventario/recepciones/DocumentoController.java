@@ -83,35 +83,49 @@ public class DocumentoController {
                 .body(resource);
     }
 
+    // R-F3 (red-team): tope de documentos por descarga. Antes se armaba TODO el
+    // zip en un ByteArrayOutputStream en heap + se duplicaba con toByteArray();
+    // pedir miles de docs -> OOM. Ahora se transmite en streaming al cliente.
+    private static final int MAX_DOCS_ZIP = 500;
+
     @PostMapping("/descargar-zip")
-    public ResponseEntity<byte[]> descargarZip(@RequestParam("ids") List<Long> ids) throws IOException {
+    // Lectura: GERENTE puede descargar (igual que ver/descargar individual). Debe
+    // coincidir con la regla POST de SecurityConfig para este endpoint.
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('GERENTE','ADMIN','SUPERADMIN')")
+    public ResponseEntity<org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody>
+            descargarZip(@RequestParam("ids") List<Long> ids) {
+        if (ids == null || ids.isEmpty() || ids.size() > MAX_DOCS_ZIP) {
+            return ResponseEntity.badRequest().build();
+        }
         List<RecepcionDocumento> docs = documentoRepository.findAllById(ids);
 
-        java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
-        Set<String> nombresUsados = new HashSet<>();
+        // R-F3: el zip se escribe DIRECTO al OutputStream de la respuesta, sin
+        // materializarlo en memoria.
+        org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody cuerpo = out -> {
+            Set<String> nombresUsados = new HashSet<>();
+            try (ZipOutputStream zos = new ZipOutputStream(out)) {
+                for (RecepcionDocumento doc : docs) {
+                    Path ruta = Paths.get(doc.getRutaArchivo());
+                    if (!Files.exists(ruta)) continue;
 
-        try (ZipOutputStream zos = new ZipOutputStream(baos)) {
-            for (RecepcionDocumento doc : docs) {
-                Path ruta = Paths.get(doc.getRutaArchivo());
-                if (!Files.exists(ruta)) continue;
+                    String nombreEntrada = doc.getNombreOriginal();
+                    int contador = 1;
+                    while (nombresUsados.contains(nombreEntrada)) {
+                        nombreEntrada = "(" + contador + ")_" + doc.getNombreOriginal();
+                        contador++;
+                    }
+                    nombresUsados.add(nombreEntrada);
 
-                String nombreEntrada = doc.getNombreOriginal();
-                int contador = 1;
-                while (nombresUsados.contains(nombreEntrada)) {
-                    nombreEntrada = "(" + contador + ")_" + doc.getNombreOriginal();
-                    contador++;
+                    zos.putNextEntry(new ZipEntry(nombreEntrada));
+                    Files.copy(ruta, zos);
+                    zos.closeEntry();
                 }
-                nombresUsados.add(nombreEntrada);
-
-                zos.putNextEntry(new ZipEntry(nombreEntrada));
-                Files.copy(ruta, zos);
-                zos.closeEntry();
             }
-        }
+        };
 
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("application/zip"))
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"documentos.zip\"")
-                .body(baos.toByteArray());
+                .body(cuerpo);
     }
 }
