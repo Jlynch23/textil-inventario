@@ -52,6 +52,7 @@ public class ArchivoHistoricoService {
     private final com.textil.inventario.catalogo.CatalogoService catalogoService;
     private final DocumentoHistoricoClasificador clasificador;
     private final DocumentoHistoricoFileManager fileManager;
+    private final ZipSeguroExtractor zipExtractor;
     /**
      * Descomprime el ZIP subido, guarda cada PDF en disco y crea un registro
      * PENDIENTE por documento. NO llama a la IA aquí (eso es rápido y se hace
@@ -64,74 +65,27 @@ public class ArchivoHistoricoService {
      * kardex_movimientos). Pensado SOLO para cargar datos de prueba masivos;
      * por defecto viene en false y el comportamiento original no cambia.
      */
-    // SEC-05 (auditoria 17-jul-2026): proteccion basica contra "zip bomb".
-    private static final int MAX_ENTRADAS_ZIP = 1000;
-    private static final long MAX_TAMANO_DESCOMPRIMIDO_TOTAL = 200L * 1024 * 1024; // 200 MB
-    // R-F1 (red-team): tope POR ENTRADA. Una guia/factura PDF real pesa unos
-    // pocos MB; 50 MB es holgado. El cap acumulado de 200 MB NO alcanza por si
-    // solo, porque readAllBytes() descomprimia la entrada ENTERA a memoria antes
-    // de poder chequearlo -> una sola entrada bomba (p.ej. 25 GB de ceros) reventaba
-    // el heap. Ahora se copia en streaming cortando en cuanto se supera el tope.
-    private static final long MAX_TAMANO_POR_ENTRADA = 50L * 1024 * 1024; // 50 MB
+    // #12: los limites anti zip-bomb y la copia en streaming viven ahora en
+    // ZipSeguroExtractor (SEC-05 / R-F1).
     public int subirZip(MultipartFile zip, boolean crearRecepcionAutomatica, Long usuarioId) throws IOException {
         List<Empresa> empresas = empresaRepository.findByActivoTrue();
-        int contador = 0;
-        int entradasProcesadas = 0;
-        long tamanoTotalDescomprimido = 0;
-        Set<String> nombresUsados = new HashSet<>();
 
-        try (ZipInputStream zis = new ZipInputStream(zip.getInputStream())) {
-            ZipEntry entry;
-            while ((entry = zis.getNextEntry()) != null) {
-                if (entry.isDirectory()) continue;
-                entradasProcesadas++;
-                if (entradasProcesadas > MAX_ENTRADAS_ZIP) {
-                    throw new IllegalArgumentException(
-                            "El ZIP supera el limite de " + MAX_ENTRADAS_ZIP + " archivos permitidos.");
-                }
-                String nombreEntrada = entry.getName();
-                if (!nombreEntrada.toLowerCase().endsWith(".pdf")) continue;
-
-                DocumentoHistorico.TipoDocumentoHistorico tipo = clasificador.detectarTipo(nombreEntrada);
-                Empresa empresa = clasificador.detectarEmpresaPorRuta(nombreEntrada, empresas);
-
-                String nombreArchivo = Paths.get(nombreEntrada).getFileName().toString();
-                Path carpetaDestino = Paths.get(rutaBase, "HistoricoImportado",
-                        tipo.name(),
-                        empresa != null ? empresa.getCarpeta() : "SinIdentificar");
-                Files.createDirectories(carpetaDestino);
-
-                String nombreGuardado = clasificador.evitarColision(nombreArchivo, nombresUsados);
-                Path rutaCompleta = carpetaDestino.resolve(nombreGuardado);
-
-                // R-F1: copia en streaming al disco controlando el tamano DURANTE
-                // la copia, sin materializar la entrada entera en memoria. El tope
-                // efectivo es el menor entre el maximo por-entrada y lo que resta
-                // del cap acumulado; si se supera, aborta la importacion.
-                long escritos = copiarEntradaConTope(zis, rutaCompleta,
-                        Math.min(MAX_TAMANO_POR_ENTRADA, MAX_TAMANO_DESCOMPRIMIDO_TOTAL - tamanoTotalDescomprimido));
-                if (escritos == 0) {
-                    Files.deleteIfExists(rutaCompleta);
-                    continue;
-                }
-                tamanoTotalDescomprimido += escritos;
-
-                DocumentoHistorico doc = new DocumentoHistorico();
-                doc.setEmpresa(empresa);
-                doc.setTipoDocumento(tipo);
-                doc.setNombreOriginal(nombreArchivo);
-                doc.setRutaRelativaZip(nombreEntrada);
-                doc.setRutaArchivo(rutaCompleta.toString());
-                doc.setEstadoProceso(DocumentoHistorico.EstadoProceso.PENDIENTE);
-                doc.setCrearRecepcionAutomatica(crearRecepcionAutomatica);
-                doc.setSubidoPorUsuarioId(usuarioId);
-                documentoHistoricoRepository.save(doc);
-
-                contador++;
-            }
+        // #12: la descompresion segura a disco (limites anti zip-bomb + streaming)
+        // vive en ZipSeguroExtractor. Aca solo se crean los registros PENDIENTE.
+        List<ZipSeguroExtractor.EntradaExtraida> entradas = zipExtractor.extraer(zip, empresas);
+        for (ZipSeguroExtractor.EntradaExtraida e : entradas) {
+            DocumentoHistorico doc = new DocumentoHistorico();
+            doc.setEmpresa(e.empresa());
+            doc.setTipoDocumento(e.tipo());
+            doc.setNombreOriginal(e.nombreOriginal());
+            doc.setRutaRelativaZip(e.rutaRelativaZip());
+            doc.setRutaArchivo(e.rutaArchivo().toString());
+            doc.setEstadoProceso(DocumentoHistorico.EstadoProceso.PENDIENTE);
+            doc.setCrearRecepcionAutomatica(crearRecepcionAutomatica);
+            doc.setSubidoPorUsuarioId(usuarioId);
+            documentoHistoricoRepository.save(doc);
         }
-
-        return contador;
+        return entradas.size();
     }
 
     /**
@@ -140,29 +94,6 @@ public class ArchivoHistoricoService {
      * entero en memoria (que es lo que permitía la zip-bomb con readAllBytes()).
      * Devuelve los bytes escritos; borra el archivo parcial y lanza si se excede.
      */
-    private long copiarEntradaConTope(InputStream in, Path destino, long maxBytes) throws IOException {
-        long total = 0;
-        boolean excedido = false;
-        byte[] buffer = new byte[8192];
-        try (OutputStream out = Files.newOutputStream(destino)) {
-            int leidos;
-            while ((leidos = in.read(buffer)) != -1) {
-                total += leidos;
-                if (total > maxBytes) { excedido = true; break; }
-                out.write(buffer, 0, leidos);
-            }
-        }
-        if (excedido) {
-            Files.deleteIfExists(destino);
-            throw new IllegalArgumentException(
-                    "Una entrada del ZIP supera el límite de seguridad de descompresión "
-                    + "(máx " + (MAX_TAMANO_POR_ENTRADA / (1024 * 1024)) + " MB por archivo, "
-                    + (MAX_TAMANO_DESCOMPRIMIDO_TOTAL / (1024 * 1024)) + " MB en total). "
-                    + "Posible archivo corrupto o zip-bomb; se abortó la importación.");
-        }
-        return total;
-    }
-
     /**
      * Re-intenta detectar la empresa de los documentos que quedaron "(sin
      * identificar)", SIN volver a leer el PDF: reutiliza la razon social que ya
