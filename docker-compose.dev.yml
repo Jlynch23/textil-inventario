@@ -23,6 +23,9 @@ services:
       MYSQL_DATABASE: textil_inventario
       MYSQL_USER: textil_user
       MYSQL_PASSWORD: ${DB_PASSWORD}
+      # M17: hora Peru en el contenedor (ver docker-compose.yml).
+      TZ: America/Lima
+    command: ["--default-time-zone=-05:00"]
     volumes:
       - mysql_data_dev:/var/lib/mysql
     networks:

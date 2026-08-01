@@ -10,6 +10,13 @@ services:
       MYSQL_DATABASE: textil_inventario
       MYSQL_USER: textil_user
       MYSQL_PASSWORD: ${DB_PASSWORD}
+      # M17 (auditoria): el contenedor corre en hora Peru. Sin esto MySQL genera
+      # los DEFAULT CURRENT_TIMESTAMP en UTC, descuadrando hasta 5h las filas
+      # que llena la BD frente a las que llena la app (que ya usa America/Lima).
+      TZ: America/Lima
+    # --default-time-zone por offset: la imagen de MySQL no trae las tablas de
+    # zonas nombradas, asi que "America/Lima" no se puede usar aca; -05:00 si.
+    command: ["--default-time-zone=-05:00"]
     ports:
       - "127.0.0.1:3307:3306"
     volumes:

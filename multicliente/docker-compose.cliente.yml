@@ -28,7 +28,12 @@ services:
       MYSQL_DATABASE: textil_inventario
       MYSQL_USER: textil_user
       MYSQL_PASSWORD: ${DB_PASSWORD}
+      # M17: hora Peru en el contenedor (ver docker-compose.yml).
+      TZ: America/Lima
     command:
+      # M17: DEFAULT CURRENT_TIMESTAMP en hora Peru (offset; la imagen no trae
+      # las tablas de zonas nombradas). Alinea la BD con la app (America/Lima).
+      - --default-time-zone=-05:00
       # Afinado de memoria para que varios MySQL quepan en los 4 GB del VPS.
       # El buffer pool es lo que mas RAM consume en InnoDB; 128M es holgado
       # para el volumen de datos de una textileria. performance_schema OFF
