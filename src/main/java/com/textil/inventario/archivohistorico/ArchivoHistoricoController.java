@@ -24,6 +24,9 @@ import java.nio.file.Paths;
 @Controller
 @RequestMapping("/archivo-historico")
 @RequiredArgsConstructor
+// M7 (auditoria): defensa en profundidad. Todo el modulo es ADMIN+SUPERADMIN por
+// las reglas de URL, pero era el unico controlador de escritura sin @PreAuthorize.
+@org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
 public class ArchivoHistoricoController {
 
     private final DocumentoHistoricoRepository documentoHistoricoRepository;

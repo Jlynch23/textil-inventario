@@ -570,7 +570,11 @@ public class ArchivoHistoricoService {
                     color = colorRepository.save(nuevo);
                     colorCreado = 1;
                 } catch (Exception e) {
-                    // choque de datos que no pudimos anticipar: no se puede crear con seguridad
+                    // choque de datos que no pudimos anticipar: no se puede crear con seguridad.
+                    // R-S1 (auditoria): se LOGUEA antes de degradar; sin esto, las lineas
+                    // perdidas de un import quedaban sin ningun rastro de por que.
+                    log.warn("No se pudo crear el color '{}' (cod '{}') durante el enriquecimiento: {}",
+                            p.colorNombre(), p.colorCodigo(), e.getMessage());
                     return new EnriquecimientoResultado(null, null, 0, 0);
                 }
             }
@@ -597,7 +601,10 @@ public class ArchivoHistoricoService {
                 articulo = articuloRepository.save(nuevo);
                 articuloCreado = 1;
             } catch (Exception e) {
-                // no se pudo crear el articulo
+                // R-S1 (auditoria): loguear antes de degradar, para no perder en
+                // silencio la linea que no se pudo enriquecer.
+                log.warn("No se pudo crear el articulo ({}/{}/{}) durante el enriquecimiento: {}",
+                        tipoTela.get().getNombre(), titulo.get().getValor(), composicion.get().getNombre(), e.getMessage());
                 return new EnriquecimientoResultado(null, null, 0, 0);
             }
         }
