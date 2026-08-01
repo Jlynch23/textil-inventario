@@ -70,7 +70,9 @@ mc_esperar_db "$SLUG" || exit 1
 
 # --- 3. Restaurar el dump dentro de db_<slug> ------------------------------
 # La clave de root del cliente nuevo esta en su propio .env recien generado.
-set -a; source "$DIR_CLIENTE/.env"; set +a
+# M16 (auditoria): se lee LITERAL (grep|cut), no con `source`, para que un
+# NOMBRE_EMPRESA con "&"/espacios no aborte el script (mismo patron que deploy.sh).
+MYSQL_ROOT_PASSWORD="$(grep -E '^MYSQL_ROOT_PASSWORD=' "$DIR_CLIENTE/.env" | cut -d= -f2-)"
 
 echo "Restaurando el dump dentro de db_$SLUG..."
 # Password por MYSQL_PWD (no por -p"...") para no exponerla en la lista de

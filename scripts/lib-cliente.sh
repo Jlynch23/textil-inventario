@@ -67,7 +67,7 @@ mc_generar_env() {
     cat > "$env_cliente" <<EOF
 # Generado por el modelo multi-cliente. Contiene credenciales: NO commitear.
 CLIENTE_SLUG=$slug
-NOMBRE_EMPRESA=$nombre
+NOMBRE_EMPRESA="$nombre"
 DB_PASSWORD=$db_pass
 MYSQL_ROOT_PASSWORD=$root_pass
 REMEMBER_ME_KEY=$rememberme

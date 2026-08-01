@@ -29,8 +29,12 @@ backup_uno() {
         return 1
     fi
 
-    # Lee MYSQL_ROOT_PASSWORD (y demas) del .env del cliente.
-    set -a; source "$env_cliente"; set +a
+    # M16 (auditoria): se lee SOLO MYSQL_ROOT_PASSWORD de forma LITERAL (grep|cut),
+    # NO con `source`. Con `source`, un NOMBRE_EMPRESA con "&" o espacios (ej.
+    # "Laura & Clemente") abortaba bajo `set -euo pipefail` y el backup por cron
+    # fallaba EN SILENCIO. Mismo patron que scripts/deploy.sh.
+    local MYSQL_ROOT_PASSWORD
+    MYSQL_ROOT_PASSWORD="$(grep -E '^MYSQL_ROOT_PASSWORD=' "$env_cliente" | cut -d= -f2-)"
 
     local carpeta="${HOME}/backups/$slug"
     mkdir -p "$carpeta"
