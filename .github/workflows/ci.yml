@@ -25,3 +25,45 @@ jobs:
 
       - name: Ejecutar tests
         run: mvn -B test
+
+  # M15 (auditoria): valida que las entidades JPA calcen con las migraciones
+  # Flyway arrancando el contexto de Spring contra un MySQL real. Sin esto, un
+  # drift entidad<->esquema pasaba CI en verde y reventaba recien en el deploy
+  # (ddl-auto: validate). Ver EsquemaFlywayTest.
+  validar-esquema:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: textil_inventario
+          MYSQL_USER: textil_user
+          MYSQL_PASSWORD: textil_pass
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Validar esquema (Flyway + Hibernate validate)
+        env:
+          RUN_DB_IT: "true"
+          DB_URL: "jdbc:mysql://127.0.0.1:3306/textil_inventario?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
+          DB_USERNAME: textil_user
+          DB_PASSWORD: textil_pass
+          # Requerida por SecurityConfig (no es secreto: solo para arrancar el contexto en CI).
+          REMEMBER_ME_KEY: ci-clave-solo-para-validar-el-esquema
+        run: mvn -B test -Dtest=EsquemaFlywayTest -DfailIfNoTests=false
