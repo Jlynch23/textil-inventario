@@ -30,16 +30,25 @@ public class EmpresaController {
                 .collect(Collectors.joining(" "));
     }
 
+    // #7: entidad -> DTO para poblar el form en edicion.
+    private EmpresaForm aEmpresaForm(Empresa e) {
+        EmpresaForm f = new EmpresaForm();
+        f.setId(e.getId());
+        f.setNombre(e.getNombre());
+        f.setRuc(e.getRuc());
+        return f;
+    }
+
     @GetMapping("/empresas")
     @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public String listarEmpresas(Model model) {
         model.addAttribute("empresas", catalogoService.listarEmpresas());
-        model.addAttribute("empresa", new Empresa());
+        model.addAttribute("empresa", new EmpresaForm());
         return "catalogo/empresas";
     }
 
     @PostMapping("/empresas/guardar")
-    public String guardarEmpresaForm(@Valid @ModelAttribute Empresa empresa, BindingResult bindingResult, RedirectAttributes ra) {
+    public String guardarEmpresaForm(@Valid @ModelAttribute("empresa") EmpresaForm empresa, BindingResult bindingResult, RedirectAttributes ra) {
         if (bindingResult.hasErrors()) {
             ra.addFlashAttribute("error", primerError(bindingResult));
             return "redirect:/catalogo/empresas";
@@ -57,7 +66,7 @@ public class EmpresaController {
     @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public String editarEmpresa(@PathVariable Long id, Model model) {
         model.addAttribute("empresas", catalogoService.listarEmpresas());
-        model.addAttribute("empresa", catalogoService.buscarEmpresa(id));
+        model.addAttribute("empresa", aEmpresaForm(catalogoService.buscarEmpresa(id)));
         return "catalogo/empresas";
     }
 

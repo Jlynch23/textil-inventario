@@ -30,6 +30,15 @@ public class TituloController {
                 .collect(Collectors.joining(" "));
     }
 
+    // #7: entidad -> DTO para poblar el form en edicion.
+    private TituloForm aTituloForm(Titulo e) {
+        TituloForm f = new TituloForm();
+        f.setId(e.getId());
+        f.setValor(e.getValor());
+        f.setDescripcion(e.getDescripcion());
+        return f;
+    }
+
     @GetMapping("/titulos")
     @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public String listarTitulos(Model model) {
@@ -39,12 +48,12 @@ public class TituloController {
         // de la pestana del navegador -- si el atributo del modelo se llamara
         // igual, ese parametro lo tapa y Thymeleaf falla al resolver "titulo.id"
         // dentro de esta pantalla (EL1008E: Fragment has no field 'id').
-        model.addAttribute("tituloForm", new Titulo());
+        model.addAttribute("tituloForm", new TituloForm());
         return "catalogo/titulos";
     }
 
     @PostMapping("/titulos/guardar")
-    public String guardarTituloForm(@Valid @ModelAttribute("tituloForm") Titulo tituloForm, BindingResult bindingResult, RedirectAttributes ra) {
+    public String guardarTituloForm(@Valid @ModelAttribute("tituloForm") TituloForm tituloForm, BindingResult bindingResult, RedirectAttributes ra) {
         if (bindingResult.hasErrors()) {
             ra.addFlashAttribute("error", primerError(bindingResult));
             return "redirect:/catalogo/titulos";
@@ -62,7 +71,7 @@ public class TituloController {
     @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public String editarTitulo(@PathVariable Long id, Model model) {
         model.addAttribute("titulos", catalogoService.listarTitulos());
-        model.addAttribute("tituloForm", catalogoService.buscarTitulo(id));
+        model.addAttribute("tituloForm", aTituloForm(catalogoService.buscarTitulo(id)));
         return "catalogo/titulos";
     }
 

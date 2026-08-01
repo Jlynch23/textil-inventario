@@ -191,4 +191,27 @@ class CatalogoServiceTest {
         assertThat(guardado.getNombre()).isEqualTo("TEXTIL LAURA");
         assertThat(guardado.getRuc()).isEqualTo("20123456789");
     }
+
+    // #7 (DTO): editar una empresa INACTIVA por el form NO la reactiva. El DTO no
+    // tiene 'activo'; el service hace fetch-or-create y preserva el estado.
+    @Test
+    void guardarEmpresaForm_edicionDeInactiva_preservaActivoFalse() {
+        Empresa inactiva = new Empresa();
+        inactiva.setId(7L);
+        inactiva.setNombre("VIEJO");
+        inactiva.setRuc("20123456789");
+        inactiva.setActivo(false);
+        when(empresaRepository.findById(7L)).thenReturn(Optional.of(inactiva));
+        when(empresaRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        EmpresaForm form = new EmpresaForm();
+        form.setId(7L);
+        form.setNombre("nuevo nombre");
+        form.setRuc("20123456789");
+
+        Empresa guardado = service.guardarEmpresa(form);
+
+        assertThat(guardado.getActivo()).as("editar no debe reactivar").isFalse();
+        assertThat(guardado.getNombre()).isEqualTo("NUEVO NOMBRE");
+    }
 }

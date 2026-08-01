@@ -30,11 +30,22 @@ public class UbicacionController {
                 .collect(Collectors.joining(" "));
     }
 
+    // #7: entidad -> DTO para poblar el form en edicion.
+    private UbicacionForm aUbicacionForm(Ubicacion e) {
+        UbicacionForm f = new UbicacionForm();
+        f.setId(e.getId());
+        f.setCodigo(e.getCodigo());
+        f.setNombre(e.getNombre());
+        f.setTipo(e.getTipo());
+        f.setEsPrincipal(e.getEsPrincipal());
+        return f;
+    }
+
     @GetMapping("/ubicaciones")
     @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public String listarUbicaciones(Model model) {
         model.addAttribute("ubicaciones", catalogoService.listarUbicaciones());
-        model.addAttribute("ubicacion", new Ubicacion());
+        model.addAttribute("ubicacion", new UbicacionForm());
         return "catalogo/ubicaciones";
     }
 
@@ -42,12 +53,12 @@ public class UbicacionController {
     @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public String editarUbicacion(@PathVariable Long id, Model model) {
         model.addAttribute("ubicaciones", catalogoService.listarUbicaciones());
-        model.addAttribute("ubicacion", catalogoService.buscarUbicacion(id));
+        model.addAttribute("ubicacion", aUbicacionForm(catalogoService.buscarUbicacion(id)));
         return "catalogo/ubicaciones";
     }
 
     @PostMapping("/ubicaciones/guardar")
-    public String guardarUbicacion(@Valid @ModelAttribute Ubicacion ubicacion, BindingResult bindingResult, RedirectAttributes ra) {
+    public String guardarUbicacion(@Valid @ModelAttribute("ubicacion") UbicacionForm ubicacion, BindingResult bindingResult, RedirectAttributes ra) {
         if (bindingResult.hasErrors()) {
             ra.addFlashAttribute("error", primerError(bindingResult));
             return "redirect:/catalogo/ubicaciones";

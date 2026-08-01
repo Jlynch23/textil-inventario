@@ -30,16 +30,25 @@ public class AcabadoController {
                 .collect(Collectors.joining(" "));
     }
 
+    // #7: entidad -> DTO para poblar el form en edicion.
+    private AcabadoForm aAcabadoForm(Acabado e) {
+        AcabadoForm f = new AcabadoForm();
+        f.setId(e.getId());
+        f.setNombre(e.getNombre());
+        f.setDescripcion(e.getDescripcion());
+        return f;
+    }
+
     @GetMapping("/acabados")
     @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public String listarAcabados(Model model) {
         model.addAttribute("acabados", catalogoService.listarAcabados());
-        model.addAttribute("acabado", new Acabado());
+        model.addAttribute("acabado", new AcabadoForm());
         return "catalogo/acabados";
     }
 
     @PostMapping("/acabados/guardar")
-    public String guardarAcabadoForm(@Valid @ModelAttribute Acabado acabado, BindingResult bindingResult, RedirectAttributes ra) {
+    public String guardarAcabadoForm(@Valid @ModelAttribute("acabado") AcabadoForm acabado, BindingResult bindingResult, RedirectAttributes ra) {
         if (bindingResult.hasErrors()) {
             ra.addFlashAttribute("error", primerError(bindingResult));
             return "redirect:/catalogo/acabados";
@@ -57,7 +66,7 @@ public class AcabadoController {
     @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public String editarAcabado(@PathVariable Long id, Model model) {
         model.addAttribute("acabados", catalogoService.listarAcabados());
-        model.addAttribute("acabado", catalogoService.buscarAcabado(id));
+        model.addAttribute("acabado", aAcabadoForm(catalogoService.buscarAcabado(id)));
         return "catalogo/acabados";
     }
 

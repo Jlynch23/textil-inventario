@@ -30,16 +30,25 @@ public class ComposicionController {
                 .collect(Collectors.joining(" "));
     }
 
+    // #7: entidad -> DTO para poblar el form en edicion.
+    private ComposicionForm aComposicionForm(Composicion e) {
+        ComposicionForm f = new ComposicionForm();
+        f.setId(e.getId());
+        f.setNombre(e.getNombre());
+        f.setDescripcion(e.getDescripcion());
+        return f;
+    }
+
     @GetMapping("/composiciones")
     @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public String listarComposiciones(Model model) {
         model.addAttribute("composiciones", catalogoService.listarComposiciones());
-        model.addAttribute("composicion", new Composicion());
+        model.addAttribute("composicion", new ComposicionForm());
         return "catalogo/composiciones";
     }
 
     @PostMapping("/composiciones/guardar")
-    public String guardarComposicionForm(@Valid @ModelAttribute Composicion composicion, BindingResult bindingResult, RedirectAttributes ra) {
+    public String guardarComposicionForm(@Valid @ModelAttribute("composicion") ComposicionForm composicion, BindingResult bindingResult, RedirectAttributes ra) {
         if (bindingResult.hasErrors()) {
             ra.addFlashAttribute("error", primerError(bindingResult));
             return "redirect:/catalogo/composiciones";
@@ -57,7 +66,7 @@ public class ComposicionController {
     @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public String editarComposicion(@PathVariable Long id, Model model) {
         model.addAttribute("composiciones", catalogoService.listarComposiciones());
-        model.addAttribute("composicion", catalogoService.buscarComposicion(id));
+        model.addAttribute("composicion", aComposicionForm(catalogoService.buscarComposicion(id)));
         return "catalogo/composiciones";
     }
 

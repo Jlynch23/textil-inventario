@@ -30,16 +30,25 @@ public class TipoTelaController {
                 .collect(Collectors.joining(" "));
     }
 
+    // #7: entidad -> DTO para poblar el form en edicion.
+    private TipoTelaForm aTipoTelaForm(TipoTela e) {
+        TipoTelaForm f = new TipoTelaForm();
+        f.setId(e.getId());
+        f.setNombre(e.getNombre());
+        f.setDescripcion(e.getDescripcion());
+        return f;
+    }
+
     @GetMapping("/tipos-tela")
     @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public String listarTiposTela(Model model) {
         model.addAttribute("tiposTela", catalogoService.listarTiposTela());
-        model.addAttribute("tipoTela", new TipoTela());
+        model.addAttribute("tipoTela", new TipoTelaForm());
         return "catalogo/tipos-tela";
     }
 
     @PostMapping("/tipos-tela/guardar")
-    public String guardarTipoTela(@Valid @ModelAttribute TipoTela tipoTela, BindingResult bindingResult, RedirectAttributes ra) {
+    public String guardarTipoTela(@Valid @ModelAttribute("tipoTela") TipoTelaForm tipoTela, BindingResult bindingResult, RedirectAttributes ra) {
         if (bindingResult.hasErrors()) {
             ra.addFlashAttribute("error", primerError(bindingResult));
             return "redirect:/catalogo/tipos-tela";
@@ -57,7 +66,7 @@ public class TipoTelaController {
     @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public String editarTipoTela(@PathVariable Long id, Model model) {
         model.addAttribute("tiposTela", catalogoService.listarTiposTela());
-        model.addAttribute("tipoTela", catalogoService.buscarTipoTela(id));
+        model.addAttribute("tipoTela", aTipoTelaForm(catalogoService.buscarTipoTela(id)));
         return "catalogo/tipos-tela";
     }
 

@@ -40,6 +40,15 @@ public class CatalogoService {
         e.setCarpeta(generarCarpeta(e.getNombre()));
         return empresaRepository.save(e);
     }
+    // #7: form de Empresa por DTO. fetch-or-create PRESERVA 'activo' en edicion
+    // (editar una inactiva ya no la reactiva; el hidden 'activo' del template
+    // deja de hacer falta) y setea solo nombre/ruc (la carpeta se auto-genera).
+    public Empresa guardarEmpresa(EmpresaForm form) {
+        Empresa e = (form.getId() == null) ? new Empresa() : buscarEmpresa(form.getId());
+        e.setNombre(form.getNombre());
+        e.setRuc(form.getRuc());
+        return guardarEmpresa(e);
+    }
     public Empresa buscarEmpresa(Long id) { return empresaRepository.findById(id).orElseThrow(); }
 
     /** Slug de carpeta a partir del nombre: sin tildes, minusculas, espacios y
@@ -79,6 +88,17 @@ public class CatalogoService {
         }
         return ubicacionRepository.save(u);
     }
+    // #7: form de Ubicacion por DTO. fetch-or-create preserva 'activo'; setea
+    // codigo/nombre/tipo/esPrincipal (la logica de principal-unica vive en el
+    // guardarUbicacion(Ubicacion) que se reutiliza abajo).
+    public Ubicacion guardarUbicacion(UbicacionForm form) {
+        Ubicacion u = (form.getId() == null) ? new Ubicacion() : buscarUbicacion(form.getId());
+        u.setCodigo(form.getCodigo());
+        u.setNombre(form.getNombre());
+        u.setTipo(form.getTipo());
+        u.setEsPrincipal(form.getEsPrincipal() != null && form.getEsPrincipal());
+        return guardarUbicacion(u);
+    }
     public Ubicacion buscarUbicacion(Long id) { return ubicacionRepository.findById(id).orElseThrow(); }
 
     // TIPOS DE TELA
@@ -86,6 +106,13 @@ public class CatalogoService {
     public TipoTela guardarTipoTela(TipoTela t) {
         t.setNombre(normalizar(t.getNombre()));
         return tipoTelaRepository.save(t);
+    }
+    // #7: alta/edicion desde el form (fetch-or-create; no toca activo/version).
+    public TipoTela guardarTipoTela(TipoTelaForm form) {
+        TipoTela t = (form.getId() == null) ? new TipoTela() : buscarTipoTela(form.getId());
+        t.setNombre(form.getNombre());
+        t.setDescripcion(form.getDescripcion());
+        return guardarTipoTela(t);
     }
     public TipoTela buscarTipoTela(Long id) { return tipoTelaRepository.findById(id).orElseThrow(); }
 
@@ -95,6 +122,12 @@ public class CatalogoService {
         t.setValor(normalizar(t.getValor()));
         return tituloRepository.save(t);
     }
+    public Titulo guardarTitulo(TituloForm form) {
+        Titulo t = (form.getId() == null) ? new Titulo() : buscarTitulo(form.getId());
+        t.setValor(form.getValor());
+        t.setDescripcion(form.getDescripcion());
+        return guardarTitulo(t);
+    }
     public Titulo buscarTitulo(Long id) { return tituloRepository.findById(id).orElseThrow(); }
 
     // COMPOSICIONES
@@ -103,6 +136,12 @@ public class CatalogoService {
         c.setNombre(normalizar(c.getNombre()));
         return composicionRepository.save(c);
     }
+    public Composicion guardarComposicion(ComposicionForm form) {
+        Composicion c = (form.getId() == null) ? new Composicion() : buscarComposicion(form.getId());
+        c.setNombre(form.getNombre());
+        c.setDescripcion(form.getDescripcion());
+        return guardarComposicion(c);
+    }
     public Composicion buscarComposicion(Long id) { return composicionRepository.findById(id).orElseThrow(); }
 
     // ACABADOS
@@ -110,6 +149,12 @@ public class CatalogoService {
     public Acabado guardarAcabado(Acabado a) {
         a.setNombre(normalizar(a.getNombre()));
         return acabadoRepository.save(a);
+    }
+    public Acabado guardarAcabado(AcabadoForm form) {
+        Acabado a = (form.getId() == null) ? new Acabado() : buscarAcabado(form.getId());
+        a.setNombre(form.getNombre());
+        a.setDescripcion(form.getDescripcion());
+        return guardarAcabado(a);
     }
     public Acabado buscarAcabado(Long id) { return acabadoRepository.findById(id).orElseThrow(); }
 
