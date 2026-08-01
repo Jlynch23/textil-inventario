@@ -405,6 +405,12 @@
     document.getElementById('formRecepcion').addEventListener('submit', async (e) => {
         e.preventDefault();
 
+        // R-J3: deshabilitar el boton mientras se procesa evita una segunda
+        // creacion por doble-click (hay dos await en serie antes del POST final).
+        const btnSubmit = e.submitter || e.target.querySelector('button[type="submit"]');
+        if (btnSubmit) btnSubmit.disabled = true;
+        try {
+
         const empresaId = document.getElementById('empresaId').value;
         const numeroGuia = document.getElementById('numeroGuia').value;
 
@@ -462,8 +468,12 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ empresaId: parseInt(empresaId), numeroGuia, numeroFactura, fechaGuia, observaciones, lineas })
             });
-            const data = await resp.json();
-            if (resp.ok) {
+            // R-J2: el backend puede responder HTML de error (500/403) en vez de
+            // JSON; sin este guard, resp.json() lanzaba y la creacion fallaba en
+            // absoluto silencio (el usuario no veia ningun mensaje).
+            let data = null;
+            try { data = await resp.json(); } catch (parseErr) { data = null; }
+            if (resp.ok && data) {
                 if (pdfSeleccionado) {
                     const fd = new FormData();
                     fd.append('file', pdfSeleccionado);
@@ -483,7 +493,7 @@
                 }
                 window.location.href = data.redirectUrl;
             } else {
-                alert('Error: ' + data.error);
+                alert('Error: ' + ((data && data.error) || ('No se pudo crear la recepción (HTTP ' + resp.status + ').')));
             }
         } else {
             const form = document.createElement('form');
@@ -514,6 +524,13 @@
             }
             document.body.appendChild(form);
             form.submit();
+        }
+        } catch (err) {
+            // R-J2: error de red u otro fallo inesperado -> avisar en vez de
+            // quedar en silencio con el boton bloqueado.
+            alert('No se pudo procesar la recepción: ' + (err && err.message ? err.message : err));
+        } finally {
+            if (btnSubmit) btnSubmit.disabled = false;
         }
     });
 </script>
