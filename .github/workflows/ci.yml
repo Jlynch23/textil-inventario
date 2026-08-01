@@ -66,4 +66,4 @@ jobs:
           DB_PASSWORD: textil_pass
           # Requerida por SecurityConfig (no es secreto: solo para arrancar el contexto en CI).
           REMEMBER_ME_KEY: ci-clave-solo-para-validar-el-esquema
-        run: mvn -B test -Dtest=EsquemaFlywayTest -DfailIfNoTests=false
+        run: mvn -B test -Dtest=EsquemaFlywayTest,ConfirmacionConcurrenteTest -DfailIfNoTests=false
