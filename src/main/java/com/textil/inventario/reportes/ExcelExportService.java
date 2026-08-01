@@ -1,7 +1,7 @@
 package com.textil.inventario.reportes;
 
 import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
@@ -11,8 +11,24 @@ import java.util.List;
 @Service
 public class ExcelExportService {
 
+    // R-F2 (red-team): tope duro de filas. Antes, exportar el kardex/stock SIN
+    // rango de fechas materializaba TODO el historico en un XSSFWorkbook (DOM
+    // entero en heap) + autoSizeColumn O(filas) -> OutOfMemoryError con un click.
+    // Ahora: (a) SXSSFWorkbook mantiene solo una ventana de filas en memoria y
+    // vuelca el resto a disco; (b) si el dataset supera este tope, se corta con
+    // un mensaje claro pidiendo filtrar, en vez de tumbar la instancia.
+    private static final int MAX_FILAS = 100_000;
+    private static final int VENTANA_FILAS_EN_MEMORIA = 100;
+
     public byte[] generarExcel(String nombreHoja, List<String> encabezados, List<List<Object>> filas) throws IOException {
-        try (Workbook workbook = new XSSFWorkbook()) {
+        if (filas.size() > MAX_FILAS) {
+            throw new IllegalArgumentException(
+                    "El reporte tiene " + filas.size() + " filas, supera el máximo exportable de "
+                    + MAX_FILAS + ". Filtrá por un rango de fechas más acotado para descargarlo.");
+        }
+
+        SXSSFWorkbook workbook = new SXSSFWorkbook(VENTANA_FILAS_EN_MEMORIA);
+        try {
             Sheet sheet = workbook.createSheet(nombreHoja);
 
             CellStyle estiloEncabezado = workbook.createCellStyle();
@@ -28,6 +44,10 @@ public class ExcelExportService {
                 Cell celda = filaEncabezado.createCell(col);
                 celda.setCellValue(encabezados.get(col));
                 celda.setCellStyle(estiloEncabezado);
+                // Ancho fijo por columna: autoSizeColumn bajo streaming exige
+                // trackear todas las columnas en memoria (defo el propósito de
+                // SXSSF) y es O(filas). Un ancho derivado del encabezado alcanza.
+                sheet.setColumnWidth(col, Math.min(60, Math.max(14, encabezados.get(col).length() + 4)) * 256);
             }
 
             int numeroFila = 1;
@@ -46,13 +66,13 @@ public class ExcelExportService {
                 }
             }
 
-            for (int col = 0; col < encabezados.size(); col++) {
-                sheet.autoSizeColumn(col);
-            }
-
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             workbook.write(out);
             return out.toByteArray();
+        } finally {
+            // Libera los archivos temporales que SXSSF vuelca a disco.
+            workbook.dispose();
+            workbook.close();
         }
     }
 
