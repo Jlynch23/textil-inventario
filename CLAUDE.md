@@ -117,16 +117,43 @@ parsing de guías, ese prompt es la fuente de verdad.
 
 - Todo cambio de esquema es una migración Flyway nueva en
   `src/main/resources/db/migration/V<n>__descripcion.sql`. **Nunca** editar una migración ya
-  aplicada; sumar una nueva con el siguiente número (actualmente van hasta **V37**).
+  aplicada; sumar una nueva con el siguiente número (actualmente van hasta **V41**). Las últimas:
+  V38 (`@Version` en recepción/transferencia), V39 (flag de cambio de password forzado),
+  V40 (número normalizado para dedup de documentos históricos), V41 (tabla `correlativo`).
 - `ddl-auto: validate`: si una entidad no calza con el esquema migrado, la app no arranca.
 - `baseline-on-migrate: true`.
 
+### Rendimiento JPA (importante)
+- **`open-in-view: false`** (apagado a propósito): la sesión de Hibernate se cierra al terminar la
+  capa de servicio, NO durante el render. Por eso las vistas reciben entidades ya cargadas: los
+  finders de detalle usan `@EntityGraph(type = LOAD)` (OJO: el tipo por defecto FETCH degrada a
+  LAZY toda asociación NO listada, ¡incluidas las EAGER! — usar LOAD) o se fuerza la init dentro
+  de `@Transactional`. Si agregás una pantalla que navega una asociación no precargada, va a
+  reventar con `LazyInitializationException` — precargala en el finder, no reactives OSIV.
+- `hibernate.default_batch_fetch_size: 16`: agrupa las cargas LAZY en `IN(:ids)` (mata N+1).
+
 ## Tests
 
-`src/test/java/...`, JUnit 5 + Spring Boot Test. Concentrados en la lógica de servicio:
+`src/test/java/...`, JUnit 5 + Spring Boot Test. Lógica de servicio:
 `RecepcionServiceTest`, `ArticuloMatchingServiceTest`, `TransferenciaServiceTest`,
-`CatalogoServiceTest`, `ArchivoHistoricoServiceTest`. CI (`.github/workflows/ci.yml`) corre
-`mvn -B clean compile` + `mvn -B test` en cada push/PR a `main`.
+`CatalogoServiceTest`, `ArchivoHistoricoServiceTest`, `DocumentoHistoricoClasificadorTest`,
+`GeneradorUsernameTest`, `ValidadorPdfTest`, `VersionOptimistaTest`.
+
+CI (`.github/workflows/ci.yml`), en cada push/PR a `develop` y `main`, corre **dos jobs**:
+- `build-and-test`: `mvn -B clean compile` + `mvn -B test` (tests con Mockito, sin BD).
+- `validar-esquema`: levanta un **MySQL 8** de servicio y corre los tests marcados
+  `@EnabledIfEnvironmentVariable(RUN_DB_IT=true)` contra BD real: `EsquemaFlywayTest` (valida que
+  el esquema Flyway calce con las entidades, `ddl-auto: validate`), `ConfirmacionConcurrenteTest`
+  (concurrencia real de confirmación) y `OsivFetchGraphTest` (guarda anti-regresión de OSIV:
+  verifica que las pantallas de detalle traigan sus asociaciones inicializadas). Al sumar un test
+  de este tipo, agregalo al `-Dtest=...` del job `validar-esquema`.
+
+### Seguridad de front (CSP)
+`CspNonceFilter` emite una Content-Security-Policy con **nonce por request**: `script-src 'self'
+'nonce-XXX'` bloquea cualquier `<script>` inyectado (XSS). Los `<script>` inline propios llevan
+`nonce=${cspNonce}` (lo puentea `GlobalModelAttributes` al modelo). Se mantiene a propósito
+`script-src-attr 'unsafe-inline'` para no reescribir los ~30 `onclick/onchange` inline. Al agregar
+un `<script>` inline nuevo, ponele `th:attr="nonce=${cspNonce}"` o la CSP lo bloqueará.
 
 ## Flujo de trabajo (ramas)
 
@@ -203,6 +230,16 @@ Tailscale), `fail2ban`, y Docker ya NO depende de Tailscale.
 - Futuro (todavía no vendidos): **Textil Camargo**, **Textil Emilio**.
 
 ### Estado de trabajo (dónde quedamos — sesión 24-jul-2026)
+
+**✅ Sprint de hardening COMPLETO (ago-2026, en `develop` → promovido a `main`)**: cerrada la auditoría
+red-team + Sprint 2-5. Concurrencia (`@Version` + lock optimista en confirmaciones), tabla `correlativo`
+(numeración de transferencias sin colisiones), DTOs anti mass-assignment en todo el catálogo, logout por
+POST + CSRF, split de `CatalogoController`/`ArchivoHistoricoService`, Excel por streaming, JS extraído a
+`/js/*.js`. **Rendimiento JPA**: `open-in-view` APAGADO con fetch-graphs `type=LOAD` en las vistas de
+detalle + `default_batch_fetch_size` (ver sección "Rendimiento JPA"). **Seguridad front**: CSP con nonce
+por request (`CspNonceFilter`). **Estáticos cacheables** (cadena de seguridad dedicada, sin `no-store`).
+Guarda de CI `OsivFetchGraphTest` contra MySQL real. Validación de PDF (`%PDF-`), límite de OCR concurrente
+(Semaphore), `JAVA_TOOL_OPTIONS` de memoria, `scripts/verificar-backup.sh`.
 
 **✅ Entrada secreta / staging YA EN VIVO y en uso desde casa**: `dev.texcontrol.pe` (OCULTO, Basic Auth)
 corre `develop` con su propia BD aislada (setup y uso en `STAGING.md`). El Basic Auth es usuario **`jlynch`**
