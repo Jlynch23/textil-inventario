@@ -20,6 +20,10 @@ public class DocumentoStorageService {
     private String rutaBase;
 
     public String guardar(MultipartFile archivo, String tipoDocumento, Empresa empresa, java.time.LocalDate fecha) throws IOException {
+        // Auditoria: validar en el backend antes de escribir en disco (no confiar
+        // en accept=".pdf" del navegador): vacio / tamaño / firma magica %PDF-.
+        ValidadorPdf.validar(archivo);
+
         String carpetaEmpresa = (empresa.getCarpeta() != null && !empresa.getCarpeta().isBlank())
                 ? empresa.getCarpeta() : "Otros";
 

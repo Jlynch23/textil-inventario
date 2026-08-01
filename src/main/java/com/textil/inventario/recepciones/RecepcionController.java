@@ -153,6 +153,9 @@ public class RecepcionController {
         try {
             ExtraccionFacturaResponse resultado = anthropicOcrService.extraerDatosFactura(file);
             return ResponseEntity.ok(resultado);
+        } catch (IllegalArgumentException e) {
+            // Validacion de PDF (vacio / tamaño / no es PDF): error del cliente -> 400.
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
             log.error("Error en extraerFactura: {}", e.getMessage(), e);
             return ResponseEntity.status(500).body(Map.of("error", "Ocurrió un error interno. Intenta de nuevo o contacta al administrador."));
@@ -177,6 +180,9 @@ public class RecepcionController {
         try {
             recepcionService.guardarDocumentoGuia(id, file);
             return ResponseEntity.ok(Map.of("ok", true));
+        } catch (IllegalArgumentException e) {
+            // Validacion de PDF (vacio / tamaño / no es PDF): error del cliente -> 400.
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
             log.error("Error en guardarDocumentoGuia: {}", e.getMessage(), e);
             return ResponseEntity.status(500).body(Map.of("error", "Ocurrió un error interno. Intenta de nuevo o contacta al administrador."));
@@ -190,6 +196,9 @@ public class RecepcionController {
         try {
             recepcionService.guardarDocumentoFactura(recepcionIds, file);
             return ResponseEntity.ok(Map.of("ok", true));
+        } catch (IllegalArgumentException e) {
+            // Validacion de PDF (vacio / tamaño / no es PDF): error del cliente -> 400.
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
             log.error("Error en guardarDocumentoFactura: {}", e.getMessage(), e);
             return ResponseEntity.status(500).body(Map.of("error", "Ocurrió un error interno. Intenta de nuevo o contacta al administrador."));
@@ -221,6 +230,9 @@ public class RecepcionController {
             );
 
             return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            // Validacion de PDF (vacio / tamaño / no es PDF): error del cliente -> 400.
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
             log.error("Error en extraerGuia: {}", e.getMessage(), e);
             return ResponseEntity.status(500).body(Map.of("error", "Ocurrió un error interno. Intenta de nuevo o contacta al administrador."));

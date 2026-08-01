@@ -207,6 +207,12 @@ public class ArchivoHistoricoService {
     private void procesarUno(DocumentoHistorico doc) {
         try {
             byte[] bytes = Files.readAllBytes(Paths.get(doc.getRutaArchivo()));
+            // Auditoria: una entrada del ZIP que no sea PDF no debe mandarse al OCR
+            // (falla obscuro); se marca con un mensaje claro. La firma %PDF- es la
+            // barrera real (el nombre/extension no garantiza nada).
+            if (!com.textil.inventario.recepciones.ValidadorPdf.esPdf(bytes)) {
+                throw new IllegalArgumentException("El archivo no es un PDF válido (no empieza con %PDF-).");
+            }
             String razonSocialDetectada;
 
             if (doc.getTipoDocumento() == DocumentoHistorico.TipoDocumentoHistorico.FACTURA) {

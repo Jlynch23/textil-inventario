@@ -119,6 +119,7 @@ public class AnthropicOcrService {
         """;
 
     public ExtraccionFacturaResponse extraerDatosFactura(MultipartFile pdf) throws IOException {
+        ValidadorPdf.validar(pdf); // backend: vacio / tamaño / firma %PDF-
         return extraerDatosFactura(pdf.getBytes());
     }
 
@@ -129,6 +130,7 @@ public class AnthropicOcrService {
     }
 
     public ExtraccionGuiaResponse extraerDatosGuia(MultipartFile pdf) throws IOException {
+        ValidadorPdf.validar(pdf); // backend: vacio / tamaño / firma %PDF-
         return extraerDatosGuia(pdf.getBytes());
     }
 
