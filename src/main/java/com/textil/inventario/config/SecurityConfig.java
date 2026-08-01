@@ -14,6 +14,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.core.annotation.Order;
 
 @Configuration
 @EnableWebSecurity
@@ -52,7 +53,34 @@ public class SecurityConfig {
         return new org.springframework.security.web.session.HttpSessionEventPublisher();
     }
 
+    // #CSS (dev): cadena de seguridad DEDICADA para los estaticos, evaluada
+    // PRIMERO (@Order(1)). Spring Security, por defecto, estampa en TODA respuesta
+    // (incluidos /webjars/, /css/, /js/, /img/) las cabeceras anti-cache
+    // "Cache-Control: no-cache, no-store, must-revalidate" + "Pragma: no-cache" +
+    // "Expires: 0". Sobre los estaticos eso es un bug de rendimiento y causaba el
+    // parpadeo/estilos-sin-cargar en las paginas autenticadas (el navegador no
+    // podia reutilizar el CSS/JS y a veces lo servia a medias hasta un Ctrl+Shift+R).
+    // Esta cadena los deja PUBLICOS y CACHEABLES, sin CSRF (son GET estaticos) y
+    // sin las cabeceras no-store. El resto de la app sigue con la cadena @Order(2).
     @Bean
+    @Order(1)
+    public SecurityFilterChain estaticosFilterChain(HttpSecurity http) throws Exception {
+        http
+            .securityMatcher("/webjars/**", "/css/**", "/js/**", "/img/**", "/favicon.ico")
+            .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+            .requestCache(cache -> cache.disable())
+            .sessionManagement(session -> session
+                .sessionCreationPolicy(org.springframework.security.config.http.SessionCreationPolicy.STATELESS))
+            .csrf(csrf -> csrf.disable())
+            .headers(headers -> headers
+                // Quita el no-store por defecto y deja que el ResourceHttpRequestHandler
+                // ponga su propio Cache-Control (cacheable). nosniff se mantiene.
+                .cacheControl(cache -> cache.disable()));
+        return http.build();
+    }
+
+    @Bean
+    @Order(2)
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         // A2 (auditoria): la clave de firma del remember-me DEBE ser un secreto
         // único por instancia. Se valida presente y no vacía en el arranque:
