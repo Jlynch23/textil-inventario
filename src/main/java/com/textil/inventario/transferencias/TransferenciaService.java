@@ -53,9 +53,24 @@ public class TransferenciaService {
         return guardada;
     }
 
+    // A5: deriva el siguiente numero del MAXIMO existente (no de count(), que
+    // baja al borrar borradores y provoca colisiones contra el UNIQUE). Si por
+    // una carrera dos altas simultaneas generan el mismo numero, el UNIQUE hace
+    // fallar a una con DataIntegrityViolationException, que el controller mapea a
+    // un mensaje de reintento (no corrompe nada).
     private String generarNumero() {
-        long total = transferenciaRepository.count();
-        return String.format("TRF-%06d", total + 1);
+        String maxNumero = transferenciaRepository.findMaxNumero();
+        int siguiente = 1;
+        if (maxNumero != null) {
+            int guion = maxNumero.lastIndexOf('-');
+            try {
+                siguiente = Integer.parseInt(maxNumero.substring(guion + 1)) + 1;
+            } catch (NumberFormatException e) {
+                // Formato inesperado: cae a un fallback seguro sobre el conteo.
+                siguiente = (int) transferenciaRepository.count() + 1;
+            }
+        }
+        return String.format("TRF-%06d", siguiente);
     }
 
     @Transactional

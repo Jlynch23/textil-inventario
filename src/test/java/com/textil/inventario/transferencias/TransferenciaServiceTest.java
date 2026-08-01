@@ -58,6 +58,33 @@ class TransferenciaServiceTest {
         return u;
     }
 
+    @Test
+    void crearTransferencia_derivaElNumeroDelMaximo_noDeCount() {
+        // A5: con MAX = TRF-000007, el siguiente debe ser TRF-000008 aunque
+        // count() dijera otra cosa (p.ej. tras borrar un borrador intermedio).
+        when(ubicacionRepository.findByEsPrincipalTrue()).thenReturn(Optional.of(praderasDePrueba()));
+        when(usuarioActualService.obtenerUsuarioActual()).thenReturn(new Usuario());
+        when(transferenciaRepository.findMaxNumero()).thenReturn("TRF-000007");
+        when(transferenciaRepository.save(any(Transferencia.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Transferencia creada = service.crearTransferencia("obs");
+
+        assertThat(creada.getNumero()).isEqualTo("TRF-000008");
+        verify(transferenciaRepository, never()).count();
+    }
+
+    @Test
+    void crearTransferencia_sinTransferenciasPrevias_arrancaEnUno() {
+        when(ubicacionRepository.findByEsPrincipalTrue()).thenReturn(Optional.of(praderasDePrueba()));
+        when(usuarioActualService.obtenerUsuarioActual()).thenReturn(new Usuario());
+        when(transferenciaRepository.findMaxNumero()).thenReturn(null);
+        when(transferenciaRepository.save(any(Transferencia.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Transferencia creada = service.crearTransferencia("obs");
+
+        assertThat(creada.getNumero()).isEqualTo("TRF-000001");
+    }
+
     private Ubicacion tiendaDePrueba() {
         Ubicacion u = new Ubicacion();
         u.setId(2L);

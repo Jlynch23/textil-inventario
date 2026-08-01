@@ -47,11 +47,19 @@ public class TransferenciaController {
     }
 
     @PostMapping("/crear")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public String crear(@RequestParam(required = false) String observaciones,
                          RedirectAttributes ra) {
-        Transferencia t = transferenciaService.crearTransferencia(observaciones);
-        ra.addFlashAttribute("mensaje", "Transferencia creada. Ahora agrega los artículos a enviar.");
-        return "redirect:/transferencias/" + t.getId() + "/detalle";
+        try {
+            Transferencia t = transferenciaService.crearTransferencia(observaciones);
+            ra.addFlashAttribute("mensaje", "Transferencia creada. Ahora agrega los artículos a enviar.");
+            return "redirect:/transferencias/" + t.getId() + "/detalle";
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            // A5: dos altas casi simultaneas pudieron generar el mismo numero; el
+            // UNIQUE lo evita. Se pide reintentar en vez de mostrar un 500.
+            ra.addFlashAttribute("error", "Otra transferencia se creó al mismo tiempo; intentá de nuevo.");
+            return "redirect:/transferencias";
+        }
     }
 
     @GetMapping("/{id}/detalle")
