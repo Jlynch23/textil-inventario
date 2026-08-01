@@ -5,6 +5,10 @@ import org.springframework.data.jpa.repository.Query;
 import java.util.List;
 
 public interface TransferenciaRepository extends JpaRepository<Transferencia, Long> {
+    // #9 (auditoria): trae la ubicacion de origen en el mismo query. Las demas
+    // to-one de Transferencia (los 3 usuarios) pasaron a LAZY y no se listan, asi
+    // que ya no disparan un SELECT por fila.
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = "ubicacionOrigen")
     List<Transferencia> findAllByOrderByFechaSolicitudDesc();
     List<Transferencia> findByEstado(Transferencia.EstadoTransferencia estado);
 

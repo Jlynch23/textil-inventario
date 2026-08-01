@@ -19,19 +19,23 @@ public class Transferencia extends BaseEntity {
     @Column(name = "numero", nullable = false, length = 20, unique = true)
     private String numero;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    // #9 (auditoria): asociaciones LAZY. El listado usa @EntityGraph para traer
+    // ubicacionOrigen; el resto de accesos ocurre dentro de un request (OSIV) o de
+    // la transaccion de confirmacion. Transferencia NO se toca en @Async, asi que
+    // no hay riesgo de LazyInit fuera de sesion. NO volver a EAGER (reintroduce N+1).
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ubicacion_origen_id", nullable = false)
     private Ubicacion ubicacionOrigen;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "usuario_solicita_id", nullable = false)
     private Usuario usuarioSolicita;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "usuario_confirma_salida_id")
     private Usuario usuarioConfirmaSalida;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "usuario_confirma_llegada_id")
     private Usuario usuarioConfirmaLlegada;
 
