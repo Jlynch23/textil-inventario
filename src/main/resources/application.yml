@@ -16,6 +16,12 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
         format_sql: true
+        # #9 (auditoria): al acceder a una asociacion LAZY de N entidades ya
+        # cargadas (p.ej. los detalles de varias recepciones, o una @ManyToOne
+        # LAZY por fila), Hibernate las trae en lotes con un IN (:ids) en vez de
+        # un SELECT por entidad (N+1). Es una mejora global y SIN riesgo: no
+        # cambia el resultado, solo cuantos queries se emiten.
+        default_batch_fetch_size: 16
 
   flyway:
     enabled: true

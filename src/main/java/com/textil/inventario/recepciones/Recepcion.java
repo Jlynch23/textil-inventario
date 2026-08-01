@@ -52,7 +52,11 @@ public class Recepcion extends BaseEntity {
     @Column(nullable = false)
     private Integer version;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    // #9 (auditoria): LAZY. No se muestra en el listado (que ya trae empresa por
+    // @EntityGraph), asi que EAGER solo disparaba un SELECT de usuario por fila.
+    // El unico acceso Java es dentro de confirmarRecepcion (@Transactional, sesion
+    // abierta), donde carga sin problema. NO volver a EAGER (reintroduce N+1).
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "usuario_id", nullable = false)
     private Usuario usuario;
 
