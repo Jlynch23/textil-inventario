@@ -33,6 +33,20 @@ echo "Generando backup: $ARCHIVO"
 # lista de procesos (ps aux / /proc/<pid>/cmdline) mientras corre mysqldump.
 docker exec -e MYSQL_PWD="$MYSQL_ROOT_PASSWORD" "$CONTENEDOR" mysqldump -u root \
     --single-transaction --routines --triggers "$BASE_DATOS" | gzip > "$ARCHIVO"
+# Con 'set -o pipefail', si mysqldump falla la tuberia entera falla y el script
+# aborta aca (no se llega a "completado"). Ademas se valida que el resultado no
+# sea un dump vacio/corrupto: un .sql.gz que no descomprime o no trae ninguna
+# tabla NO es un backup valido, y dejarlo pasar da una falsa sensacion de respaldo.
+if ! gzip -t "$ARCHIVO" 2>/dev/null; then
+    echo "ERROR: el backup generado esta corrupto (gzip -t fallo). Se elimina." >&2
+    rm -f "$ARCHIVO"
+    exit 1
+fi
+if ! gunzip -c "$ARCHIVO" | grep -q "CREATE TABLE"; then
+    echo "ERROR: el backup no contiene ninguna tabla (dump vacio). Se elimina." >&2
+    rm -f "$ARCHIVO"
+    exit 1
+fi
 
 echo "Backup completado: $(du -h "$ARCHIVO" | cut -f1)"
 
