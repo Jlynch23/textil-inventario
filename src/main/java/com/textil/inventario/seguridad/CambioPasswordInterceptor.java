@@ -65,6 +65,10 @@ public class CambioPasswordInterceptor implements HandlerInterceptor {
                 || uri.equals("/offline.html")
                 || uri.startsWith("/css/")
                 || uri.startsWith("/js/")
-                || uri.startsWith("/img/");
+                || uri.startsWith("/img/")
+                // Bootstrap e iconos se sirven de /webjars/ (M11). Sin esto, la
+                // pantalla de cambio forzado de clave redirige tambien el CSS a
+                // mi-cuenta y queda SIN estilos.
+                || uri.startsWith("/webjars/");
     }
 }
