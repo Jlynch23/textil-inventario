@@ -101,6 +101,21 @@
             <artifactId>poi-ooxml</artifactId>
             <version>5.3.0</version>
         </dependency>
+
+        <!-- M11 (auditoria): Bootstrap e iconos servidos LOCALMENTE (webjars),
+             no desde el CDN de jsdelivr. El service worker solo cachea estaticos
+             del mismo origen, asi que con el CDN la PWA quedaba sin estilos ni JS
+             offline / con el CDN bloqueado. Se sirven en /webjars/**. -->
+        <dependency>
+            <groupId>org.webjars</groupId>
+            <artifactId>bootstrap</artifactId>
+            <version>5.3.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars.npm</groupId>
+            <artifactId>bootstrap-icons</artifactId>
+            <version>1.11.0</version>
+        </dependency>
     </dependencies>
 
     <build>

@@ -13,14 +13,24 @@
 //     abra rapido. Se actualizan solos cuando cambia la version del cache.
 //
 // Al cambiar estos archivos, subir CACHE_VERSION para invalidar el cache viejo.
-const CACHE_VERSION = 'texcontrol-v1';
+// v2 (M11): se agregan Bootstrap e iconos (servidos localmente en /webjars) al
+// precache. Antes venian del CDN de jsdelivr, que el SW NO podia cachear (otro
+// origen) -> offline / CDN bloqueado = app sin estilos ni JS.
+const CACHE_VERSION = 'texcontrol-v2';
 const OFFLINE_URL = '/offline.html';
 
 // Recursos minimos que se guardan al instalar (la "cascara" + la pagina offline).
+// Los webjars tienen la version en la URL, asi que son cache-first sin riesgo de
+// quedar viejos (una version nueva cambia la URL). La fuente .woff2 la referencia
+// el CSS con un ?hash y se cachea sola en la primera carga (regex de abajo).
 const PRECACHE = [
   OFFLINE_URL,
   '/img/pwa/icon-192.png',
-  '/img/pwa/icon-512.png'
+  '/img/pwa/icon-512.png',
+  '/js/pwa-register.js',
+  '/webjars/bootstrap/5.3.0/css/bootstrap.min.css',
+  '/webjars/bootstrap/5.3.0/js/bootstrap.bundle.min.js',
+  '/webjars/bootstrap-icons/1.11.0/font/bootstrap-icons.css'
 ];
 
 self.addEventListener('install', (event) => {
@@ -64,7 +74,7 @@ self.addEventListener('fetch', (event) => {
           const copia = resp.clone();
           caches.open(CACHE_VERSION).then((cache) => cache.put(req, copia));
           return resp;
-        }).catch(() => cacheada)
+        }).catch(() => cacheada || Response.error())
       )
     );
   }
