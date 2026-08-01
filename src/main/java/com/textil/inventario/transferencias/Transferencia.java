@@ -51,6 +51,14 @@ public class Transferencia extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String observaciones;
 
+    // Lock optimista (auditoria red-team R-C1): los guards de estado de
+    // confirmarSalida/confirmarLlegada son TOCTOU -- dos confirmaciones
+    // CONCURRENTES pasan el guard y mueven el stock dos veces. Con @Version, la
+    // segunda transaccion falla con OptimisticLockException y revierte.
+    @Version
+    @Column(nullable = false)
+    private Integer version;
+
     @OneToMany(mappedBy = "transferencia", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<TransferenciaDetalle> detalles = new ArrayList<>();
 

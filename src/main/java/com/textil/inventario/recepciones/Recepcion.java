@@ -43,6 +43,15 @@ public class Recepcion extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String observaciones;
 
+    // Lock optimista (auditoria red-team R-C1): el guard de estado de
+    // confirmarRecepcion es TOCTOU -- dos confirmaciones CONCURRENTES leen ambas
+    // estado=PENDIENTE, pasan el guard y aplican el stock DOS veces. Con @Version,
+    // la segunda transaccion actualiza la fila WHERE version=<vieja> -> 0 filas ->
+    // OptimisticLockException -> rollback de todo su movimiento de stock/kardex.
+    @Version
+    @Column(nullable = false)
+    private Integer version;
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "usuario_id", nullable = false)
     private Usuario usuario;
