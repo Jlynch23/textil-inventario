@@ -293,8 +293,11 @@ public class UsuarioController {
     // /usuarios/cambiar-mi-password.
 
     @GetMapping("/mi-cuenta")
-    public String miCuenta(Model model) {
+    public String miCuenta(@RequestParam(required = false) boolean forzar, Model model) {
         model.addAttribute("usuario", usuarioActualService.obtenerUsuarioActual());
+        // A1: el interceptor redirige aca con ?forzar=1 cuando la cuenta arrastra
+        // la contraseña por defecto; se muestra el aviso correspondiente.
+        model.addAttribute("forzarCambio", forzar);
         return "usuarios/mi-cuenta";
     }
 
@@ -302,6 +305,7 @@ public class UsuarioController {
     public String cambiarMiPassword(@RequestParam String passwordActual,
                                      @RequestParam String passwordNueva,
                                      @RequestParam String passwordConfirmacion,
+                                     jakarta.servlet.http.HttpSession session,
                                      RedirectAttributes ra) {
         Usuario u = usuarioActualService.obtenerUsuarioActual();
 
@@ -318,9 +322,18 @@ public class UsuarioController {
             ra.addFlashAttribute("error", "La nueva contraseña y su confirmación no coinciden.");
             return "redirect:/usuarios/mi-cuenta";
         }
+        // A1: no permitir "cambiar" a la misma clave (dejaria la default en uso).
+        if (passwordEncoder.matches(passwordNueva, u.getPasswordHash())) {
+            ra.addFlashAttribute("error", "La nueva contraseña debe ser distinta de la actual.");
+            return "redirect:/usuarios/mi-cuenta";
+        }
 
         u.setPasswordHash(passwordEncoder.encode(passwordNueva));
+        // A1: al rotar la clave se apaga el flag de "debe cambiar" (en BD y en la
+        // cache de sesion que usa CambioPasswordInterceptor).
+        u.setDebeCambiarPassword(false);
         usuarioRepository.save(u);
+        session.setAttribute(CambioPasswordInterceptor.ATTR_DEBE_CAMBIAR, false);
         auditLogService.registrar("CAMBIAR_PASSWORD_PROPIA", "Usuario", u.getId(), "Cambio su propia contraseña");
 
         ra.addFlashAttribute("mensaje", "Tu contraseña se actualizó correctamente.");

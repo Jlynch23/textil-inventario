@@ -36,6 +36,14 @@ public class Usuario extends BaseEntity {
     @Column(name = "es_prueba", nullable = false)
     private Boolean esPrueba = false;
 
+    /**
+     * Obliga a fijar una contraseña nueva en el próximo login (auditoría A1). Se
+     * siembra en TRUE para las cuentas con clave por defecto reproducible; un
+     * interceptor bloquea la navegación hasta que la persona rota su clave.
+     */
+    @Column(name = "debe_cambiar_password", nullable = false)
+    private Boolean debeCambiarPassword = false;
+
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
