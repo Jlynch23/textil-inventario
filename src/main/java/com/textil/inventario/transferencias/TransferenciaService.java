@@ -26,6 +26,7 @@ public class TransferenciaService {
     private final StockActualRepository stockActualRepository;
     private final KardexMovimientoRepository kardexRepository;
     private final UbicacionRepository ubicacionRepository;
+    private final CorrelativoRepository correlativoRepository;
     private final com.textil.inventario.auditoria.AuditLogService auditLogService;
 
     // R-C2 (red-team): cota superior por linea para que sumar cantidades enormes
@@ -57,23 +58,19 @@ public class TransferenciaService {
         return guardada;
     }
 
-    // A5: deriva el siguiente numero del MAXIMO existente (no de count(), que
-    // baja al borrar borradores y provoca colisiones contra el UNIQUE). Si por
-    // una carrera dos altas simultaneas generan el mismo numero, el UNIQUE hace
-    // fallar a una con DataIntegrityViolationException, que el controller mapea a
-    // un mensaje de reintento (no corrompe nada).
+    // #6 (auditoria): el numero se reserva de un CORRELATIVO con bloqueo pesimista,
+    // no del MAX(numero). Antes, dos altas simultaneas leian el mismo MAX y
+    // generaban el mismo "TRF-000101" (una fallaba contra el UNIQUE). Ahora el
+    // SELECT ... FOR UPDATE serializa: cada request obtiene un numero distinto.
+    // Corre dentro de la transaccion de crearTransferencia (@Transactional), asi
+    // que el lock se mantiene hasta el commit.
     private String generarNumero() {
-        String maxNumero = transferenciaRepository.findMaxNumero();
-        int siguiente = 1;
-        if (maxNumero != null) {
-            int guion = maxNumero.lastIndexOf('-');
-            try {
-                siguiente = Integer.parseInt(maxNumero.substring(guion + 1)) + 1;
-            } catch (NumberFormatException e) {
-                // Formato inesperado: cae a un fallback seguro sobre el conteo.
-                siguiente = (int) transferenciaRepository.count() + 1;
-            }
-        }
+        Correlativo c = correlativoRepository.bloquearPorNombre("transferencia")
+                .orElseThrow(() -> new IllegalStateException(
+                        "Falta el correlativo 'transferencia' (deberia crearlo la migracion V41)."));
+        long siguiente = Math.addExact(c.getUltimoValor(), 1);
+        c.setUltimoValor(siguiente);
+        correlativoRepository.save(c);
         return String.format("TRF-%06d", siguiente);
     }
 

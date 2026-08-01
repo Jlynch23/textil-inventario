@@ -46,6 +46,7 @@ class TransferenciaServiceTest {
     @Mock private StockActualRepository stockActualRepository;
     @Mock private KardexMovimientoRepository kardexRepository;
     @Mock private UbicacionRepository ubicacionRepository;
+    @Mock private CorrelativoRepository correlativoRepository;
     @Mock private AuditLogService auditLogService;
 
     @InjectMocks
@@ -58,26 +59,38 @@ class TransferenciaServiceTest {
         return u;
     }
 
+    private Correlativo correlativoDePrueba(long ultimoValor) {
+        Correlativo c = new Correlativo();
+        c.setNombre("transferencia");
+        c.setUltimoValor(ultimoValor);
+        c.setVersion(0L);
+        return c;
+    }
+
     @Test
-    void crearTransferencia_derivaElNumeroDelMaximo_noDeCount() {
-        // A5: con MAX = TRF-000007, el siguiente debe ser TRF-000008 aunque
-        // count() dijera otra cosa (p.ej. tras borrar un borrador intermedio).
+    void crearTransferencia_reservaElSiguienteDelCorrelativo() {
+        // #6: con el correlativo en 7, el siguiente numero es TRF-000008 y el
+        // correlativo queda en 8. Ya NO se usa MAX(numero) ni count().
         when(ubicacionRepository.findByEsPrincipalTrue()).thenReturn(Optional.of(praderasDePrueba()));
         when(usuarioActualService.obtenerUsuarioActual()).thenReturn(new Usuario());
-        when(transferenciaRepository.findMaxNumero()).thenReturn("TRF-000007");
+        Correlativo corr = correlativoDePrueba(7L);
+        when(correlativoRepository.bloquearPorNombre("transferencia")).thenReturn(Optional.of(corr));
         when(transferenciaRepository.save(any(Transferencia.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Transferencia creada = service.crearTransferencia("obs");
 
         assertThat(creada.getNumero()).isEqualTo("TRF-000008");
+        assertThat(corr.getUltimoValor()).isEqualTo(8L);
         verify(transferenciaRepository, never()).count();
+        verify(transferenciaRepository, never()).findMaxNumero();
     }
 
     @Test
-    void crearTransferencia_sinTransferenciasPrevias_arrancaEnUno() {
+    void crearTransferencia_correlativoEnCero_arrancaEnUno() {
         when(ubicacionRepository.findByEsPrincipalTrue()).thenReturn(Optional.of(praderasDePrueba()));
         when(usuarioActualService.obtenerUsuarioActual()).thenReturn(new Usuario());
-        when(transferenciaRepository.findMaxNumero()).thenReturn(null);
+        when(correlativoRepository.bloquearPorNombre("transferencia"))
+                .thenReturn(Optional.of(correlativoDePrueba(0L)));
         when(transferenciaRepository.save(any(Transferencia.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Transferencia creada = service.crearTransferencia("obs");
