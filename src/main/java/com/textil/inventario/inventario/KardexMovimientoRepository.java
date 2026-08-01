@@ -2,11 +2,31 @@ package com.textil.inventario.inventario;
 
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 public interface KardexMovimientoRepository extends JpaRepository<KardexMovimiento, Long> {
+    // #9 (auditoria): @EntityGraph para no disparar N+1 al renderizar el kardex
+    // por articulo (kardex de inventario).
+    @EntityGraph(attributePaths = {
+            "articulo", "articulo.tipoTela", "articulo.titulo", "articulo.composicion", "articulo.acabado",
+            "color", "empresa", "ubicacionOrigen", "ubicacionDestino", "usuario"
+    })
     List<KardexMovimiento> findByArticuloIdOrderByFechaDesc(Long articuloId);
+
+    // Auditoria (ALTA, N+1/memoria): el reporte de kardex empuja el rango de
+    // fechas a SQL en vez de traer TODA la tabla (que crece sin fin) y filtrar en
+    // memoria. desde/hasta son limites [desde, hasta) en LocalDateTime.
+    @EntityGraph(attributePaths = {
+            "articulo", "articulo.tipoTela", "articulo.titulo", "articulo.composicion", "articulo.acabado",
+            "color", "empresa", "ubicacionOrigen", "ubicacionDestino", "usuario"
+    })
+    @Query("SELECT k FROM KardexMovimiento k WHERE (:desde IS NULL OR k.fecha >= :desde) "
+            + "AND (:hasta IS NULL OR k.fecha < :hasta) ORDER BY k.fecha DESC")
+    List<KardexMovimiento> buscarPorRango(@Param("desde") LocalDateTime desde, @Param("hasta") LocalDateTime hasta);
 
     // M5 (auditoria): trae las asociaciones to-one del kardex en un solo query
     // (LEFT JOINs) para no disparar un SELECT por fila al listar/exportar (N+1).

@@ -77,18 +77,13 @@ public class ReporteService {
     // ---------- KARDEX POR RANGO DE FECHAS ----------
 
     public List<KardexMovimiento> filtrarKardex(LocalDate desde, LocalDate hasta) {
-        List<KardexMovimiento> movimientos = kardexMovimientoRepository.findAllByOrderByFechaDesc();
-        if (desde != null) {
-            movimientos = movimientos.stream()
-                    .filter(m -> !m.getFecha().toLocalDate().isBefore(desde))
-                    .toList();
-        }
-        if (hasta != null) {
-            movimientos = movimientos.stream()
-                    .filter(m -> !m.getFecha().toLocalDate().isAfter(hasta))
-                    .toList();
-        }
-        return movimientos;
+        // Auditoria (ALTA): se empuja el rango a SQL en vez de materializar TODO
+        // el kardex (crece sin fin) y filtrar en memoria. Limites [desde, hasta):
+        // hasta.plusDays(1).atStartOfDay() hace inclusivo el dia 'hasta', igual
+        // que el antiguo !isAfter(hasta).
+        java.time.LocalDateTime desdeDt = (desde != null) ? desde.atStartOfDay() : null;
+        java.time.LocalDateTime hastaDt = (hasta != null) ? hasta.plusDays(1).atStartOfDay() : null;
+        return kardexMovimientoRepository.buscarPorRango(desdeDt, hastaDt);
     }
 
     // ---------- RECEPCIONES POR PROVEEDOR / FECHA ----------
