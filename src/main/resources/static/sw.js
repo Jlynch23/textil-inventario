@@ -16,7 +16,7 @@
 // v2 (M11): se agregan Bootstrap e iconos (servidos localmente en /webjars) al
 // precache. Antes venian del CDN de jsdelivr, que el SW NO podia cachear (otro
 // origen) -> offline / CDN bloqueado = app sin estilos ni JS.
-const CACHE_VERSION = 'texcontrol-v2';
+const CACHE_VERSION = 'texcontrol-v3';
 const OFFLINE_URL = '/offline.html';
 
 // Recursos minimos que se guardan al instalar (la "cascara" + la pagina offline).
@@ -34,8 +34,16 @@ const PRECACHE = [
 ];
 
 self.addEventListener('install', (event) => {
+  // Auditoria: cache.addAll() es atomico -> si UN recurso falla (ej. una URL de
+  // webjar mal escrita), la instalacion ENTERA se aborta y la PWA queda sin
+  // cache. Se cachea cada recurso por separado y se toleran fallos individuales,
+  // asi un recurso ausente no rompe el resto del precache.
   event.waitUntil(
-    caches.open(CACHE_VERSION).then((cache) => cache.addAll(PRECACHE))
+    caches.open(CACHE_VERSION).then((cache) =>
+      Promise.all(PRECACHE.map((url) =>
+        cache.add(url).catch((err) => console.warn('SW: no se pudo precachear', url, err))
+      ))
+    )
   );
   // Activa este SW nuevo de inmediato, sin esperar a que se cierren las pestañas.
   self.skipWaiting();

@@ -60,6 +60,14 @@
             reader.readAsDataURL(this.files[0]);
         }
     });
+
+    // Auditoria (doble-submit): el submit solo se dispara si pasa la validacion
+    // HTML5 (foto + cantidad requeridas); ahi se deshabilita el boton para que un
+    // doble-toque no registre la entrada dos veces.
+    document.getElementById('formEntrada').addEventListener('submit', function () {
+        const b = this.querySelector('button[type="submit"]');
+        if (b) { b.disabled = true; b.textContent = 'Guardando...'; }
+    });
 </script>
 </body>
 </html>

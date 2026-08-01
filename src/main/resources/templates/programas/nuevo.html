@@ -289,11 +289,20 @@
         let selectTipoTelaActual = null;
         let selectTituloActual = null;
 
+        // Auditoria (XSS): los nombres del catalogo (color/tela/etc.) se
+        // interpolan al construir <option> por concatenacion; se escapan para
+        // que un nombre con < > & " no rompa el HTML ni inyecte markup.
+        function esc(v) {
+            return String(v == null ? '' : v)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
         function opcionesColores(seleccionarId) {
             let options = '<option value="">Color...</option>';
             coloresData.forEach(c => {
                 const sel = seleccionarId && c.id === seleccionarId ? ' selected' : '';
-                options += '<option value="' + c.id + '"' + sel + '>' + (c.nombreMostrar || c.nombreOficial) + ' (' + c.codigoFastDye + ')</option>';
+                options += '<option value="' + esc(c.id) + '"' + sel + '>' + esc(c.nombreMostrar || c.nombreOficial) + ' (' + esc(c.codigoFastDye) + ')</option>';
             });
             return options;
         }
@@ -301,7 +310,7 @@
             let options = '<option value="">Composición...</option>';
             composicionesData.forEach(c => {
                 const sel = seleccionarId && c.id === seleccionarId ? ' selected' : '';
-                options += '<option value="' + c.id + '"' + sel + '>' + c.nombre + '</option>';
+                options += '<option value="' + esc(c.id) + '"' + sel + '>' + esc(c.nombre) + '</option>';
             });
             return options;
         }
@@ -309,7 +318,7 @@
             let options = '<option value="">Tipo de tela...</option>';
             tiposTelaData.forEach(t => {
                 const sel = seleccionarId && t.id === seleccionarId ? ' selected' : '';
-                options += '<option value="' + t.id + '"' + sel + '>' + t.nombre + '</option>';
+                options += '<option value="' + esc(t.id) + '"' + sel + '>' + esc(t.nombre) + '</option>';
             });
             return options;
         }
@@ -317,7 +326,7 @@
             let options = '<option value="">Título...</option>';
             titulosData.forEach(ti => {
                 const sel = seleccionarId && ti.id === seleccionarId ? ' selected' : '';
-                options += '<option value="' + ti.id + '"' + sel + '>' + ti.valor + '</option>';
+                options += '<option value="' + esc(ti.id) + '"' + sel + '>' + esc(ti.valor) + '</option>';
             });
             return options;
         }
@@ -329,7 +338,7 @@
             let options = '<option value="">Acabado...</option>';
             acabadosData.forEach(a => {
                 const sel = seleccionarId && a.id === seleccionarId ? ' selected' : '';
-                options += '<option value="' + a.id + '"' + sel + '>' + a.nombre + '</option>';
+                options += '<option value="' + esc(a.id) + '"' + sel + '>' + esc(a.nombre) + '</option>';
             });
             return options;
         }
@@ -403,6 +412,12 @@
             if (suma !== totalEsperado) {
                 e.preventDefault();
                 alert('El total de rollos (' + totalEsperado + ') no coincide con la suma de las líneas (' + suma + '). Corrígelo antes de guardar.');
+            }
+            // Auditoria (doble-submit): si paso toda la validacion, se deshabilita
+            // el boton para que un doble-click no cree el programa dos veces.
+            if (!e.defaultPrevented) {
+                const b = e.target.querySelector('button[type="submit"]');
+                if (b) { b.disabled = true; b.textContent = 'Guardando...'; }
             }
         });
 
