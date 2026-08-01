@@ -28,7 +28,11 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       DOCUMENTOS_PATH: /app/documentos
       MAX_UPLOAD_SIZE: ${MAX_UPLOAD_SIZE:-25MB}
-      NOMBRE_EMPRESA: ${NOMBRE_EMPRESA:-Laura & Clemente}
+      # Auditoria (multi-tenant): SIN default de cliente. Antes el default
+      # "Laura & Clemente" hacia que una copia recien entregada a OTRO cliente
+      # mostrara ese nombre. El subtitulo real sale de las empresas activas del
+      # catalogo (ver CLAUDE.md, "Sin fallback"); esta var queda vacia por defecto.
+      NOMBRE_EMPRESA: ${NOMBRE_EMPRESA:-}
       SPRING_PROFILES_ACTIVE: prod
     volumes:
       # Bind mount (no volumen nombrado) para que los PDFs queden en una
@@ -38,6 +42,16 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+    # Auditoria: healthcheck para que nginx espere a que la app este LISTA (no
+    # solo arrancada) antes de recibir trafico -> sin 502 en el arranque. Chequeo
+    # TCP por bash /dev/tcp (la imagen jre-jammy trae bash, no curl). start_period
+    # holgado porque Spring + Flyway pueden tardar en el primer arranque.
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/localhost/8080' || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 90s
     # Sin "ports": la app no se expone directo al host, solo nginx le llega
     # via la red interna de Docker (servicio "app", puerto 8080).
 
@@ -68,4 +82,7 @@ services:
       # crea un directorio vacio en su lugar. Ver STAGING.md.
       - ./nginx/dev.htpasswd:/etc/nginx/dev.htpasswd:ro
     depends_on:
-      - app
+      # Auditoria: espera a que la app este SANA (healthcheck) antes de arrancar,
+      # asi el proxy no devuelve 502 mientras la app todavia bootea.
+      app:
+        condition: service_healthy

@@ -36,6 +36,10 @@ services:
     image: adminer:latest
     container_name: textil_adminer
     restart: unless-stopped
+    # Auditoria (hardening): Adminer NO debe correr en produccion. Con este
+    # profile solo arranca si se pide explicito (docker compose --profile debug up),
+    # asi el deploy normal (prod) NO lo levanta. En local: agregar --profile debug.
+    profiles: ["debug"]
     ports:
       - "127.0.0.1:8081:8080"
     depends_on:
