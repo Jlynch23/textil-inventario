@@ -156,17 +156,46 @@ public class AnthropicOcrService {
                 )
         );
 
-        String rawResponse = restClient.post()
-                .uri("https://api.anthropic.com/v1/messages")
-                .header("x-api-key", apiKey)
-                .header("anthropic-version", "2023-06-01")
-                .header("content-type", "application/json")
-                .body(requestBody)
-                .retrieve()
-                .body(String.class);
+        // R-F4 (red-team): la respuesta del proveedor es entrada NO confiable.
+        // Se capturan los errores HTTP (rate-limit / caido) con un mensaje claro
+        // en vez de dejar salir una excepcion cruda.
+        String rawResponse;
+        try {
+            rawResponse = restClient.post()
+                    .uri("https://api.anthropic.com/v1/messages")
+                    .header("x-api-key", apiKey)
+                    .header("anthropic-version", "2023-06-01")
+                    .header("content-type", "application/json")
+                    .body(requestBody)
+                    .retrieve()
+                    .body(String.class);
+        } catch (org.springframework.web.client.HttpStatusCodeException e) {
+            int codigo = e.getStatusCode().value();
+            if (codigo == 429) {
+                throw new IOException("El servicio de OCR está saturado (límite de solicitudes). Esperá unos segundos y volvé a intentar.");
+            }
+            if (codigo >= 500) {
+                throw new IOException("El servicio de OCR no está disponible en este momento (código " + codigo + "). Intentá de nuevo en un rato.");
+            }
+            throw new IOException("El servicio de OCR rechazó la solicitud (código " + codigo + ").");
+        }
+
+        if (rawResponse == null || rawResponse.isBlank()) {
+            throw new IOException("El servicio de OCR devolvió una respuesta vacía. Intentá de nuevo.");
+        }
 
         JsonNode root = mapper.readTree(rawResponse);
-        String textoExtraido = root.path("content").get(0).path("text").asText();
+        // Respuesta truncada por max_tokens: el JSON viene incompleto y el
+        // readValue posterior reventaria con un error opaco; se avisa claro.
+        if ("max_tokens".equals(root.path("stop_reason").asText())) {
+            throw new IOException("El documento es demasiado largo para leerlo de una vez (la lectura se cortó). Probá con menos páginas.");
+        }
+        JsonNode contenido = root.path("content");
+        // Sin este guard, un content vacio hacia .get(0) == null -> NullPointerException.
+        if (!contenido.isArray() || contenido.isEmpty() || !contenido.get(0).hasNonNull("text")) {
+            throw new IOException("El servicio de OCR devolvió una respuesta inesperada (sin texto). Intentá de nuevo.");
+        }
+        String textoExtraido = contenido.get(0).path("text").asText();
 
         String jsonLimpio = textoExtraido.trim();
         if (jsonLimpio.startsWith("```")) {
