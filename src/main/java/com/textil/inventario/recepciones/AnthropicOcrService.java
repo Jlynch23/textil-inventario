@@ -4,8 +4,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
+
+import java.net.http.HttpClient;
+import java.time.Duration;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -26,9 +29,16 @@ public class AnthropicOcrService {
     private final RestClient restClient = crearRestClientConTimeouts();
 
     private static RestClient crearRestClientConTimeouts() {
-        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout(30_000); // 30s para establecer conexion
-        factory.setReadTimeout(90_000);    // 90s: OCR de PDF puede tardar
+        // R-F5 (red-team): con SimpleClientHttpRequestFactory el read-timeout es
+        // SO_TIMEOUT (maximo ENTRE paquetes), asi que un upstream "slow-drip" (1
+        // byte cada 89s) mantenia el hilo tomado para siempre y podia agotar el
+        // pool @Async. El readTimeout de JdkClientHttpRequestFactory (java.net.http)
+        // es un DEADLINE TOTAL de la respuesta: pasado ese tiempo, se corta.
+        HttpClient httpClient = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(30))
+                .build();
+        JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory(httpClient);
+        factory.setReadTimeout(Duration.ofSeconds(90)); // presupuesto total de respuesta
         return RestClient.builder().requestFactory(factory).build();
     }
     private final ObjectMapper mapper = new ObjectMapper();
