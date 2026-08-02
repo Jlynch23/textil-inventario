@@ -160,11 +160,15 @@ un `<script>` inline nuevo, ponele `th:attr="nonce=${cspNonce}"` o la CSP lo blo
 **Solo existen DOS ramas y NO se crean otras** (nada de `feature/*`, `claude/*`, ni ramas efímeras
 por tarea — es una molestia explícita del dueño):
 - **`develop`**: rama de **trabajo y pruebas**. Todo lo nuevo pasa primero por acá.
-- **`main`**: **producción**. El VPS despliega de esta rama (`scripts/deploy.sh` hace
-  `git reset --hard origin/main`). **Solo** se mergea `develop → main` cuando está probado y estable.
+- **`main`**: **producción**. Es la rama que corren los clientes: en el VPS el clon
+  `~/textil-inventario` debe estar en **`main`**, y al actualizar se reconstruye la imagen desde ahí y
+  se reinician las apps de los clientes (ver "Actualizar el código de TODOS los clientes" en
+  Infraestructura). **Solo** se mergea `develop → main` cuando está probado y estable.
 
-Regla: nunca pushear features a medio hacer a `main`; probar en `develop`, y recién cuando anda,
-promover a `main` (dispara el redeploy). CI (`.github/workflows/ci.yml`) corre en push/PR a **ambas**.
+Regla: nunca pushear features a medio hacer a `main`; probar en `develop` (staging `dev.texcontrol.pe`),
+y recién cuando anda, promover a `main` y reconstruir los clientes. CI (`.github/workflows/ci.yml`) corre
+en push/PR a **ambas**. Nota: `scripts/deploy.sh`/`deploy-dev.sh` eran del modelo single-cliente; hoy el
+despliegue de producción es el bucle multicliente de arriba (el `deploy-dev.sh` sí sigue vigente para staging).
 
 > **Pruebas en la nube, no en local**: el objetivo es dejar de levantar MySQL+app en cada PC
 > (casa/trabajo) y probar `develop` contra un entorno de **staging en el propio VPS** (ver "entrada
@@ -202,32 +206,46 @@ promover a `main` (dispara el redeploy). CI (`.github/workflows/ci.yml`) corre e
   API de Cloudflare) en `/etc/letsencrypt/live/texcontrol.pe/`, renovación
   automática. Un subdominio nuevo ya queda cubierto sin emitir nada.
 - **Rutas**: `login.texcontrol.pe` = lanzador; `<empresa>.texcontrol.pe` = la app.
-- **Modelo actual = SINGLE-cliente**: UN stack (`docker-compose.yml` +
-  `docker-compose.prod.yml`) = `textil_app` + `textil_mysql` + `textil_nginx`,
-  corriendo `main`, sirviendo a `textillaura`. `BIND_IP=0.0.0.0`. La BD arranca de
-  cero con las 36 migraciones + cuentas semilla. **Usar clave de BD sin símbolos**
-  (hex): `deploy.sh` sincroniza leyendo el `.env` literal, pero el hex evita todo
-  problema de escaping.
-- **Multicliente** (roadmap, scaffolding listo en `multicliente/`): un stack
-  aislado por empresa (`app_<slug>` + `db_<slug>`, BD propia, red `interna`) tras
-  el proxy compartido **`texcontrol_proxy_nginx`** (red `texcontrol_red`). Alta con
-  `scripts/nuevo-cliente.sh <slug> "<nombre>"`. Techo ~3 clientes en 4 GB de RAM.
-  **OJO**: el proxy NO debe llamarse `textil_nginx` (ese nombre es del single-cliente
-  y chocan) — es `texcontrol_proxy_nginx`.
-- **Deploy** (NO es automático): `ssh texcontrol` → `cd ~/textil-inventario` →
-  `./scripts/deploy.sh` (trae `main`, reconstruye la imagen, reinicia; los datos de
-  MySQL no se tocan).
+- **Modelo actual = MULTICLIENTE (EN VIVO desde ago-2026)**: un stack aislado por
+  empresa (`app_<slug>` + `db_<slug>`, BD propia, red privada `interna`) tras el
+  proxy compartido **`texcontrol_proxy_nginx`** (red `texcontrol_red`), que rutea
+  `<slug>.texcontrol.pe` → `app_<slug>`. Clientes en vivo: **`textillaura`**
+  (`textillaura.texcontrol.pe`) y **`textilcamargo`** (`textilcamargo.texcontrol.pe`),
+  cada uno con su BD aislada y su clave de `jlynch` propia. Techo ~3 clientes en 4 GB.
+  **OJO**: el proxy NO debe llamarse `textil_nginx` — es `texcontrol_proxy_nginx`.
+  El viejo stack single-cliente (`docker-compose.prod.yml` = `textil_app` +
+  `textil_mysql` + `textil_nginx`) **fue decomisionado** en la migración; sus
+  archivos siguen en el repo por historia pero YA NO se usan.
+- **Alta / gestión de clientes** (scripts en `scripts/*-cliente.sh`, detalle en
+  DEPLOY.md 6.6): `nuevo-cliente.sh <slug> "<Nombre>"` (crea BD aislada, levanta el
+  stack, genera el bloque nginx, recarga el proxy y ENDURECE — rota `jlynch` a una
+  clave única e imprime UNA vez, borra cuentas de prueba). Otros: `listar-clientes.sh`,
+  `backup-cliente.sh --todos` (cron diario 2am via `instalar-cron-backups.sh`),
+  `eliminar-cliente.sh`, `endurecer-cliente.sh` (re-rota `jlynch`), `migrar-cliente.sh`.
+  **OCR**: `ANTHROPIC_API_KEY` (del proveedor, la MISMA para todos) debe estar en el
+  entorno al correr `nuevo-cliente.sh` — se copia al `.env` del cliente.
+- **Actualizar el código de TODOS los clientes** (comparten imagen): en el VPS, con
+  el clon en **`main`**, `git pull` → `docker build -t texcontrol-app:latest .` →
+  reiniciar cada app: `for e in clientes/*/.env; do s=$(basename $(dirname $e)); \
+  docker compose -p texcontrol_$s --env-file $e -f multicliente/docker-compose.cliente.yml up -d; done`.
+  (Reemplaza al viejo `deploy.sh`, que era del modelo single-cliente.)
+- **`dev.texcontrol.pe`** (staging): su stack (`docker-compose.dev.yml`: `textil_app_dev`
+  + `textil_mysql_dev`) se une a `texcontrol_red` para que el proxy lo alcance; el
+  bloque `dev.` (Basic Auth) vive en `multicliente/nginx/00-texcontrol.conf`.
 
 ## Roadmap / pendientes
 
-Estado actual (jul-2026): **en vivo** en `texcontrol.pe` (dominio + HTTPS wildcard; `login.texcontrol.pe`
-= lanzador, `<empresa>.texcontrol.pe` = la app). **Modelo single-cliente**: hoy hay UN solo stack
-(app + MySQL + nginx de `docker-compose.prod.yml`) sirviendo a `textillaura`. Infra: SSH por clave (sin
-Tailscale), `fail2ban`, y Docker ya NO depende de Tailscale.
+Estado actual (ago-2026): **en vivo** en `texcontrol.pe` (dominio + HTTPS wildcard; `login.texcontrol.pe`
+= lanzador, `<empresa>.texcontrol.pe` = la app). **Modelo MULTICLIENTE en vivo**: proxy
+`texcontrol_proxy_nginx` + un stack `app_<slug>`+`db_<slug>` aislado por cliente (ver sección
+"Infraestructura"). El single-cliente fue decomisionado. Infra: SSH por clave (sin Tailscale),
+`fail2ban`, y Docker ya NO depende de Tailscale.
 
-**Clientes** (una instancia por cliente, cada uno con su BD propia):
-- **`textillaura`** — cliente actual = **Textil Laura + Textil Clemente** juntos (una sola instancia/BD).
-- Futuro (todavía no vendidos): **Textil Camargo**, **Textil Emilio**.
+**Clientes** (una instancia por cliente, cada uno con su BD propia y su clave de `jlynch`):
+- **`textillaura`** (`textillaura.texcontrol.pe`) — **Textil Laura + Textil Clemente** juntos. EN VIVO.
+- **`textilcamargo`** (`textilcamargo.texcontrol.pe`) — **Textil Camargo**. EN VIVO (listo para entregar).
+- Futuro (aún no dado de alta): **Textil Emilio**. Ojo al techo de RAM (~3 clientes en 4 GB): al sumar
+  el 3.º pagando, subir la RAM del VPS.
 
 ### Estado de trabajo (dónde quedamos — sesión 24-jul-2026)
 
@@ -284,17 +302,19 @@ entradas al vuelo desde los flujos (como ya hace "Crear color"). Hecho: "Crear a
 `mysqldump` de `textil_mysql` restaurado en `textil_mysql_dev` (aislado, `--ignore-table=...flyway_schema_history`,
 no toca prod). Pendiente dejarlo como `scripts/sembrar-dev-desde-prod.sh`.
 
+**✅ Multi-cliente real EN VIVO (ago-2026)**: migrado del single-cliente al modelo `multicliente/`
+(proxy `texcontrol_proxy_nginx` + `app_<slug>`+`db_<slug>` aislado por cliente, ruteados por subdominio).
+`textillaura` y `textilcamargo` dados de alta y endurecidos; backups diarios (cron 2am); `jlynch` con
+clave única por copia; cuentas de prueba eliminadas; `dev.texcontrol.pe` reconectado al proxy nuevo.
+Es la pieza que habilita el modelo de negocio — **ya está**.
+
 Falta, por orden de prioridad:
 
-1. **Multi-cliente real (BD aislada por empresa)**: migrar de forma deliberada al modelo `multicliente/`
-   (proxy `texcontrol_proxy_nginx` + un stack `app_<cliente>` + `db_<cliente>` por empresa, ruteados por
-   subdominio). El scaffolding ya existe en `multicliente/` y `scripts/nuevo-cliente.sh`. Clientes arriba.
-   Es la pieza que habilita el modelo de negocio.
-2. **App móvil iOS/Android**: una app para celular para que **los usuarios ingresen desde el móvil**
+1. **App móvil iOS/Android**: una app para celular para que **los usuarios ingresen desde el móvil**
    (los vendedores/almaceneros/gerentes de cada empresa). A definir: nativa contra una API REST
    (que hay que construir), PWA instalable sobre la web actual, o wrapper WebView. Pedido explícito
    del cliente. (Ya hay PWA instalable + sesión persistente móvil implementada.)
-3. **Antes del primer cliente que pague**: backups automáticos (cron por cliente), rotar `jlynch`
-   con clave única por copia, limpiar/cerrar cuentas de prueba, `NOMBRE_EMPRESA` por cliente.
-4. **Marketing** en `texcontrol.pe` (hoy la raíz redirige a `login.`).
-5. **Módulo de Ventas** (rol `VENDEDOR`, hoy sin permisos).
+2. **Al sumar el 3.er cliente (Emilio) pagando**: subir la RAM del VPS (techo ~3 clientes en 4 GB) o
+   evaluar MySQL compartido. Crear cada cliente con `NOMBRE_EMPRESA` propio (ya lo hace el script).
+3. **Marketing** en `texcontrol.pe` (hoy la raíz redirige a `login.`).
+4. **Módulo de Ventas** (rol `VENDEDOR`, hoy sin permisos).
