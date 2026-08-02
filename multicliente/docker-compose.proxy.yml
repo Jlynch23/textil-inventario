@@ -45,6 +45,11 @@ services:
       - ../nginx/launcher:/usr/share/nginx/launcher:ro
       # Certificados wildcard de Let's Encrypt emitidos en el host (DEPLOY.md).
       - /etc/letsencrypt:/etc/letsencrypt:ro
+      # Basic Auth del staging (dev.texcontrol.pe). El archivo se crea EN EL VPS
+      # con htpasswd y NO se versiona (ver STAGING.md). DEBE existir antes de
+      # levantar el proxy; si falta, docker crearia un DIRECTORIO vacio ahi y el
+      # login de dev daria error (produccion no se ve afectada).
+      - ../nginx/dev.htpasswd:/etc/nginx/dev.htpasswd:ro
     networks:
       - red
 
