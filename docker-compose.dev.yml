@@ -25,7 +25,13 @@ services:
       MYSQL_PASSWORD: ${DB_PASSWORD}
       # M17: hora Peru en el contenedor (ver docker-compose.yml).
       TZ: America/Lima
-    command: ["--default-time-zone=-05:00"]
+    command:
+      - "--default-time-zone=-05:00"
+      # Footprint reducido: dev tiene poca data y bajo trafico. Recorta el buffer
+      # pool y apaga performance_schema (ahorra ~200-400MB) para no competir por RAM
+      # con produccion en el mismo VPS. Seguro para un entorno de pruebas.
+      - "--innodb-buffer-pool-size=64M"
+      - "--performance-schema=OFF"
     volumes:
       - mysql_data_dev:/var/lib/mysql
     networks:
@@ -58,6 +64,11 @@ services:
       ENTORNO_ETIQUETA: ${ENTORNO_ETIQUETA:-DEV}
       REMEMBER_ME_KEY: ${REMEMBER_ME_KEY}
       SPRING_PROFILES_ACTIVE: prod
+      # Tope de heap para dev: sin esto la JVM toma por defecto ~25% de la RAM del
+      # HOST (~1GB en el VPS de 4GB) y compite con produccion. Dev solo sirve para
+      # probar, con 512m sobra. -XX:+ExitOnOutOfMemoryError = si se queda sin heap,
+      # muere limpio (lo reinicia restart:unless-stopped) en vez de quedar "vivo pero roto".
+      JAVA_TOOL_OPTIONS: -Xms128m -Xmx512m -XX:+UseG1GC -XX:+ExitOnOutOfMemoryError
     volumes:
       - ./documentos-dev:/app/documentos
     depends_on:
