@@ -77,9 +77,11 @@ services:
     networks:
       # dev_interna: para alcanzar su propio MySQL (aislado).
       - dev_interna
-      # proxy_red: la red del stack de produccion, para que textil_nginx lo
-      # alcance por nombre (textil_app_dev). Tambien le da salida a internet
-      # (OCR/Anthropic), que dev_interna al ser 'internal' no tiene.
+      # proxy_red: la red COMPARTIDA del proxy multicliente (texcontrol_red), para
+      # que texcontrol_proxy_nginx alcance a textil_app_dev por nombre y sirva
+      # dev.texcontrol.pe. Tambien le da salida a internet (OCR/Anthropic), que
+      # dev_interna al ser 'internal' no tiene. (Antes apuntaba a la red del
+      # stack single-cliente 'textil-inventario_default', ya retirado.)
       - proxy_red
 
 networks:
@@ -88,7 +90,7 @@ networks:
     internal: true
   proxy_red:
     external: true
-    name: textil-inventario_default
+    name: texcontrol_red
 
 volumes:
   mysql_data_dev:
