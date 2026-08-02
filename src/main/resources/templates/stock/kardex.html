@@ -47,6 +47,7 @@
             <th>Peso (kg)</th>
             <th>Usuario</th>
             <th>Observaciones</th>
+            <th>Guía</th>
         </tr>
         </thead>
         <tbody>
@@ -64,9 +65,17 @@
             <td th:text="${m.pesoKg}"></td>
             <td th:text="${m.usuario.nombreMostrar}"></td>
             <td th:text="${m.observaciones}"></td>
+            <td>
+                <a th:if="${m.recepcionDetalleId != null and guiaPorDetalle.containsKey(m.recepcionDetalleId)}"
+                   th:href="@{/documentos/{id}/ver(id=${guiaPorDetalle.get(m.recepcionDetalleId)})}"
+                   target="_blank" rel="noopener"
+                   class="btn btn-sm btn-outline-primary" title="Ver guía (PDF)">
+                    <i class="bi bi-eye"></i>
+                </a>
+            </td>
         </tr>
         <tr th:if="${#lists.isEmpty(movimientos)}">
-            <td colspan="9" class="text-center text-muted">No hay movimientos registrados.</td>
+            <td colspan="10" class="text-center text-muted">No hay movimientos registrados.</td>
         </tr>
         </tbody>
     </table>

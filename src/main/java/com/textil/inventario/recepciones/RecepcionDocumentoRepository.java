@@ -8,6 +8,13 @@ import java.util.List;
 public interface RecepcionDocumentoRepository extends JpaRepository<RecepcionDocumento, Long> {
     List<RecepcionDocumento> findByRecepcionId(Long recepcionId);
 
+    // Kardex → guía: para un lote de recepciones, el id del documento GUÍA de cada
+    // una (MIN si hubiera más de uno). Un solo query, sin N+1.
+    @Query("SELECT d.recepcion.id, MIN(d.id) FROM RecepcionDocumento d " +
+           "WHERE d.recepcion.id IN :recepcionIds AND d.tipoDocumento = 'GUIA' " +
+           "GROUP BY d.recepcion.id")
+    List<Object[]> guiaDocPorRecepcion(@Param("recepcionIds") java.util.Collection<Long> recepcionIds);
+
     // El filtro de anio/mes usa la fecha REAL de la guia (recepcion.fechaGuia),
     // no d.createdAt (que es cuando el PDF se subio al sistema, no cuando
     // realmente ocurrio la recepcion). Con createdAt, un documento de una
