@@ -68,6 +68,9 @@
         <div th:if="${param.logout}" class="alerta alerta-ok">
             Sesión cerrada correctamente.
         </div>
+        <div th:if="${param.expirado}" class="alerta alerta-error">
+            Tu sesión expiró. Vuelve a ingresar.
+        </div>
 
         <form th:action="@{/login}" method="post">
             <label for="username">Usuario</label>

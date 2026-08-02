@@ -169,8 +169,18 @@ public class SecurityConfig {
             // ConcurrentSessionFilter la invalida en su siguiente request.
             // maximumSessions(-1) = sin limite de sesiones, solo se usa el registro.
             .sessionManagement(session -> session
+                // UX tras un deploy/reinicio: la sesion vive en memoria, asi que al
+                // reiniciar la app muere y el navegador manda una cookie invalida. En
+                // vez del crudo "This session has been expired (concurrent logins)",
+                // se redirige LIMPIO al login. El remember-me (que sobrevive reinicios)
+                // suele re-loguear solo antes de llegar aca; si no, el usuario cae en
+                // una pagina de login normal, no en un mensaje tecnico de error.
+                .invalidSessionUrl("/login?expirado")
                 .maximumSessions(-1)
                 .sessionRegistry(sessionRegistry())
+                // Mismo trato para la expiracion via SessionRegistry (R-A1: cuando el
+                // ADMIN inactiva/degrada a un usuario y se corta su sesion): login limpio.
+                .expiredUrl("/login?expirado")
             )
             .formLogin(form -> form
                 .loginPage("/login")
