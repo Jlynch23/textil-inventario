@@ -27,6 +27,10 @@ public class StockController {
     private final TituloRepository tituloRepository;
     private final ColorRepository colorRepository;
 
+    // Umbral de "stock bajo" (mismo criterio que el dashboard): un color cuyo total
+    // de rollos cae por debajo se marca para saltar a reponer.
+    private static final int UMBRAL_STOCK_BAJO = 10;
+
     @GetMapping("/stock")
     public String listar(@RequestParam(required = false) Long ubicacionId,
                           @RequestParam(required = false) Long tipoTelaId,
@@ -58,6 +62,9 @@ public class StockController {
         }
 
         model.addAttribute("stockList", stock);
+        // Vista "Stock por color": mismo stock (ya filtrado) agrupado por color ->
+        // ubicacion -> articulo, para el resumen "cuanto tengo y donde".
+        model.addAttribute("resumenColor", StockPorColor.construir(stock, UMBRAL_STOCK_BAJO));
         model.addAttribute("ubicaciones", ubicacionRepository.findByActivoTrue());
         model.addAttribute("tiposTela", tipoTelaRepository.findByActivoTrue());
         model.addAttribute("titulos", tituloRepository.findByActivoTrue());

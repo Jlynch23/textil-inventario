@@ -4,43 +4,141 @@
 <head><title>Stock Actual</title></head>
 <body>
 <section>
-    <h2 class="mb-4">Stock Actual</h2>
 
-    <form method="get" th:action="@{/inventario/stock}" class="row g-2 mb-4">
+    <style>
+        /* Vista Stock por color. Usa variables de Bootstrap (--bs-*) para seguir el
+           tema claro/oscuro de la app. style-src permite inline styles (ver CSP). */
+        .stock-head { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:16px; }
+        .stock-switch { display:inline-flex; background:var(--bs-tertiary-bg); border:1px solid var(--bs-border-color); border-radius:10px; padding:3px; gap:2px; }
+        .stock-switch button { font:inherit; font-size:.84rem; font-weight:600; border:0; background:transparent; color:var(--bs-secondary-color); padding:7px 13px; border-radius:7px; cursor:pointer; display:inline-flex; align-items:center; gap:7px; }
+        .stock-switch button.on { background:var(--bs-body-bg); color:var(--bs-primary); box-shadow:0 1px 3px rgba(0,0,0,.14); }
+        .stock-switch svg { width:15px; height:15px; }
+
+        .stock-banner { display:grid; grid-template-columns:1.5fr 1fr 1fr 1fr; gap:8px; background:var(--bs-body-bg); border:1px solid var(--bs-border-color); border-radius:12px; padding:18px 20px; position:relative; overflow:hidden; margin-bottom:16px; }
+        .stock-banner::before { content:""; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--bs-primary); }
+        .sb-stat { padding-left:8px; }
+        .sb-lbl { font-size:.68rem; text-transform:uppercase; letter-spacing:.08em; color:var(--bs-secondary-color); font-weight:700; }
+        .sb-big { font-size:1.85rem; font-weight:800; letter-spacing:-.02em; font-variant-numeric:tabular-nums; line-height:1.15; margin-top:2px; }
+        .sb-big small { font-size:.8rem; font-weight:600; color:var(--bs-secondary-color); margin-left:3px; }
+        .sb-stat.main .sb-big { color:var(--bs-primary); }
+        .sb-sub { font-size:.78rem; color:var(--bs-secondary-color); margin-top:1px; }
+
+        .color-card { background:var(--bs-body-bg); border:1px solid var(--bs-border-color); border-radius:12px; overflow:hidden; }
+        .color-thead, .color-cells { display:grid; grid-template-columns:34px 1.7fr 1.5fr 96px 1.5fr 30px; gap:12px; align-items:center; }
+        .color-thead { padding:11px 18px; font-size:.68rem; text-transform:uppercase; letter-spacing:.07em; color:var(--bs-secondary-color); font-weight:700; border-bottom:1px solid var(--bs-border-color); background:var(--bs-tertiary-bg); }
+        .color-thead .r { text-align:right; }
+        .color-row { border-bottom:1px solid var(--bs-border-color); }
+        .color-row:last-child { border-bottom:0; }
+        .color-cells { padding:13px 18px; cursor:pointer; }
+        .color-cells:hover { background:var(--bs-tertiary-bg); }
+        .color-cells:focus-visible { outline:2px solid var(--bs-primary); outline-offset:-2px; }
+
+        .swatch { width:22px; height:22px; border-radius:6px; border:1px solid rgba(128,128,128,.4); }
+        .cname { font-weight:650; }
+        .ccode { font-size:.72rem; color:var(--bs-secondary-color); font-variant-numeric:tabular-nums; }
+        .qty { display:flex; align-items:center; gap:10px; }
+        .track { flex:1; height:8px; background:var(--bs-tertiary-bg); border-radius:5px; overflow:hidden; }
+        .bar { height:100%; border-radius:5px; background:var(--bs-primary); }
+        .bar.low { background:var(--bs-warning, #e0a54a); }
+        .qnum { font-variant-numeric:tabular-nums; font-weight:700; min-width:30px; text-align:right; }
+        .peso { text-align:right; font-variant-numeric:tabular-nums; color:var(--bs-secondary-color); }
+        .where { display:flex; gap:6px; flex-wrap:wrap; }
+        .chip { font-size:.74rem; background:rgba(var(--bs-primary-rgb),.13); color:var(--bs-primary); border-radius:999px; padding:3px 10px; font-weight:600; white-space:nowrap; }
+        .chip b { font-variant-numeric:tabular-nums; }
+        .chev { color:var(--bs-secondary-color); display:grid; place-items:center; transition:transform .18s; }
+        .color-row.open .chev { transform:rotate(90deg); color:var(--bs-primary); }
+        .chev svg { width:16px; height:16px; }
+        .low-badge { display:inline-flex; align-items:center; font-size:.62rem; font-weight:700; color:#b26a12; background:rgba(230,179,82,.18); border:1px solid rgba(230,179,82,.5); border-radius:999px; padding:1px 8px; margin-left:8px; text-transform:uppercase; letter-spacing:.04em; vertical-align:middle; }
+
+        .color-detail { display:none; padding:2px 18px 16px 64px; background:var(--bs-tertiary-bg); border-top:1px dashed var(--bs-border-color); }
+        .color-row.open .color-detail { display:block; }
+        .loc { margin-top:12px; }
+        .loc-head { display:flex; align-items:baseline; gap:10px; }
+        .loc-name { font-weight:700; font-size:.9rem; display:flex; align-items:center; gap:6px; }
+        .loc-name svg { width:14px; height:14px; color:var(--bs-primary); }
+        .loc-tot { font-size:.78rem; color:var(--bs-secondary-color); font-variant-numeric:tabular-nums; }
+        .arts { margin-top:6px; border-left:2px solid var(--bs-border-color); }
+        .art { display:grid; grid-template-columns:1fr 60px 92px; gap:12px; padding:5px 0 5px 16px; font-size:.85rem; }
+        .art .a-num { text-align:right; font-variant-numeric:tabular-nums; font-weight:650; }
+        .art .a-peso { text-align:right; font-variant-numeric:tabular-nums; color:var(--bs-secondary-color); }
+        .art .tag { display:inline-block; font-size:.68rem; font-weight:700; color:var(--bs-primary); background:rgba(var(--bs-primary-rgb),.13); border-radius:5px; padding:1px 6px; margin-right:8px; }
+        .stock-empty { padding:34px; text-align:center; color:var(--bs-secondary-color); }
+        [hidden] { display:none !important; }
+
+        @media (max-width: 720px) {
+            .stock-banner { grid-template-columns:1fr 1fr; row-gap:14px; }
+            .color-thead { display:none; }
+            .color-cells { grid-template-columns:30px 1fr 34px; grid-template-areas:"sw name chev" "sw qty chev" "sw where chev"; row-gap:8px; }
+            .color-cells .swatch { grid-area:sw; }
+            .cc-name { grid-area:name; }
+            .cc-qty { grid-area:qty; }
+            .cc-peso { display:none; }
+            .cc-where { grid-area:where; }
+            .color-cells .chev { grid-area:chev; }
+            .color-detail { padding-left:44px; }
+        }
+    </style>
+
+    <div class="stock-head">
+        <h2 class="m-0">Stock Actual</h2>
+        <div class="stock-switch" role="tablist" aria-label="Vista de stock">
+            <button type="button" id="vista-resumen" class="on" role="tab" aria-selected="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>
+                Resumen por color
+            </button>
+            <button type="button" id="vista-detalle" role="tab" aria-selected="false">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+                Detalle por artículo
+            </button>
+        </div>
+    </div>
+
+    <!-- TOTAL: lo primero que se ve, en las dos vistas -->
+    <div class="stock-banner">
+        <div class="sb-stat main">
+            <div class="sb-lbl">Stock total</div>
+            <div class="sb-big" th:text="${#numbers.formatInteger(resumenColor.totalRollos, 1, 'POINT')}">0</div>
+            <div class="sb-sub">rollos · RIB algodón peinado</div>
+        </div>
+        <div class="sb-stat">
+            <div class="sb-lbl">Peso total</div>
+            <div class="sb-big"><span th:text="${#numbers.formatDecimal(resumenColor.totalPeso, 1, 'POINT', 0, 'NONE')}">0</span><small> kg</small></div>
+        </div>
+        <div class="sb-stat">
+            <div class="sb-lbl">Colores</div>
+            <div class="sb-big" th:text="${resumenColor.totalColores}">0</div>
+            <div class="sb-sub">con stock</div>
+        </div>
+        <div class="sb-stat">
+            <div class="sb-lbl">Ubicaciones</div>
+            <div class="sb-big" th:text="${resumenColor.totalUbicaciones}">0</div>
+        </div>
+    </div>
+
+    <!-- Filtros: aplican a las dos vistas -->
+    <form method="get" th:action="@{/inventario/stock}" class="row g-2 mb-3">
         <div class="col-md-3">
             <select name="ubicacionId" class="form-select" onchange="this.form.submit()">
                 <option value="">Todas las ubicaciones</option>
-                <option th:each="u : ${ubicaciones}"
-                        th:value="${u.id}"
-                        th:selected="${u.id == filtroUbicacionId}"
-                        th:text="${u.nombre}"></option>
+                <option th:each="u : ${ubicaciones}" th:value="${u.id}" th:selected="${u.id == filtroUbicacionId}" th:text="${u.nombre}"></option>
             </select>
         </div>
         <div class="col-md-3">
             <select name="tipoTelaId" class="form-select" onchange="this.form.submit()">
                 <option value="">Todos los tipos de tela</option>
-                <option th:each="t : ${tiposTela}"
-                        th:value="${t.id}"
-                        th:selected="${t.id == filtroTipoTelaId}"
-                        th:text="${t.nombre}"></option>
+                <option th:each="t : ${tiposTela}" th:value="${t.id}" th:selected="${t.id == filtroTipoTelaId}" th:text="${t.nombre}"></option>
             </select>
         </div>
         <div class="col-md-3">
             <select name="tituloId" class="form-select" onchange="this.form.submit()">
                 <option value="">Todos los títulos</option>
-                <option th:each="ti : ${titulos}"
-                        th:value="${ti.id}"
-                        th:selected="${ti.id == filtroTituloId}"
-                        th:text="${ti.valor}"></option>
+                <option th:each="ti : ${titulos}" th:value="${ti.id}" th:selected="${ti.id == filtroTituloId}" th:text="${ti.valor}"></option>
             </select>
         </div>
         <div class="col-md-3">
             <select name="colorId" class="form-select" onchange="this.form.submit()">
                 <option value="">Todos los colores</option>
-                <option th:each="c : ${colores}"
-                        th:value="${c.id}"
-                        th:selected="${c.id == filtroColorId}"
-                        th:text="${c.nombreMostrar}"></option>
+                <option th:each="c : ${colores}" th:value="${c.id}" th:selected="${c.id == filtroColorId}" th:text="${c.nombreMostrar}"></option>
             </select>
         </div>
         <div class="col-md-3">
@@ -48,35 +146,83 @@
         </div>
     </form>
 
-    <table class="table table-striped table-hover">
-        <thead>
-        <tr>
-            <th>Tipo Tela</th>
-            <th>Título</th>
-            <th>Color</th>
-            <th>Ubicación</th>
-            <th>Rollos</th>
-            <th>Peso (kg)</th>
-            <th>Kardex</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr th:each="s : ${stockList}">
-            <td th:text="${s.articulo.tipoTela.nombre}"></td>
-            <td th:text="${s.articulo.titulo.valor}"></td>
-            <td th:text="${s.color.nombreMostrar}"></td>
-            <td th:text="${s.ubicacion.nombre}"></td>
-            <td th:text="${s.rollos}"></td>
-            <td th:text="${s.pesoKg}"></td>
-            <td>
-                <a th:href="@{/inventario/kardex(articuloId=${s.articulo.id})}" class="btn btn-sm btn-outline-primary">Ver Kardex</a>
-            </td>
-        </tr>
-        <tr th:if="${#lists.isEmpty(stockList)}">
-            <td colspan="7" class="text-center text-muted">No hay stock disponible con estos filtros.</td>
-        </tr>
-        </tbody>
-    </table>
+    <!-- ===== VISTA 1: RESUMEN POR COLOR ===== -->
+    <div id="pane-resumen">
+        <div class="color-card" th:if="${!resumenColor.colores.isEmpty()}">
+            <div class="color-thead">
+                <div></div><div>Color</div><div>Rollos</div><div class="r">Peso</div><div>Dónde está</div><div></div>
+            </div>
+            <div class="color-row" th:each="c : ${resumenColor.colores}">
+                <div class="color-cells" tabindex="0" role="button" aria-expanded="false">
+                    <span class="swatch" th:style="'background:' + ${c.hex}"></span>
+                    <div class="cc-name">
+                        <span class="cname" th:text="${c.nombre}">Color</span>
+                        <span class="ccode" th:if="${c.codigoFastDye}" th:text="'· FD ' + ${c.codigoFastDye}"></span>
+                        <span class="low-badge" th:if="${c.bajo}">stock bajo</span>
+                    </div>
+                    <div class="cc-qty qty">
+                        <div class="track"><div th:classappend="${c.bajo} ? ' low'" class="bar" th:style="'width:' + ${c.anchoBarra} + '%'"></div></div>
+                        <div class="qnum" th:text="${c.rollos}">0</div>
+                    </div>
+                    <div class="cc-peso peso" th:text="${#numbers.formatDecimal(c.peso, 1, 'POINT', 0, 'NONE')} + ' kg'">0 kg</div>
+                    <div class="cc-where where">
+                        <span class="chip" th:each="u : ${c.ubicaciones}"><span th:text="${u.ubicacion}">Ubic</span> <b th:text="${u.rollos}">0</b></span>
+                    </div>
+                    <div class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 6l6 6-6 6"/></svg></div>
+                </div>
+                <div class="color-detail">
+                    <div class="loc" th:each="u : ${c.ubicaciones}">
+                        <div class="loc-head">
+                            <div class="loc-name">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6-7-11a7 7 0 0114 0c0 5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+                                <span th:text="${u.ubicacion}">Ubicación</span>
+                            </div>
+                            <div class="loc-tot" th:text="${u.rollos} + ' rollos · ' + ${#numbers.formatDecimal(u.peso, 1, 'POINT', 0, 'NONE')} + ' kg'"></div>
+                        </div>
+                        <div class="arts">
+                            <div class="art" th:each="l : ${u.lineas}">
+                                <div><span class="tag" th:text="${l.tipoTela}">RIB</span><span th:text="${l.titulo}">24/1</span></div>
+                                <div class="a-num" th:text="${l.rollos}">0</div>
+                                <div class="a-peso" th:text="${#numbers.formatDecimal(l.peso, 1, 'POINT', 0, 'NONE')} + ' kg'">0 kg</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="color-card stock-empty" th:if="${resumenColor.colores.isEmpty()}">
+            No hay stock disponible con estos filtros.
+        </div>
+    </div>
+
+    <!-- ===== VISTA 2: DETALLE POR ARTÍCULO (la tabla clásica) ===== -->
+    <div id="pane-detalle" hidden>
+        <table class="table table-striped table-hover">
+            <thead>
+            <tr>
+                <th>Tipo Tela</th><th>Título</th><th>Color</th><th>Ubicación</th><th>Rollos</th><th>Peso (kg)</th><th>Kardex</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="s : ${stockList}">
+                <td th:text="${s.articulo.tipoTela.nombre}"></td>
+                <td th:text="${s.articulo.titulo.valor}"></td>
+                <td th:text="${s.color.nombreMostrar}"></td>
+                <td th:text="${s.ubicacion.nombre}"></td>
+                <td th:text="${s.rollos}"></td>
+                <td th:text="${s.pesoKg}"></td>
+                <td>
+                    <a th:href="@{/inventario/kardex(articuloId=${s.articulo.id})}" class="btn btn-sm btn-outline-primary">Ver Kardex</a>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(stockList)}">
+                <td colspan="7" class="text-center text-muted">No hay stock disponible con estos filtros.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script src="/js/stock-resumen.js"></script>
 </section>
 </body>
 </html>
