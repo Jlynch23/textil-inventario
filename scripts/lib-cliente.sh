@@ -38,10 +38,22 @@ mc_asegurar_red_e_imagen() {
         echo "Creando la red compartida $MC_RED_COMPARTIDA..."
         docker network create "$MC_RED_COMPARTIDA"
     fi
-    if ! docker image inspect "$MC_IMAGEN" >/dev/null 2>&1; then
-        echo "Construyendo la imagen compartida $MC_IMAGEN (una sola vez para todos)..."
-        docker build -t "$MC_IMAGEN" "$raiz"
+    # Aviso si el clon NO esta en main: los clientes de produccion deberian salir
+    # de main. No bloquea (podrias estar probando algo a proposito), pero avisa.
+    local rama
+    rama="$(git -C "$raiz" rev-parse --abbrev-ref HEAD 2>/dev/null || echo '?')"
+    if [ "$rama" != "main" ]; then
+        echo "AVISO: el repo esta en la rama '$rama', no en 'main'. El cliente se"
+        echo "       construira con ESE codigo. Para produccion: deja el clon en main"
+        echo "       y corre 'git pull' antes de dar de alta al cliente."
     fi
+    # SIEMPRE reconstruye la imagen compartida desde el codigo ACTUAL del repo.
+    # Con la cache de capas de Docker es instantaneo si nada cambio; si cambio, el
+    # cliente NUEVO arranca con el codigo mas reciente en vez de heredar una imagen
+    # vieja de un build anterior. (Antes construia solo "si no existe", y por eso un
+    # cliente nuevo podia salir con codigo antiguo.)
+    echo "Reconstruyendo la imagen compartida $MC_IMAGEN desde el codigo actual (cache si no cambio)..."
+    docker build -t "$MC_IMAGEN" "$raiz"
 }
 
 # --- Crear carpeta + .env del cliente (credenciales aleatorias) ------------
