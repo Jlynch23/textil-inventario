@@ -6,24 +6,18 @@
     <title>Error - Textil Inventario</title>
     <link href="/webjars/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <link href="/webjars/bootstrap-icons/1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="/css/texcontrol.css" rel="stylesheet">
     <style>
         body {
-            background-color: #f0f4f8;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
+            display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px;
         }
         .error-card {
-            background: white;
-            border-radius: 12px;
-            padding: 48px;
-            text-align: center;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-            max-width: 480px;
+            background: var(--tx-surface); border: 1px solid var(--tx-border);
+            border-radius: var(--tx-radius-lg); padding: 48px; text-align: center;
+            box-shadow: var(--tx-shadow); max-width: 480px;
         }
-        .error-card i { font-size: 3rem; color: #1F4E79; }
-        .error-card h3 { color: #1F4E79; margin-top: 16px; }
+        .error-card i { font-size: 3rem; color: var(--tx-blue); }
+        .error-card h3 { color: var(--tx-ink); margin-top: 16px; font-family: var(--tx-font-head); font-weight: 700; }
     </style>
 </head>
 <body>
