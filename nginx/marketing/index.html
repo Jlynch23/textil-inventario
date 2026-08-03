@@ -5,32 +5,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TexControl — Software de inventario para la industria textil</title>
     <meta name="description" content="TexControl es el sistema de gestion de inventario para empresas textiles: recepcion con lectura de guias por IA, kardex con trazabilidad total, transferencias entre tiendas y reportes a Excel.">
-    <meta name="theme-color" content="#0b1220">
+    <meta name="theme-color" content="#0B3A66">
     <link rel="icon" href="/icon.png" type="image/png">
+    <link rel="preload" href="/fonts/manrope-800.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/fonts/inter-400.woff2" as="font" type="font/woff2" crossorigin>
     <style>
+        /* Fuentes de marca auto-hospedadas (mismas que la app: Manrope + Inter). */
+        @font-face { font-family:'Manrope'; font-weight:600; font-display:swap; src:url('/fonts/manrope-600.woff2') format('woff2'); }
+        @font-face { font-family:'Manrope'; font-weight:700; font-display:swap; src:url('/fonts/manrope-700.woff2') format('woff2'); }
+        @font-face { font-family:'Manrope'; font-weight:800; font-display:swap; src:url('/fonts/manrope-800.woff2') format('woff2'); }
+        @font-face { font-family:'Inter'; font-weight:400; font-display:swap; src:url('/fonts/inter-400.woff2') format('woff2'); }
+        @font-face { font-family:'Inter'; font-weight:500; font-display:swap; src:url('/fonts/inter-500.woff2') format('woff2'); }
+        @font-face { font-family:'Inter'; font-weight:600; font-display:swap; src:url('/fonts/inter-600.woff2') format('woff2'); }
         :root {
-            --azul:#1a82f0; --azul-oscuro:#1568c8; --navy:#0b1220; --navy2:#0f1a2e;
-            --texto:#1f2937; --gris:#5b6b85; --linea:#e5e9f0; --claro:#f4f7fb;
+            /* Paleta de marca TexControl (misma que la app): navy + azul + oro. */
+            --azul:#1E6FB9; --azul-oscuro:#155489; --oro:#D4A017; --oro-oscuro:#B98910;
+            --navy:#0B3A66; --navy2:#092E52; --navy3:#061F38;
+            --texto:#16202E; --gris:#5b6b85; --linea:#E3E8EF; --claro:#F4F6FA;
+            --head:'Manrope', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            --body:'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html { scroll-behavior: smooth; }
-        body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--texto); line-height: 1.6; }
+        body { font-family: var(--body); color: var(--texto); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+        h1, h2, h3 { font-family: var(--head); }
         a { text-decoration: none; color: inherit; }
         .contenedor { width: 100%; max-width: 1120px; margin: 0 auto; padding: 0 24px; }
 
         /* --- Barra superior --- */
         header {
             position: sticky; top: 0; z-index: 50;
-            background: rgba(11,18,32,.92); backdrop-filter: blur(8px);
-            border-bottom: 1px solid rgba(148,163,184,.14);
+            background: rgba(9,46,82,.92); backdrop-filter: blur(8px);
+            border-bottom: 1px solid rgba(255,255,255,.10);
         }
         .nav { display: flex; align-items: center; justify-content: space-between; height: 66px; }
         /* Marca en texto (nitida a cualquier tamaño) + el simbolo transparente. */
         .marca { display: inline-flex; align-items: center; gap: 10px; }
         .marca img { height: 32px; width: auto; }
-        .marca .nombre { font-size: 21px; font-weight: 800; letter-spacing: -.3px; color: #fff; line-height: 1; }
-        .marca .erp { font-size: 10px; font-weight: 700; letter-spacing: .6px; color: var(--azul);
-            border: 1px solid rgba(26,130,240,.55); border-radius: 4px; padding: 2px 5px; margin-left: 8px;
+        .marca .nombre { font-family: var(--head); font-size: 21px; font-weight: 800; letter-spacing: -.3px; color: #fff; line-height: 1; }
+        .marca .erp { font-family: var(--head); font-size: 10px; font-weight: 700; letter-spacing: .6px; color: var(--oro);
+            border: 1px solid rgba(212,160,23,.55); border-radius: 4px; padding: 2px 5px; margin-left: 8px;
             vertical-align: middle; }
         .nav-links { display: flex; align-items: center; gap: 28px; }
         .nav-links a { color: #c7d2e2; font-size: 15px; font-weight: 500; }
@@ -45,11 +59,11 @@
 
         /* --- Hero --- */
         .hero {
-            background: radial-gradient(1200px 600px at 50% -10%, #16233b 0%, var(--navy) 60%, #070c16 100%);
+            background: radial-gradient(1200px 600px at 50% -10%, #10528F 0%, var(--navy) 55%, var(--navy3) 100%);
             color: #fff; text-align: center; padding: 92px 0 104px;
         }
         .hero h1 { font-size: clamp(2rem, 5vw, 3.3rem); font-weight: 800; line-height: 1.12; letter-spacing: -.5px; }
-        .hero h1 span { color: var(--azul); }
+        .hero h1 span { color: var(--oro); }
         .hero p { color: #a7b5cc; font-size: clamp(1.05rem, 2vw, 1.3rem); max-width: 640px; margin: 22px auto 34px; }
         .hero-cta { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
         .btn-fantasma { background: transparent; border: 1px solid #33425d; color: #dbe4f0; }
@@ -71,7 +85,7 @@
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 22px; }
         .tarjeta { border: 1px solid var(--linea); border-radius: 16px; padding: 30px 26px; background: #fff; transition: box-shadow .2s, transform .2s; }
         .tarjeta:hover { box-shadow: 0 14px 40px rgba(15,26,46,.10); transform: translateY(-3px); }
-        .tarjeta .ico { width: 46px; height: 46px; border-radius: 12px; background: rgba(26,130,240,.12); color: var(--azul);
+        .tarjeta .ico { width: 46px; height: 46px; border-radius: 12px; background: rgba(30,111,185,.12); color: var(--azul);
             display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 16px; }
         .tarjeta h3 { font-size: 1.2rem; margin-bottom: 8px; }
         .tarjeta p { color: var(--gris); font-size: .98rem; }
@@ -86,12 +100,12 @@
         .paso p { color: var(--gris); font-size: .98rem; }
 
         /* --- CTA final --- */
-        .cierre { background: radial-gradient(900px 400px at 50% 120%, #16233b 0%, var(--navy) 70%); color: #fff; text-align: center; padding: 88px 0; }
+        .cierre { background: radial-gradient(900px 400px at 50% 120%, #10528F 0%, var(--navy) 70%); color: #fff; text-align: center; padding: 88px 0; }
         .cierre h2 { font-size: clamp(1.7rem, 4vw, 2.6rem); font-weight: 800; }
         .cierre p { color: #a7b5cc; font-size: 1.15rem; margin: 16px auto 30px; max-width: 560px; }
 
         /* --- Footer --- */
-        footer { background: #070c16; color: #6f7f9b; padding: 34px 0; font-size: 14px; }
+        footer { background: var(--navy3); color: #8DA2BE; padding: 34px 0; font-size: 14px; }
         footer .contenedor { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; }
         footer .marca img { height: 26px; }
         footer .marca .nombre { font-size: 17px; color: #c7d2e2; }
