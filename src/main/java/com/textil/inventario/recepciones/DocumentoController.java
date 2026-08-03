@@ -18,7 +18,6 @@ import java.nio.charset.StandardCharsets;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -32,6 +31,7 @@ public class DocumentoController {
 
     private final RecepcionDocumentoRepository documentoRepository;
     private final EmpresaRepository empresaRepository;
+    private final DocumentoStorageService documentoStorageService;
 
     @GetMapping
     public String listar(@RequestParam(required = false) Long empresaId,
@@ -56,7 +56,8 @@ public class DocumentoController {
     @GetMapping("/{id}/descargar")
     public ResponseEntity<Resource> descargar(@PathVariable Long id) throws MalformedURLException {
         RecepcionDocumento doc = documentoRepository.findById(id).orElseThrow();
-        Path ruta = Paths.get(doc.getRutaArchivo());
+        // FILE-02: exigir que la ruta quede dentro de documentos.ruta-base.
+        Path ruta = documentoStorageService.resolverRutaSegura(doc.getRutaArchivo());
         if (!Files.exists(ruta)) {
             return ResponseEntity.notFound().build();
         }
@@ -71,7 +72,8 @@ public class DocumentoController {
     @GetMapping("/{id}/ver")
     public ResponseEntity<Resource> ver(@PathVariable Long id) throws MalformedURLException {
         RecepcionDocumento doc = documentoRepository.findById(id).orElseThrow();
-        Path ruta = Paths.get(doc.getRutaArchivo());
+        // FILE-02: exigir que la ruta quede dentro de documentos.ruta-base.
+        Path ruta = documentoStorageService.resolverRutaSegura(doc.getRutaArchivo());
         if (!Files.exists(ruta)) {
             return ResponseEntity.notFound().build();
         }
@@ -105,7 +107,12 @@ public class DocumentoController {
             Set<String> nombresUsados = new HashSet<>();
             try (ZipOutputStream zos = new ZipOutputStream(out)) {
                 for (RecepcionDocumento doc : docs) {
-                    Path ruta = Paths.get(doc.getRutaArchivo());
+                    Path ruta;
+                    try {
+                        ruta = documentoStorageService.resolverRutaSegura(doc.getRutaArchivo());
+                    } catch (IllegalArgumentException e) {
+                        continue; // FILE-02: saltar rutas fuera del almacenamiento permitido
+                    }
                     if (!Files.exists(ruta)) continue;
 
                     String nombreEntrada = doc.getNombreOriginal();

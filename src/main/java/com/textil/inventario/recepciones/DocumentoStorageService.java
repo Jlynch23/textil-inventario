@@ -65,6 +65,10 @@ public class DocumentoStorageService {
     }
 
     public String guardarFotoRapida(org.springframework.web.multipart.MultipartFile archivo, String subcarpeta) throws IOException {
+        // Auditoria FILE-01: validar el CONTENIDO de la foto en el backend (firma
+        // magica + tamaño), no solo la extension del nombre.
+        ValidadorImagen.validar(archivo);
+
         Path carpetaDestino = Paths.get(rutaBase, subcarpeta);
         Files.createDirectories(carpetaDestino);
 
@@ -80,6 +84,26 @@ public class DocumentoStorageService {
 
     public Path resolverRuta(String rutaGuardada) {
         return Paths.get(rutaGuardada);
+    }
+
+    /**
+     * Resuelve una ruta guardada en BD garantizando que quede DENTRO de
+     * {@code documentos.ruta-base} (auditoría FILE-02). Las rutas de descarga se
+     * construían con {@code Paths.get(doc.getRutaArchivo())} confiando en el valor
+     * de la BD; si ese valor se alterara (o una función administrativa futura lo
+     * tomara de otra fuente), se podría leer un archivo fuera del almacenamiento
+     * permitido. Se normaliza base y destino y se exige contención.
+     */
+    public Path resolverRutaSegura(String rutaGuardada) {
+        if (rutaGuardada == null || rutaGuardada.isBlank()) {
+            throw new IllegalArgumentException("Ruta de documento vacía.");
+        }
+        Path base = Paths.get(rutaBase).toAbsolutePath().normalize();
+        Path resuelta = Paths.get(rutaGuardada).toAbsolutePath().normalize();
+        if (!resuelta.startsWith(base)) {
+            throw new IllegalArgumentException("Ruta de documento fuera del almacenamiento permitido.");
+        }
+        return resuelta;
     }
 
     private static final java.util.Set<String> EXTENSIONES_PERMITIDAS =

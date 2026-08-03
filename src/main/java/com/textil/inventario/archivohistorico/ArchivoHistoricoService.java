@@ -132,7 +132,17 @@ public class ArchivoHistoricoService {
 
     private void procesarUno(DocumentoHistorico doc) {
         try {
-            byte[] bytes = Files.readAllBytes(Paths.get(doc.getRutaArchivo()));
+            // Auditoria OCR-01: acotar el tamaño ANTES de cargar el PDF entero a
+            // memoria (readAllBytes + Base64 + JSON multiplican la RAM). El tope
+            // por entrada del ZIP (50MB) es mayor que el limite del OCR; se aplica
+            // el mismo maximo que la ruta interactiva (ValidadorPdf, 20MB).
+            java.nio.file.Path rutaPdf = Paths.get(doc.getRutaArchivo());
+            if (Files.size(rutaPdf) > com.textil.inventario.recepciones.ValidadorPdf.MAX_PDF_BYTES) {
+                throw new IllegalArgumentException(
+                        "El PDF supera el tamaño permitido (máx "
+                        + (com.textil.inventario.recepciones.ValidadorPdf.MAX_PDF_BYTES / 1024 / 1024) + " MB).");
+            }
+            byte[] bytes = Files.readAllBytes(rutaPdf);
             // Auditoria: una entrada del ZIP que no sea PDF no debe mandarse al OCR
             // (falla obscuro); se marca con un mensaje claro. La firma %PDF- es la
             // barrera real (el nombre/extension no garantiza nada).

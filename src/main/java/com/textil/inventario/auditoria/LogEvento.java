@@ -37,4 +37,15 @@ public class LogEvento {
 
     @PrePersist
     protected void onCreate() { createdAt = LocalDateTime.now(); }
+
+    // Auditoria KDX-01: el log de auditoria es append-only. Un evento registrado
+    // no se edita; este guard hace que cualquier UPDATE accidental reviente en
+    // vez de alterar en silencio la historia forense. (El DELETE queda a nivel de
+    // usuario SQL / retencion; V34 lo vacia por SQL directo en el arranque, sin
+    // pasar por este callback.)
+    @PreUpdate
+    protected void impedirActualizacion() {
+        throw new UnsupportedOperationException(
+                "El log de auditoría es append-only: un evento no se puede modificar.");
+    }
 }

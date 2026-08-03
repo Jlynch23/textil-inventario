@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.net.MalformedURLException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 @Controller
 @RequestMapping("/archivo-historico")
@@ -33,6 +32,7 @@ public class ArchivoHistoricoController {
     private final EmpresaRepository empresaRepository;
     private final ArchivoHistoricoService archivoHistoricoService;
     private final UsuarioActualService usuarioActualService;
+    private final com.textil.inventario.recepciones.DocumentoStorageService documentoStorageService;
 
     @GetMapping
     public String listar(@RequestParam(required = false) Long empresaId,
@@ -97,7 +97,8 @@ public class ArchivoHistoricoController {
     @GetMapping("/{id}/ver")
     public ResponseEntity<Resource> ver(@PathVariable Long id) throws MalformedURLException {
         DocumentoHistorico doc = documentoHistoricoRepository.findById(id).orElseThrow();
-        Path ruta = Paths.get(doc.getRutaArchivo());
+        // FILE-02: exigir que la ruta quede dentro de documentos.ruta-base.
+        Path ruta = documentoStorageService.resolverRutaSegura(doc.getRutaArchivo());
         Resource resource = new UrlResource(ruta.toUri());
 
         return ResponseEntity.ok()
@@ -109,7 +110,8 @@ public class ArchivoHistoricoController {
     @GetMapping("/{id}/descargar")
     public ResponseEntity<Resource> descargar(@PathVariable Long id) throws MalformedURLException {
         DocumentoHistorico doc = documentoHistoricoRepository.findById(id).orElseThrow();
-        Path ruta = Paths.get(doc.getRutaArchivo());
+        // FILE-02: exigir que la ruta quede dentro de documentos.ruta-base.
+        Path ruta = documentoStorageService.resolverRutaSegura(doc.getRutaArchivo());
         Resource resource = new UrlResource(ruta.toUri());
 
         return ResponseEntity.ok()
@@ -122,9 +124,11 @@ public class ArchivoHistoricoController {
     public String eliminar(@PathVariable Long id, RedirectAttributes ra) {
         documentoHistoricoRepository.findById(id).ifPresent(doc -> {
             try {
-                java.nio.file.Files.deleteIfExists(Paths.get(doc.getRutaArchivo()));
-            } catch (IOException ignored) {
-                // si el archivo fisico ya no existe, igual borramos el registro
+                // FILE-02: solo borrar dentro de documentos.ruta-base.
+                java.nio.file.Files.deleteIfExists(documentoStorageService.resolverRutaSegura(doc.getRutaArchivo()));
+            } catch (IOException | IllegalArgumentException ignored) {
+                // si el archivo fisico ya no existe (o la ruta es invalida), igual
+                // borramos el registro
             }
             documentoHistoricoRepository.delete(doc);
         });
@@ -145,9 +149,11 @@ public class ArchivoHistoricoController {
             if (docOpt.isEmpty()) continue;
             DocumentoHistorico doc = docOpt.get();
             try {
-                java.nio.file.Files.deleteIfExists(Paths.get(doc.getRutaArchivo()));
-            } catch (IOException ignored) {
-                // si el archivo fisico ya no existe, igual borramos el registro
+                // FILE-02: solo borrar dentro de documentos.ruta-base.
+                java.nio.file.Files.deleteIfExists(documentoStorageService.resolverRutaSegura(doc.getRutaArchivo()));
+            } catch (IOException | IllegalArgumentException ignored) {
+                // si el archivo fisico ya no existe (o la ruta es invalida), igual
+                // borramos el registro
             }
             documentoHistoricoRepository.delete(doc);
             contador++;
