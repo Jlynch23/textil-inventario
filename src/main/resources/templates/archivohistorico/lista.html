@@ -4,42 +4,38 @@
 <head><title>Archivo Histórico</title></head>
 <body>
 <section>
-    <h2 class="mb-4"><i class="bi bi-archive"></i> Archivo Histórico</h2>
+    <div class="tx-page-head"><h2><i class="bi bi-archive text-primary"></i> Archivo Histórico</h2></div>
 
     <div th:if="${mensaje}" class="alert alert-success" th:text="${mensaje}"></div>
     <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
 
     <div class="row g-3 mb-4">
-        <div class="col-md-3">
-            <div class="card text-white bg-secondary">
-                <div class="card-body">
-                    <h6 class="card-title">Pendientes de leer</h6>
-                    <p class="display-6 mb-0" th:text="${totalPendientes}">0</p>
-                </div>
+        <div class="col-6 col-md-3">
+            <div class="tx-kpi accent-navy">
+                <i class="bi bi-hourglass-split tx-kpi-icon"></i>
+                <div class="tx-kpi-label">Pendientes de leer</div>
+                <div class="tx-kpi-value" th:text="${totalPendientes}">0</div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card text-white bg-success">
-                <div class="card-body">
-                    <h6 class="card-title">Procesados</h6>
-                    <p class="display-6 mb-0" th:text="${totalProcesados}">0</p>
-                </div>
+        <div class="col-6 col-md-3">
+            <div class="tx-kpi accent-success">
+                <i class="bi bi-check2-circle tx-kpi-icon"></i>
+                <div class="tx-kpi-label">Procesados</div>
+                <div class="tx-kpi-value" th:text="${totalProcesados}">0</div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card text-dark bg-warning">
-                <div class="card-body">
-                    <h6 class="card-title">Duplicados</h6>
-                    <p class="display-6 mb-0" th:text="${totalDuplicados}">0</p>
-                </div>
+        <div class="col-6 col-md-3">
+            <div class="tx-kpi accent-warning">
+                <i class="bi bi-files tx-kpi-icon"></i>
+                <div class="tx-kpi-label">Duplicados</div>
+                <div class="tx-kpi-value" th:text="${totalDuplicados}">0</div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card text-white bg-danger">
-                <div class="card-body">
-                    <h6 class="card-title">Con error</h6>
-                    <p class="display-6 mb-0" th:text="${totalErrores}">0</p>
-                </div>
+        <div class="col-6 col-md-3">
+            <div class="tx-kpi accent-danger">
+                <i class="bi bi-exclamation-octagon tx-kpi-icon"></i>
+                <div class="tx-kpi-label">Con error</div>
+                <div class="tx-kpi-value" th:text="${totalErrores}">0</div>
             </div>
         </div>
     </div>
