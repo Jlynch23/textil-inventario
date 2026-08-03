@@ -1,0 +1,395 @@
+/* =========================================================================
+   TexControl — Sistema de Diseño (design tokens + componentes)
+   -------------------------------------------------------------------------
+   Fuente de verdad del look & feel. Se carga DESPUÉS de Bootstrap para poder
+   sobreescribir sus variables/componentes. Todo el estilo propio vive acá:
+   las plantillas NO deben volver a definir bloques <style> largos.
+
+   Estructura:
+     1) @font-face (Manrope + Inter, auto-hospedadas en /fonts)
+     2) Tokens  (:root) — colores de marca, superficies, tipografía, espacio…
+     3) Tokens de modo oscuro  ([data-bs-theme="dark"])
+     4) Puente con Bootstrap (--bs-*) + base tipográfica
+     5) Layout  (sidebar, topbar, main-content)  — clases que usa layout.js
+     6) Componentes (cards, botones, tablas, forms, badges, KPI, etc.)
+   ========================================================================= */
+
+/* ===== 1) Fuentes ======================================================== */
+/* Auto-hospedadas para no depender de Google (CSP font-src 'self') y evitar
+   FOUT en la primera carga del cliente. Subset latin, display=swap. */
+@font-face {
+  font-family: 'Manrope'; font-style: normal; font-weight: 600;
+  font-display: swap; src: url('/fonts/manrope-600.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Manrope'; font-style: normal; font-weight: 700;
+  font-display: swap; src: url('/fonts/manrope-700.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Manrope'; font-style: normal; font-weight: 800;
+  font-display: swap; src: url('/fonts/manrope-800.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Inter'; font-style: normal; font-weight: 400;
+  font-display: swap; src: url('/fonts/inter-400.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Inter'; font-style: normal; font-weight: 500;
+  font-display: swap; src: url('/fonts/inter-500.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Inter'; font-style: normal; font-weight: 600;
+  font-display: swap; src: url('/fonts/inter-600.woff2') format('woff2');
+}
+
+/* ===== 2) Tokens (tema claro) =========================================== */
+:root {
+  /* -- Marca -- */
+  --tx-navy:        #0B3A66;   /* azul profundo: sidebar, títulos */
+  --tx-navy-700:    #0A3159;
+  --tx-navy-900:    #072644;
+  --tx-blue:        #1E6FB9;   /* azul de acción: botones, enlaces */
+  --tx-blue-600:    #1A62A5;
+  --tx-blue-700:    #155489;
+  --tx-blue-050:    #EAF2FA;   /* fondo suave azul (badges, hover) */
+  --tx-gold:        #D4A017;   /* oro: acento, KPIs, activo */
+  --tx-gold-600:    #B98910;
+  --tx-gold-050:    #FBF3DD;
+
+  /* -- Superficies / texto -- */
+  --tx-bg:          #F4F6FA;   /* fondo de la app */
+  --tx-surface:     #FFFFFF;   /* tarjetas, topbar */
+  --tx-surface-2:   #F8FAFC;   /* cabeceras de tabla, sutiles */
+  --tx-border:      #E3E8EF;
+  --tx-border-strong:#CBD5E1;
+  --tx-ink:         #16202E;   /* texto principal */
+  --tx-ink-soft:    #384657;
+  --tx-muted:       #64748B;   /* texto secundario */
+  --tx-faint:       #94A3B8;
+
+  /* -- Semánticos (desaturados, elegantes) -- */
+  --tx-success:     #1E8A5F;  --tx-success-bg: #E6F4EC;
+  --tx-warning:     #B7791F;  --tx-warning-bg: #FBF0DA;
+  --tx-danger:      #C2413B;  --tx-danger-bg:  #FBE9E8;
+  --tx-info:        #1E6FB9;  --tx-info-bg:    #EAF2FA;
+
+  /* -- Tipografía -- */
+  --tx-font-head: 'Manrope', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --tx-font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --tx-fs-xs: .75rem; --tx-fs-sm: .8125rem; --tx-fs-base: .9375rem;
+  --tx-fs-md: 1rem;  --tx-fs-lg: 1.125rem; --tx-fs-xl: 1.375rem; --tx-fs-2xl: 1.75rem;
+
+  /* -- Espacio (base 8) -- */
+  --tx-1: 4px; --tx-2: 8px; --tx-3: 12px; --tx-4: 16px;
+  --tx-5: 24px; --tx-6: 32px; --tx-7: 48px;
+
+  /* -- Radios / sombra -- */
+  --tx-radius-sm: 6px; --tx-radius: 10px; --tx-radius-lg: 14px; --tx-radius-pill: 999px;
+  --tx-shadow-sm: 0 1px 2px rgba(16,32,52,.06), 0 1px 3px rgba(16,32,52,.05);
+  --tx-shadow:    0 1px 3px rgba(16,32,52,.06), 0 6px 16px rgba(16,32,52,.07);
+  --tx-shadow-lg: 0 10px 30px rgba(16,32,52,.12);
+  --tx-ring:      0 0 0 3px rgba(30,111,185,.22);
+
+  --tx-sidebar-w: 244px;
+  --tx-sidebar-rail: 72px;
+}
+
+/* ===== 3) Tokens — modo oscuro ========================================== */
+[data-bs-theme="dark"] {
+  --tx-navy:        #0C2E4E;   /* sidebar un punto más profundo en oscuro */
+  --tx-navy-700:    #0A2843;
+  --tx-blue:        #4C9BE8;
+  --tx-blue-600:    #3E8AD6;
+  --tx-blue-700:    #357CC2;
+  --tx-blue-050:    rgba(76,155,232,.14);
+  --tx-gold:        #E0AE2E;
+  --tx-gold-050:    rgba(224,174,46,.14);
+
+  --tx-bg:          #0E141C;
+  --tx-surface:     #161E29;
+  --tx-surface-2:   #1B2531;
+  --tx-border:      #2A3646;
+  --tx-border-strong:#3A4859;
+  --tx-ink:         #E6EDF5;
+  --tx-ink-soft:    #C4D0DE;
+  --tx-muted:       #93A2B5;
+  --tx-faint:       #6B7B90;
+
+  --tx-success-bg: rgba(30,138,95,.16);
+  --tx-warning-bg: rgba(183,121,31,.18);
+  --tx-danger-bg:  rgba(194,65,59,.18);
+  --tx-info-bg:    rgba(30,111,185,.16);
+
+  --tx-shadow-sm: 0 1px 2px rgba(0,0,0,.4);
+  --tx-shadow:    0 1px 3px rgba(0,0,0,.45), 0 6px 16px rgba(0,0,0,.4);
+  --tx-shadow-lg: 0 12px 34px rgba(0,0,0,.55);
+  --tx-ring:      0 0 0 3px rgba(76,155,232,.30);
+}
+
+/* ===== 4) Puente con Bootstrap + base =================================== */
+:root {
+  --bs-primary:      #1E6FB9;
+  --bs-primary-rgb:  30,111,185;
+  --bs-link-color:   #1E6FB9;
+  --bs-link-hover-color: #155489;
+  --bs-body-font-family: var(--tx-font-body);
+  --bs-body-color:   var(--tx-ink);
+  --bs-border-radius: var(--tx-radius);
+  --bs-border-color:  var(--tx-border);
+}
+[data-bs-theme="dark"] {
+  --bs-link-color: #4C9BE8;
+  --bs-link-hover-color: #6FB0EE;
+}
+
+body {
+  background-color: var(--tx-bg);
+  color: var(--tx-ink);
+  font-family: var(--tx-font-body);
+  font-size: var(--tx-fs-base);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, h4, h5, h6, .tx-head {
+  font-family: var(--tx-font-head);
+  font-weight: 700;
+  letter-spacing: -.011em;
+  color: var(--tx-ink);
+}
+
+a { color: var(--tx-blue); }
+a:hover { color: var(--tx-blue-700); }
+
+/* Anillo de foco accesible y uniforme en todo lo interactivo. */
+.form-control:focus, .form-select:focus, .btn:focus-visible,
+.btn-check:focus-visible + .btn, a:focus-visible, button:focus-visible {
+  box-shadow: var(--tx-ring);
+  border-color: var(--tx-blue);
+  outline: none;
+}
+
+/* ===== 5) Layout ======================================================== */
+/* Estas clases las manipula /js/layout.js (colapso, tema, acordeón): NO
+   renombrar. Acá solo cambia el aspecto, no la estructura ni los nombres. */
+
+.sidebar {
+  height: 100vh;
+  width: var(--tx-sidebar-w);
+  position: fixed; top: 0; left: 0;
+  display: flex; flex-direction: column; overflow: hidden;
+  background: linear-gradient(180deg, var(--tx-navy) 0%, var(--tx-navy-900) 100%);
+  border-right: 1px solid rgba(255,255,255,.06);
+  transition: width .2s ease, transform .2s ease;
+  z-index: 200;
+}
+body.sidebar-collapsed .sidebar { width: var(--tx-sidebar-rail); }
+
+.sidebar .brand {
+  padding: var(--tx-4);
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  flex-shrink: 0; text-align: center; white-space: nowrap;
+}
+.sidebar .brand img { height: 44px; width: auto; margin-bottom: var(--tx-1); }
+.sidebar .brand h6 {
+  color: #fff; margin: 0; font-family: var(--tx-font-head);
+  font-weight: 800; font-size: .95rem; letter-spacing: .02em;
+}
+.sidebar .brand small { color: rgba(255,255,255,.55); font-size: var(--tx-fs-xs); }
+body.sidebar-collapsed .brand { padding: 14px 0; }
+body.sidebar-collapsed .brand img { height: 32px; margin-bottom: 0; }
+body.sidebar-collapsed .brand h6, body.sidebar-collapsed .brand small { display: none; }
+
+.sidebar nav { flex: 1 1 auto; overflow-y: auto; overflow-x: hidden; min-height: 0; padding-top: var(--tx-2); }
+.sidebar nav::-webkit-scrollbar { width: 6px; }
+.sidebar nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,.18); border-radius: 3px; }
+
+.sidebar .nav-link {
+  display: flex; align-items: center; gap: .7rem;
+  color: rgba(255,255,255,.72);
+  padding: 10px 14px; margin: 2px 10px;
+  font-size: var(--tx-fs-sm); font-weight: 500;
+  border-radius: var(--tx-radius-sm); white-space: nowrap;
+  transition: background .12s ease, color .12s ease;
+}
+.sidebar .nav-link i { flex-shrink: 0; width: 1.15em; text-align: center; font-size: 1.05em; }
+.sidebar .nav-link:hover { background: rgba(255,255,255,.10); color: #fff; }
+/* Activo: fondo tenue + barra ORO a la izquierda (acento de marca). El
+   box-shadow inset no rompe el border-radius ni desplaza el texto. */
+.sidebar .nav-link.active {
+  background: rgba(255,255,255,.13); color: #fff; font-weight: 600;
+  box-shadow: inset 3px 0 0 var(--tx-gold);
+}
+body.sidebar-collapsed .nav-link { justify-content: center; gap: 0; padding: 11px; margin: 2px 12px; }
+body.sidebar-collapsed .nav-text { display: none; }
+
+.sidebar .nav-section {
+  color: rgba(255,255,255,.42);
+  font-family: var(--tx-font-head); font-weight: 700;
+  font-size: .68rem; text-transform: uppercase; letter-spacing: .12em;
+  padding: 14px 16px 4px; white-space: nowrap;
+}
+.sidebar .nav-items { display: flex; flex-direction: column; }
+.sidebar button.nav-section {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; background: none; border: none; font-family: var(--tx-font-head);
+  cursor: pointer; text-align: left;
+}
+.sidebar button.nav-section:hover { color: rgba(255,255,255,.8); }
+.sidebar .nav-chevron { font-size: .7rem; transition: transform .2s ease; }
+.nav-group.nav-collapsed .nav-chevron { transform: rotate(-90deg); }
+.nav-group.nav-collapsed .nav-items { display: none; }
+body.sidebar-collapsed .nav-section { display: none; }
+body.sidebar-collapsed .nav-group.nav-collapsed .nav-items { display: flex; }
+body.sidebar-collapsed .nav-group + .nav-group {
+  margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,.08);
+}
+
+.sidebar .logout-box { flex-shrink: 0; padding: var(--tx-4); border-top: 1px solid rgba(255,255,255,.08); }
+.sidebar .logout-box .nav-link { color: rgba(255,255,255,.72); }
+.sidebar .logout-box .nav-link:hover { background: rgba(194,65,59,.35); color: #fff; }
+body.sidebar-collapsed .logout-box { padding: 12px 10px; }
+body.sidebar-collapsed .logout-box .nav-link { margin: 0; }
+
+.main-content { margin-left: var(--tx-sidebar-w); padding: var(--tx-5); transition: margin-left .2s ease; }
+body.sidebar-collapsed .main-content { margin-left: var(--tx-sidebar-rail); }
+
+.topbar {
+  background: var(--tx-surface);
+  border-bottom: 1px solid var(--tx-border);
+  padding: 12px 24px; margin-left: var(--tx-sidebar-w);
+  position: sticky; top: 0; z-index: 100; transition: margin-left .2s ease;
+}
+.topbar h5 { font-family: var(--tx-font-head); font-weight: 700; color: var(--tx-ink); }
+body.sidebar-collapsed .topbar { margin-left: var(--tx-sidebar-rail); }
+
+@media (max-width: 768px) {
+  body.sidebar-collapsed .sidebar { width: 0; }
+  body.sidebar-collapsed .main-content, body.sidebar-collapsed .topbar { margin-left: 0; }
+  .main-content { padding: var(--tx-4); }
+}
+
+#btnToggleSidebar, #btnToggleTheme {
+  background: none; border: none; color: var(--tx-navy);
+  font-size: 1.2rem; padding: 6px 8px; cursor: pointer; border-radius: var(--tx-radius-sm);
+  line-height: 1; transition: background .12s ease, color .12s ease;
+}
+#btnToggleSidebar { margin-right: var(--tx-3); }
+#btnToggleSidebar:hover, #btnToggleTheme:hover { background: var(--tx-blue-050); color: var(--tx-blue); }
+[data-bs-theme="dark"] #btnToggleSidebar, [data-bs-theme="dark"] #btnToggleTheme { color: var(--tx-blue); }
+
+/* ===== 6) Componentes =================================================== */
+
+/* -- Cards -- */
+.card {
+  border: 1px solid var(--tx-border);
+  background: var(--tx-surface);
+  box-shadow: var(--tx-shadow-sm);
+  border-radius: var(--tx-radius-lg);
+}
+.card-header {
+  background: var(--tx-surface);
+  border-bottom: 1px solid var(--tx-border);
+  font-family: var(--tx-font-head); font-weight: 700;
+  color: var(--tx-ink); padding: var(--tx-3) var(--tx-4);
+}
+.card-title { font-family: var(--tx-font-head); font-weight: 700; }
+
+/* -- Botones -- */
+.btn { font-weight: 600; border-radius: var(--tx-radius-sm); letter-spacing: .005em; }
+.btn-primary {
+  background: var(--tx-blue); border-color: var(--tx-blue); color: #fff;
+}
+.btn-primary:hover, .btn-primary:focus { background: var(--tx-blue-700); border-color: var(--tx-blue-700); color: #fff; }
+.btn-outline-primary { color: var(--tx-blue); border-color: var(--tx-border-strong); }
+.btn-outline-primary:hover { background: var(--tx-blue); border-color: var(--tx-blue); color: #fff; }
+/* Acción de marca destacada (oro): usar con moderación, 1 por vista. */
+.btn-gold { background: var(--tx-gold); border-color: var(--tx-gold); color: #241a00; }
+.btn-gold:hover { background: var(--tx-gold-600); border-color: var(--tx-gold-600); color: #241a00; }
+.btn-soft {
+  background: var(--tx-blue-050); border-color: transparent; color: var(--tx-blue-700);
+}
+.btn-soft:hover { background: var(--tx-blue); color: #fff; }
+
+/* -- Tablas -- */
+.table { --bs-table-bg: var(--tx-surface); color: var(--tx-ink); }
+.table > thead th, .table th {
+  background: var(--tx-surface-2);
+  font-family: var(--tx-font-head); font-weight: 700;
+  font-size: var(--tx-fs-xs); text-transform: uppercase; letter-spacing: .04em;
+  color: var(--tx-muted); border-bottom: 1px solid var(--tx-border);
+  padding: 10px 12px; white-space: nowrap;
+}
+.table > tbody td { padding: 11px 12px; vertical-align: middle; border-color: var(--tx-border); }
+.table-hover > tbody > tr:hover > * { background: var(--tx-blue-050); }
+/* Tarjeta que envuelve una tabla ancha: bordes redondeados + scroll propio. */
+.tx-table-card { border: 1px solid var(--tx-border); border-radius: var(--tx-radius-lg); overflow: hidden; background: var(--tx-surface); }
+.tx-table-card .table { margin: 0; }
+.tx-table-card .table-responsive { overflow-x: auto; }
+
+/* -- Formularios -- */
+.form-label { font-weight: 600; font-size: var(--tx-fs-sm); color: var(--tx-ink-soft); margin-bottom: 6px; }
+.form-control, .form-select {
+  border: 1px solid var(--tx-border-strong);
+  border-radius: var(--tx-radius-sm);
+  background: var(--tx-surface); color: var(--tx-ink);
+  padding: 9px 12px; font-size: var(--tx-fs-base);
+}
+.form-control::placeholder { color: var(--tx-faint); }
+.form-text { color: var(--tx-muted); font-size: var(--tx-fs-xs); }
+
+/* -- Badges / estados -- */
+.badge { font-weight: 600; font-size: .72rem; padding: .38em .62em; border-radius: var(--tx-radius-pill); letter-spacing: .01em; }
+.tx-badge { display: inline-flex; align-items: center; gap: 5px; padding: .3em .7em; border-radius: var(--tx-radius-pill); font-size: var(--tx-fs-xs); font-weight: 600; }
+.tx-badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .9; }
+.tx-badge.is-success { color: var(--tx-success); background: var(--tx-success-bg); }
+.tx-badge.is-warning { color: var(--tx-warning); background: var(--tx-warning-bg); }
+.tx-badge.is-danger  { color: var(--tx-danger);  background: var(--tx-danger-bg); }
+.tx-badge.is-info    { color: var(--tx-info);     background: var(--tx-info-bg); }
+.tx-badge.is-muted   { color: var(--tx-muted);    background: var(--tx-surface-2); }
+
+/* -- Alertas -- */
+.alert { border: 1px solid transparent; border-radius: var(--tx-radius); font-size: var(--tx-fs-base); }
+.alert-success { color: var(--tx-success); background: var(--tx-success-bg); border-color: color-mix(in srgb, var(--tx-success) 30%, transparent); }
+.alert-warning { color: var(--tx-warning); background: var(--tx-warning-bg); border-color: color-mix(in srgb, var(--tx-warning) 30%, transparent); }
+.alert-danger  { color: var(--tx-danger);  background: var(--tx-danger-bg);  border-color: color-mix(in srgb, var(--tx-danger) 30%, transparent); }
+.alert-info    { color: var(--tx-info);     background: var(--tx-info-bg);     border-color: color-mix(in srgb, var(--tx-info) 30%, transparent); }
+
+/* -- KPI (tarjeta de indicador) — el patrón nuevo del dashboard --
+   Superficie limpia, número grande en Manrope, acento por barra superior.
+   Reemplaza los .bg-primary/success/warning saturados de Bootstrap. */
+.tx-kpi {
+  position: relative; display: block; background: var(--tx-surface);
+  border: 1px solid var(--tx-border); border-radius: var(--tx-radius-lg);
+  padding: var(--tx-4) var(--tx-4) var(--tx-4) calc(var(--tx-4) + 4px);
+  box-shadow: var(--tx-shadow-sm); text-decoration: none; color: var(--tx-ink);
+  overflow: hidden; transition: box-shadow .15s ease, transform .15s ease, border-color .15s ease;
+}
+.tx-kpi::before { content:""; position:absolute; left:0; top:0; bottom:0; width:4px; background: var(--tx-blue); }
+.tx-kpi:hover { box-shadow: var(--tx-shadow); transform: translateY(-1px); border-color: var(--tx-border-strong); color: var(--tx-ink); }
+.tx-kpi .tx-kpi-label { font-size: var(--tx-fs-sm); font-weight: 600; color: var(--tx-muted); display: flex; align-items: center; gap: 6px; }
+.tx-kpi .tx-kpi-value { font-family: var(--tx-font-head); font-weight: 800; font-size: var(--tx-fs-2xl); line-height: 1.1; margin: 6px 0 2px; color: var(--tx-ink); }
+.tx-kpi .tx-kpi-sub { font-size: var(--tx-fs-xs); color: var(--tx-faint); }
+.tx-kpi .tx-kpi-icon { position: absolute; right: var(--tx-4); top: var(--tx-4); font-size: 1.3rem; opacity: .28; color: var(--tx-blue); }
+/* Variantes de acento (solo la barra + el icono cambian de color). */
+.tx-kpi.accent-gold::before   { background: var(--tx-gold); }   .tx-kpi.accent-gold   .tx-kpi-icon { color: var(--tx-gold); }
+.tx-kpi.accent-success::before{ background: var(--tx-success); } .tx-kpi.accent-success .tx-kpi-icon { color: var(--tx-success); }
+.tx-kpi.accent-warning::before{ background: var(--tx-warning); } .tx-kpi.accent-warning .tx-kpi-icon { color: var(--tx-warning); }
+.tx-kpi.accent-danger::before { background: var(--tx-danger); }  .tx-kpi.accent-danger  .tx-kpi-icon { color: var(--tx-danger); }
+.tx-kpi.accent-navy::before   { background: var(--tx-navy); }    .tx-kpi.accent-navy    .tx-kpi-icon { color: var(--tx-navy); }
+
+/* -- Encabezado de página (título + acciones) -- */
+.tx-page-head { display: flex; align-items: center; justify-content: space-between; gap: var(--tx-3); flex-wrap: wrap; margin-bottom: var(--tx-5); }
+.tx-page-head h2, .tx-page-head h1 { margin: 0; font-size: var(--tx-fs-2xl); display: flex; align-items: center; gap: 10px; }
+.tx-page-head .tx-eyebrow { font-size: var(--tx-fs-xs); font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--tx-blue); }
+
+/* -- Estado vacío -- */
+.tx-empty { text-align: center; padding: var(--tx-6) var(--tx-4); color: var(--tx-muted); }
+.tx-empty i { font-size: 2rem; color: var(--tx-faint); display: block; margin-bottom: var(--tx-2); }
+
+/* -- Listas (list-group) al nuevo estilo -- */
+.list-group-item { background: var(--tx-surface); border-color: var(--tx-border); color: var(--tx-ink); }
+
+/* -- Utilidades -- */
+.text-muted { color: var(--tx-muted) !important; }
+.tx-divider { height: 1px; background: var(--tx-border); border: 0; margin: var(--tx-4) 0; }

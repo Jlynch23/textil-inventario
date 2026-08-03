@@ -6,84 +6,68 @@
 <body>
 <section th:replace="~{layout/base :: layout(~{::title/text()}, ~{::div.dashboard-content})}">
 <div class="dashboard-content">
-    <h2 class="mb-4"><i class="bi bi-speedometer2"></i> Dashboard</h2>
+    <div class="tx-page-head">
+        <h2><i class="bi bi-speedometer2 text-primary"></i> Dashboard</h2>
+    </div>
 
     <div class="row g-3 mb-4">
-        <div class="col-md-3">
-            <a th:href="@{/inventario/stock}" class="text-decoration-none">
-                <div class="card text-white bg-primary">
-                    <div class="card-body">
-                        <h6 class="card-title">Stock Total</h6>
-                        <p class="display-6 mb-0" th:text="${totalRollos}">0</p>
-                        <small>rollos en todas las ubicaciones</small>
-                    </div>
-                </div>
+        <div class="col-sm-6 col-xl-4">
+            <a th:href="@{/inventario/stock}" class="tx-kpi accent-navy">
+                <i class="bi bi-boxes tx-kpi-icon"></i>
+                <div class="tx-kpi-label">Stock Total</div>
+                <div class="tx-kpi-value" th:text="${totalRollos}">0</div>
+                <div class="tx-kpi-sub">rollos en todas las ubicaciones</div>
             </a>
         </div>
-        <div class="col-md-3">
-            <a th:href="@{/inventario/stock(ubicacionId=${praderasId})}" class="text-decoration-none">
-                <div class="card text-white bg-success">
-                    <div class="card-body">
-                        <h6 class="card-title">Stock en Praderas</h6>
-                        <p class="display-6 mb-0" th:text="${totalRollosPraderas}">0</p>
-                        <small>almacén principal</small>
-                    </div>
-                </div>
+        <div class="col-sm-6 col-xl-4">
+            <a th:href="@{/inventario/stock(ubicacionId=${praderasId})}" class="tx-kpi accent-success">
+                <i class="bi bi-building tx-kpi-icon"></i>
+                <div class="tx-kpi-label">Stock en Praderas</div>
+                <div class="tx-kpi-value" th:text="${totalRollosPraderas}">0</div>
+                <div class="tx-kpi-sub">almacén principal</div>
             </a>
         </div>
-        <div class="col-md-3">
-            <a th:href="@{/transferencias}" class="text-decoration-none">
-                <div class="card text-white bg-warning">
-                    <div class="card-body">
-                        <h6 class="card-title">Transferencias en Tránsito</h6>
-                        <p class="display-6 mb-0" th:text="${transferenciasEnTransito.size()}">0</p>
-                        <small>salida confirmada, sin llegada</small>
-                    </div>
-                </div>
+        <div class="col-sm-6 col-xl-4">
+            <a th:href="@{/transferencias}" class="tx-kpi accent-warning">
+                <i class="bi bi-arrow-left-right tx-kpi-icon"></i>
+                <div class="tx-kpi-label">Transferencias en Tránsito</div>
+                <div class="tx-kpi-value" th:text="${transferenciasEnTransito.size()}">0</div>
+                <div class="tx-kpi-sub">salida confirmada, sin llegada</div>
             </a>
         </div>
-        <div class="col-md-3">
-            <a th:href="@{/recepciones}" class="text-decoration-none">
-                <div class="card text-white bg-info">
-                    <div class="card-body">
-                        <h6 class="card-title">Recepciones Pendientes</h6>
-                        <p class="display-6 mb-0" th:text="${recepcionesPendientes.size()}">0</p>
-                        <small>por validar</small>
-                    </div>
-                </div>
+        <div class="col-sm-6 col-xl-4">
+            <a th:href="@{/recepciones}" class="tx-kpi">
+                <i class="bi bi-truck tx-kpi-icon"></i>
+                <div class="tx-kpi-label">Recepciones Pendientes</div>
+                <div class="tx-kpi-value" th:text="${recepcionesPendientes.size()}">0</div>
+                <div class="tx-kpi-sub">por validar</div>
             </a>
         </div>
-        <div class="col-md-3">
-            <a th:href="@{/recepciones/facturar}" class="text-decoration-none">
-                <div class="card text-white bg-secondary">
-                    <div class="card-body">
-                        <h6 class="card-title">Sin Facturar</h6>
-                        <p class="display-6 mb-0" th:text="${sinFacturar.size()}">0</p>
-                        <small>guías sin factura asignada</small>
-                    </div>
-                </div>
+        <div class="col-sm-6 col-xl-4">
+            <a th:href="@{/recepciones/facturar}" class="tx-kpi accent-gold">
+                <i class="bi bi-receipt tx-kpi-icon"></i>
+                <div class="tx-kpi-label">Sin Facturar</div>
+                <div class="tx-kpi-value" th:text="${sinFacturar.size()}">0</div>
+                <div class="tx-kpi-sub">guías sin factura asignada</div>
             </a>
         </div>
-        <div class="col-md-3">
-            <a th:href="@{/almacen/revision}" class="text-decoration-none">
-                <div class="card text-white bg-dark">
-                    <div class="card-body">
-                        <h6 class="card-title">Almacén Sin Revisar</h6>
-                        <p class="display-6 mb-0" th:text="${entradasSalidasPendientes}">0</p>
-                        <small>entradas/salidas del celular</small>
-                    </div>
-                </div>
+        <div class="col-sm-6 col-xl-4">
+            <a th:href="@{/almacen/revision}" class="tx-kpi accent-danger">
+                <i class="bi bi-camera tx-kpi-icon"></i>
+                <div class="tx-kpi-label">Almacén Sin Revisar</div>
+                <div class="tx-kpi-value" th:text="${entradasSalidasPendientes}">0</div>
+                <div class="tx-kpi-sub">entradas/salidas del celular</div>
             </a>
         </div>
     </div>
 
     <h5 class="mb-3">Stock por Ubicación</h5>
     <div class="row g-3 mb-4">
-        <div class="col-md-3" th:each="entry : ${stockPorUbicacion}">
-            <div class="card">
-                <div class="card-body text-center">
-                    <h6 class="card-title" th:text="${entry.key}">Ubicación</h6>
-                    <p class="fs-3 fw-bold mb-0" th:text="${entry.value}">0</p>
+        <div class="col-6 col-md-3" th:each="entry : ${stockPorUbicacion}">
+            <div class="card h-100">
+                <div class="card-body text-center py-3">
+                    <div class="text-muted small text-uppercase fw-semibold" style="letter-spacing:.04em" th:text="${entry.key}">Ubicación</div>
+                    <p class="fs-3 fw-bold mb-0 mt-1 tx-head" th:text="${entry.value}">0</p>
                     <small class="text-muted">rollos</small>
                 </div>
             </div>

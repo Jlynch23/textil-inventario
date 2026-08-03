@@ -11,7 +11,7 @@
 
     <!-- PWA: app movil instalable (agregar a pantalla de inicio, modo standalone) -->
     <link rel="manifest" href="/manifest.webmanifest">
-    <meta name="theme-color" content="#1F4E79">
+    <meta name="theme-color" content="#0B3A66">
     <link rel="apple-touch-icon" href="/img/pwa/apple-touch-icon.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -19,6 +19,12 @@
     <script src="/js/pwa-register.js" defer></script>
     <link href="/webjars/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <link href="/webjars/bootstrap-icons/1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Fuentes de marca críticas precargadas (evita FOUT en cuerpo y títulos). -->
+    <link rel="preload" href="/fonts/inter-400.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/fonts/manrope-700.woff2" as="font" type="font/woff2" crossorigin>
+    <!-- Sistema de Diseño TexControl: se carga DESPUÉS de Bootstrap para poder
+         sobreescribir sus tokens/componentes. Ver /css/texcontrol.css. -->
+    <link href="/css/texcontrol.css" rel="stylesheet">
     <script th:attr="nonce=${cspNonce}">
         // Modo oscuro: aplica el tema guardado ANTES de renderizar el body, para
         // evitar el "flash" claro al cargar. Bootstrap 5.3 lo lee de data-bs-theme.
@@ -30,161 +36,6 @@
             } catch (e) {}
         })();
     </script>
-    <style>
-        body { background-color: #f0f4f8; }
-        .sidebar {
-            height: 100vh;
-            background-color: #1F4E79;
-            width: 240px;
-            position: fixed;
-            top: 0; left: 0;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            transition: width 0.2s ease, transform 0.2s ease;
-            z-index: 200;
-        }
-        /* Colapsado = RIEL de iconos (antes ocultaba el menu entero). En
-           moviles (<=768px) se sigue ocultando del todo -- ver media query. */
-        body.sidebar-collapsed .sidebar { width: 70px; }
-        .sidebar .brand {
-            padding: 16px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            flex-shrink: 0;
-            text-align: center;
-            white-space: nowrap;
-        }
-        .sidebar .brand img { height: 48px; width: auto; margin-bottom: 6px; }
-        .sidebar .brand h6 { color: white; margin: 0; font-weight: 700; font-size: 0.95rem; }
-        .sidebar .brand small { color: rgba(255,255,255,0.6); font-size: 0.75rem; }
-        body.sidebar-collapsed .brand { padding: 14px 0; }
-        body.sidebar-collapsed .brand img { height: 34px; margin-bottom: 0; }
-        body.sidebar-collapsed .brand h6, body.sidebar-collapsed .brand small { display: none; }
-        .sidebar nav {
-            flex: 1 1 auto;
-            overflow-y: auto;
-            overflow-x: hidden;
-            min-height: 0;
-        }
-        .sidebar nav::-webkit-scrollbar { width: 6px; }
-        .sidebar nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
-        .sidebar .nav-link {
-            display: flex;
-            align-items: center;
-            gap: 0.65rem;
-            color: rgba(255,255,255,0.75);
-            padding: 10px 16px;
-            font-size: 0.875rem;
-            border-radius: 6px;
-            margin: 2px 8px;
-            white-space: nowrap;
-        }
-        .sidebar .nav-link i { flex-shrink: 0; width: 1.1em; text-align: center; }
-        .sidebar .nav-link:hover, .sidebar .nav-link.active {
-            background-color: rgba(255,255,255,0.15);
-            color: white;
-        }
-        /* El activo se diferencia del :hover con una barra a la izquierda,
-           si no, con el mouse encima no se distingue en que modulo estas.
-           box-shadow inset en vez de border-left: no rompe el border-radius
-           ni desplaza el texto. */
-        .sidebar .nav-link.active {
-            font-weight: 600;
-            box-shadow: inset 3px 0 0 rgba(255,255,255,0.9);
-        }
-        /* Modo riel: solo iconos centrados; el texto se esconde y el nombre
-           del modulo aparece como tooltip nativo (title="") al pasar el mouse. */
-        body.sidebar-collapsed .nav-link { justify-content: center; gap: 0; padding: 11px; margin: 2px 10px; }
-        body.sidebar-collapsed .nav-text { display: none; }
-        .sidebar .nav-section {
-            color: rgba(255,255,255,0.4);
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            padding: 12px 16px 4px;
-            white-space: nowrap;
-        }
-        .sidebar .nav-items { display: flex; flex-direction: column; }
-        /* Cabecera de seccion PLEGABLE (Analisis / Catalogo): mismo look que
-           .nav-section pero es un <button> con chevron. */
-        .sidebar button.nav-section {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            width: 100%;
-            background: none;
-            border: none;
-            font-family: inherit;
-            cursor: pointer;
-            text-align: left;
-        }
-        .sidebar button.nav-section:hover { color: rgba(255,255,255,0.75); }
-        .sidebar .nav-chevron { font-size: 0.7rem; transition: transform 0.2s ease; }
-        .nav-group.nav-collapsed .nav-chevron { transform: rotate(-90deg); }
-        .nav-group.nav-collapsed .nav-items { display: none; }
-        /* En riel: las etiquetas de seccion se esconden y se muestran TODOS los
-           iconos aunque la seccion este plegada (hay espacio de sobra). */
-        body.sidebar-collapsed .nav-section { display: none; }
-        body.sidebar-collapsed .nav-group.nav-collapsed .nav-items { display: flex; }
-        body.sidebar-collapsed .nav-group + .nav-group {
-            margin-top: 6px;
-            padding-top: 6px;
-            border-top: 1px solid rgba(255,255,255,0.08);
-        }
-        .sidebar .logout-box {
-            flex-shrink: 0;
-            padding: 16px;
-            border-top: 1px solid rgba(255,255,255,0.1);
-        }
-        body.sidebar-collapsed .logout-box { padding: 12px 10px; }
-        body.sidebar-collapsed .logout-box .nav-link { margin: 0; }
-        .main-content { margin-left: 240px; padding: 24px; transition: margin-left 0.2s ease; }
-        body.sidebar-collapsed .main-content { margin-left: 70px; }
-        .topbar {
-            background: white;
-            border-bottom: 1px solid #dee2e6;
-            padding: 12px 24px;
-            margin-left: 240px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            transition: margin-left 0.2s ease;
-        }
-        body.sidebar-collapsed .topbar { margin-left: 70px; }
-        /* En moviles el colapso oculta el menu por completo (no riel): un riel
-           fijo comeria demasiado ancho en el celular del almacenero. */
-        @media (max-width: 768px) {
-            body.sidebar-collapsed .sidebar { width: 0; }
-            body.sidebar-collapsed .main-content,
-            body.sidebar-collapsed .topbar { margin-left: 0; }
-        }
-        #btnToggleSidebar {
-            background: none;
-            border: none;
-            color: #1F4E79;
-            font-size: 1.25rem;
-            padding: 4px 8px;
-            margin-right: 12px;
-            cursor: pointer;
-            border-radius: 6px;
-        }
-        #btnToggleSidebar:hover { background-color: rgba(31,78,121,0.1); }
-        .card { border: none; box-shadow: 0 1px 8px rgba(0,0,0,0.07); border-radius: 10px; }
-        .btn-primary { background-color: #1F4E79; border-color: #1F4E79; }
-        .btn-primary:hover { background-color: #163a5f; border-color: #163a5f; }
-        .table th { background-color: #f8f9fa; font-size: 0.8rem; text-transform: uppercase; color: #6c757d; }
-
-        /* --- Modo oscuro (Bootstrap 5.3 data-bs-theme). Los componentes de
-           Bootstrap (cards, tablas, forms, modales, dropdowns) se adaptan solos;
-           aca solo se ajusta el CSS PROPIO (fondo, topbar, cabeceras de tabla).
-           El sidebar azul (#1F4E79) se deja igual: funciona en ambos temas. --- */
-        [data-bs-theme="dark"] body { background-color: #0f151d; }
-        [data-bs-theme="dark"] .topbar { background: #1a2330; border-bottom-color: #2c3644; }
-        [data-bs-theme="dark"] #btnToggleSidebar { color: #6ea8fe; }
-        [data-bs-theme="dark"] #btnToggleSidebar:hover { background-color: rgba(110,168,254,0.15); }
-        [data-bs-theme="dark"] .card { box-shadow: 0 1px 8px rgba(0,0,0,0.5); }
-        [data-bs-theme="dark"] .table th { background-color: #1a2330; color: #adb5bd; }
-    </style>
 </head>
 <body th:attr="data-sidebar-colapsado=${sidebarInicialColapsado}">
     <!-- SIDEBAR -->

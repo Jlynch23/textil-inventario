@@ -66,7 +66,7 @@ public class SecurityConfig {
     @Order(1)
     public SecurityFilterChain estaticosFilterChain(HttpSecurity http) throws Exception {
         http
-            .securityMatcher("/webjars/**", "/css/**", "/js/**", "/img/**", "/favicon.ico")
+            .securityMatcher("/webjars/**", "/css/**", "/js/**", "/img/**", "/fonts/**", "/favicon.ico")
             .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
             .requestCache(cache -> cache.disable())
             .sessionManagement(session -> session

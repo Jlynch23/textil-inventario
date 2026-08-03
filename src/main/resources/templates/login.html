@@ -7,52 +7,95 @@
 
     <!-- PWA: app movil instalable (tambien desde la pantalla de login) -->
     <link rel="manifest" href="/manifest.webmanifest">
-    <meta name="theme-color" content="#0b1220">
+    <meta name="theme-color" content="#0B3A66">
     <link rel="apple-touch-icon" href="/img/pwa/apple-touch-icon.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="TexControl">
     <script src="/js/pwa-register.js" defer></script>
+
+    <!-- Fuentes de marca precargadas + tokens del sistema de diseño. -->
+    <link rel="preload" href="/fonts/manrope-800.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/fonts/inter-400.woff2" as="font" type="font/woff2" crossorigin>
+    <link href="/css/texcontrol.css" rel="stylesheet">
     <style>
-        :root { --azul:#1a82f0; --azul-oscuro:#1568c8; }
+        /* Login = pantalla propia (no usa layout/base). Fondo oscuro de marca
+           (navy) + tarjeta translúcida. Todo con los tokens de texcontrol.css. */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            font-family: var(--tx-font-body);
             min-height: 100vh; display: flex; align-items: center; justify-content: center;
-            background: radial-gradient(1200px 600px at 50% -10%, #16233b 0%, #0b1220 60%, #070c16 100%);
-            padding: 20px;
+            color: #E6EDF5; padding: 20px;
+            background:
+                radial-gradient(1100px 620px at 50% -12%, #10528F 0%, #0B3A66 42%, #061F38 100%);
+        }
+        /* Textura sutil de puntos, casi imperceptible, para dar profundidad. */
+        body::before {
+            content: ""; position: fixed; inset: 0; pointer-events: none;
+            background-image: radial-gradient(rgba(255,255,255,.05) 1px, transparent 1px);
+            background-size: 26px 26px; opacity: .5;
         }
         .card {
-            background: #0f1a2e;
-            border: 1px solid rgba(148,163,184,.14);
-            border-radius: 18px; box-shadow: 0 24px 70px rgba(0,0,0,.55);
-            width: 100%; max-width: 440px; padding: 40px 38px; text-align: center;
+            position: relative;
+            background: rgba(9, 30, 54, .72);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,.10);
+            border-radius: 18px; box-shadow: 0 30px 80px rgba(0,0,0,.55);
+            width: 100%; max-width: 430px; padding: 42px 38px 34px; text-align: center;
         }
-        .logo { width: 100%; max-width: 270px; height: auto; margin: 0 auto 10px; display: block; }
-        .sub { color: #93a4bd; font-size: 14px; margin-top: 2px; margin-bottom: 28px; }
-        label { display:block; text-align:left; font-weight:600; font-size:14px; margin-bottom:8px; color:#dbe4f0; }
-        .campo { display: flex; align-items: stretch; border: 1px solid #2b3a53; border-radius: 10px; overflow: hidden; background:#0b1424; margin-bottom: 18px; }
-        .campo:focus-within { border-color: var(--azul); box-shadow: 0 0 0 3px rgba(26,130,240,.20); }
-        .campo input { flex: 1; border: none; outline: none; padding: 12px 14px; font-size: 16px; min-width: 0; background: transparent; color: #f1f5f9; }
-        button {
-            margin-top: 6px; width: 100%; background: var(--azul); color: #fff; border: none;
-            padding: 13px; border-radius: 10px; font-size: 16px; font-weight: 700; cursor: pointer;
-            transition: background .15s;
+        /* Filo dorado superior: firma de marca discreta. */
+        .card::before {
+            content: ""; position: absolute; left: 22px; right: 22px; top: 0; height: 3px;
+            border-radius: 0 0 3px 3px;
+            background: linear-gradient(90deg, transparent, var(--tx-gold), transparent);
         }
-        button:hover { background: var(--azul-oscuro); }
-        .alerta { border-radius: 10px; padding: 11px 14px; font-size: 14px; margin-bottom: 22px; text-align: left; }
-        .alerta-error { background: rgba(248,113,113,.12); border: 1px solid rgba(248,113,113,.35); color: #fca5a5; }
-        .alerta-ok { background: rgba(52,211,153,.12); border: 1px solid rgba(52,211,153,.35); color: #6ee7b7; }
-        .volver { display: inline-block; margin-top: 22px; color: #7c8ba6; font-size: 13.5px; text-decoration: none; }
-        .volver:hover { color: #f1f5f9; }
+        .logo { width: 100%; max-width: 240px; height: auto; margin: 4px auto 8px; display: block; }
+        .sub {
+            color: #A7BCD6; font-size: 13.5px; margin-bottom: 30px;
+            font-weight: 500; letter-spacing: .01em;
+        }
+        label {
+            display: block; text-align: left; font-weight: 600; font-size: 13.5px;
+            margin-bottom: 7px; color: #CBD9EA; font-family: var(--tx-font-body);
+        }
+        .campo {
+            display: flex; align-items: stretch; margin-bottom: 18px;
+            border: 1px solid rgba(255,255,255,.14); border-radius: 10px;
+            overflow: hidden; background: rgba(5, 18, 34, .6);
+            transition: border-color .15s, box-shadow .15s;
+        }
+        .campo:focus-within {
+            border-color: var(--tx-gold);
+            box-shadow: 0 0 0 3px rgba(212,160,23,.22);
+        }
+        .campo input {
+            flex: 1; border: none; outline: none; padding: 12px 14px; font-size: 16px;
+            min-width: 0; background: transparent; color: #F1F6FC; font-family: var(--tx-font-body);
+        }
+        button[type="submit"] {
+            margin-top: 8px; width: 100%; color: #fff; border: none;
+            padding: 13px; border-radius: 10px; font-size: 15.5px; font-weight: 700;
+            cursor: pointer; font-family: var(--tx-font-head); letter-spacing: .01em;
+            background: linear-gradient(180deg, #2A7FC9 0%, #1E6FB9 100%);
+            box-shadow: 0 6px 18px rgba(30,111,185,.35);
+            transition: filter .15s, transform .05s;
+        }
+        button[type="submit"]:hover { filter: brightness(1.07); }
+        button[type="submit"]:active { transform: translateY(1px); }
+        .alerta { border-radius: 10px; padding: 11px 14px; font-size: 13.5px; margin-bottom: 20px; text-align: left; }
+        .alerta-error { background: rgba(248,113,113,.12); border: 1px solid rgba(248,113,113,.35); color: #FCA5A5; }
+        .alerta-ok { background: rgba(52,211,153,.12); border: 1px solid rgba(52,211,153,.35); color: #6EE7B7; }
+        .volver { display: inline-block; margin-top: 22px; color: #8DA2BE; font-size: 13px; text-decoration: none; font-weight: 500; }
+        .volver:hover { color: #F1F6FC; }
         /* Distintivo de entorno (ej. BETA en dev): pastilla ambar + borde de la
            tarjeta ambar, para no confundir staging con produccion. */
         .badge-entorno {
             display: inline-block; margin: 0 auto 14px; padding: 4px 14px;
-            background: rgba(245,158,11,.16); border: 1px solid rgba(245,158,11,.55);
-            color: #fbbf24; border-radius: 999px; font-size: 12px; font-weight: 800;
-            letter-spacing: .12em; text-transform: uppercase;
+            background: rgba(212,160,23,.18); border: 1px solid rgba(212,160,23,.6);
+            color: var(--tx-gold); border-radius: 999px; font-size: 11.5px; font-weight: 800;
+            letter-spacing: .14em; text-transform: uppercase; font-family: var(--tx-font-head);
         }
-        .card.entorno { border-color: rgba(245,158,11,.45); }
+        .card.entorno { border-color: rgba(212,160,23,.45); }
+        .card.entorno::before { background: linear-gradient(90deg, transparent, var(--tx-gold), transparent); }
     </style>
 </head>
 <body>
