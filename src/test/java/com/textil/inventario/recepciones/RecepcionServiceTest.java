@@ -326,4 +326,44 @@ class RecepcionServiceTest {
 
         verify(recepcionRepository, never()).save(any());
     }
+
+    @Test
+    void crearRecepcion_guiaEnBlanco_seGuardaComoNull() {
+        // INV-02: una guía en blanco se persiste como NULL (no ""), para que el
+        // UNIQUE permita varias recepciones sin guía (MySQL admite múltiples NULL).
+        when(empresaRepository.findById(1L))
+                .thenReturn(Optional.of(new com.textil.inventario.catalogo.Empresa()));
+        when(usuarioActualService.obtenerUsuarioActual())
+                .thenReturn(new com.textil.inventario.seguridad.Usuario());
+        when(recepcionRepository.saveAndFlush(any(Recepcion.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        service.crearRecepcion(1L, "   ", null, java.time.LocalDate.now(), null);
+
+        ArgumentCaptor<Recepcion> cap = ArgumentCaptor.forClass(Recepcion.class);
+        verify(recepcionRepository).saveAndFlush(cap.capture());
+        assertThat(cap.getValue().getNumeroGuia()).isNull();
+        // Con guía nula no tiene sentido consultar duplicados.
+        verify(recepcionRepository, never()).findFirstByNumeroGuia(any());
+    }
+
+    @Test
+    void crearRecepcion_violacionUniqueConcurrente_seTraduceAExcepcionDeDominio() {
+        // INV-02: dos POST simultáneos con la misma guía pasan ambos el findFirst
+        // (read-then-write); el UNIQUE de BD deja entrar solo uno y el otro lanza
+        // DataIntegrityViolationException, que se traduce a un error de dominio
+        // (mensaje claro) en vez de un 500.
+        when(recepcionRepository.findFirstByNumeroGuia("TG01-00019662"))
+                .thenReturn(Optional.empty());
+        when(empresaRepository.findById(1L))
+                .thenReturn(Optional.of(new com.textil.inventario.catalogo.Empresa()));
+        when(usuarioActualService.obtenerUsuarioActual())
+                .thenReturn(new com.textil.inventario.seguridad.Usuario());
+        when(recepcionRepository.saveAndFlush(any(Recepcion.class)))
+                .thenThrow(new org.springframework.dao.DataIntegrityViolationException("uq_recepcion_numero_guia"));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                service.crearRecepcion(1L, "TG01-00019662", null, java.time.LocalDate.now(), null)
+        ).isInstanceOf(IllegalArgumentException.class);
+    }
 }

@@ -156,18 +156,24 @@ public class RecepcionService {
     @Transactional
     public Recepcion crearRecepcion(Long empresaId, String numeroGuia, String numeroFactura, LocalDate fechaGuia, String observaciones) {
         String guiaNorm = normalizar(numeroGuia);
+        // Guias en blanco -> NULL: una recepcion puede no llevar guia, y el UNIQUE
+        // de MySQL permite multiples NULL (varias recepciones sin guia no chocan),
+        // pero SI bloquea dos guias reales iguales.
+        String guiaFinal = (guiaNorm == null || guiaNorm.isBlank()) ? null : guiaNorm;
         // Guía duplicada: una guía = una recepción. Sin este bloqueo, cargar la
         // misma guía dos veces y confirmar ambas DUPLICA el stock y deja el
         // programa con recibido > solicitado (pendiente negativo). El aviso del
         // front es saltable; acá se hace obligatorio (defensa en el backend).
-        if (guiaNorm != null && !guiaNorm.isBlank()
-                && recepcionRepository.findFirstByNumeroGuia(guiaNorm).isPresent()) {
+        // Este chequeo previo es solo para UX (mensaje claro); la garantia real
+        // contra la carrera concurrente la da el UNIQUE de BD (INV-02, ver catch).
+        if (guiaFinal != null
+                && recepcionRepository.findFirstByNumeroGuia(guiaFinal).isPresent()) {
             throw new IllegalArgumentException(
-                    "Ya existe una recepción con la guía " + guiaNorm + ". Una guía no se puede registrar dos veces.");
+                    "Ya existe una recepción con la guía " + guiaFinal + ". Una guía no se puede registrar dos veces.");
         }
         Recepcion r = new Recepcion();
         r.setEmpresa(empresaRepository.findById(empresaId).orElseThrow());
-        r.setNumeroGuia(guiaNorm);
+        r.setNumeroGuia(guiaFinal);
         r.setNumeroFactura(normalizar(numeroFactura));
         r.setFechaGuia(fechaGuia);
         r.setFechaRecepcion(LocalDate.now());
@@ -175,7 +181,18 @@ public class RecepcionService {
         r.setEstado(Recepcion.EstadoRecepcion.PENDIENTE);
         r.setUsuario(usuarioActualService.obtenerUsuarioActual());
         r.setUpdatedAt(java.time.LocalDateTime.now());
-        Recepcion guardada = recepcionRepository.save(r);
+        Recepcion guardada;
+        try {
+            // saveAndFlush para que la violacion del UNIQUE aflore DENTRO de este
+            // try (con save() normal el INSERT se difiere al commit, fuera de aca).
+            guardada = recepcionRepository.saveAndFlush(r);
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            // Auditoria INV-02: dos POST simultaneos con la misma guia pasan ambos
+            // el findFirst de arriba (read-then-write); el UNIQUE deja entrar solo
+            // uno y el otro cae aca. Se traduce a mensaje de dominio (no un 500).
+            throw new IllegalArgumentException(
+                    "Ya existe una recepción con la guía " + guiaFinal + ". Una guía no se puede registrar dos veces.");
+        }
         auditLogService.registrar("CREAR", "Recepcion", guardada.getId(),
                 "Creo recepcion con guia " + guardada.getNumeroGuia());
         return guardada;

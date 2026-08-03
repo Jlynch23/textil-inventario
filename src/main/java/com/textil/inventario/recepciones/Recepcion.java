@@ -21,7 +21,12 @@ public class Recepcion extends BaseEntity {
     @JoinColumn(name = "empresa_id", nullable = false)
     private Empresa empresa;
 
-    @Column(name = "numero_guia", nullable = false, length = 50)
+    // Auditoria INV-02: numero_guia lleva UNIQUE (una guia = una recepcion). Es
+    // NULLABLE a proposito: una recepcion puede quedar sin guia, y en MySQL el
+    // UNIQUE permite multiples NULL (las guias en blanco se guardan como NULL, no
+    // como "", para que no choquen entre si). La unicidad la impone la migracion
+    // V42 (constraint uq_recepcion_numero_guia).
+    @Column(name = "numero_guia", length = 50)
     private String numeroGuia;
 
     @Column(name = "numero_factura", length = 50)

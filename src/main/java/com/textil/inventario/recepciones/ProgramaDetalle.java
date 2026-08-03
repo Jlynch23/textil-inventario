@@ -35,6 +35,18 @@ public class ProgramaDetalle {
     @Column(name = "cantidad_recibida", nullable = false)
     private Integer cantidadRecibida = 0;
 
+    // Auditoria INV-03: lock optimista sobre el avance del programa. El @Version
+    // del padre Recepcion (V38) protege el estado de CADA recepcion, pero NO este
+    // contador compartido: dos recepciones DISTINTAS del mismo programa que se
+    // confirman en paralelo leen ambas cantidad_recibida=X y escriben X+propio ->
+    // last-write-wins, se pierde un incremento (stock/kardex quedan bien, pero el
+    // avance del programa queda corto). Con @Version, Hibernate agrega
+    // `AND version = ?` al UPDATE: la segunda transaccion afecta 0 filas ->
+    // OptimisticLockException -> rollback. Ver migracion V43.
+    @Version
+    @Column(nullable = false)
+    private Integer version;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

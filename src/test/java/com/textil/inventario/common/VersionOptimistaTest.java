@@ -1,5 +1,6 @@
 package com.textil.inventario.common;
 
+import com.textil.inventario.recepciones.ProgramaDetalle;
 import com.textil.inventario.recepciones.Recepcion;
 import com.textil.inventario.transferencias.Transferencia;
 import jakarta.persistence.Version;
@@ -31,6 +32,15 @@ class VersionOptimistaTest {
     void transferencia_tiene_campo_version() {
         assertTrue(tieneCampoVersion(Transferencia.class),
                 "Transferencia debe tener un campo anotado con @Version (lock optimista, R-C1)");
+    }
+
+    @Test
+    void programaDetalle_tiene_campo_version() {
+        // INV-03: el @Version de Recepcion no cubre el contador compartido
+        // cantidad_recibida; dos recepciones distintas del mismo programa se
+        // pisaban (lost update). ProgramaDetalle necesita su propio @Version.
+        assertTrue(tieneCampoVersion(ProgramaDetalle.class),
+                "ProgramaDetalle debe tener un campo anotado con @Version (lock optimista, INV-03)");
     }
 
     private boolean tieneCampoVersion(Class<?> tipo) {

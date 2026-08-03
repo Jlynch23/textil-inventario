@@ -329,4 +329,38 @@ class TransferenciaServiceTest {
 
         verify(stockActualRepository, never()).save(any());
     }
+
+    @Test
+    void confirmarLlegada_repartoConNegativo_lanzaYNoTocaStock() {
+        // INV-01 (regresion): el exploit +100/-90. Sin la validacion, la suma
+        // daba 10 (pasaba el tope de "no mas que lo despachado"=10), el -90 se
+        // descartaba con `continue` y el +100 SI se agregaba al destino -> 90
+        // rollos fabricados. Debe rechazarse ANTES de mover stock.
+        Transferencia t = transferenciaDePrueba(praderasDePrueba());
+        t.setEstado(Transferencia.EstadoTransferencia.CONFIRMADA_SALIDA);
+
+        TransferenciaDetalle d = new TransferenciaDetalle();
+        d.setId(100L);
+        d.setTransferencia(t);
+        d.setArticulo(articuloDePrueba());
+        d.setColor(colorDePrueba());
+        d.setCantidadSolicitada(10);
+        d.setCantidadConfirmadaSalida(10); // salieron 10
+
+        when(transferenciaRepository.findById(1L)).thenReturn(Optional.of(t));
+        when(detalleRepository.findByTransferenciaId(1L)).thenReturn(List.of(d));
+
+        // Reparto +100 a la tienda 2 y -90 a la tienda 3 (suma 10, pero con un negativo).
+        java.util.Map<Long, Integer> repartoConNegativo = new java.util.HashMap<>();
+        repartoConNegativo.put(2L, 100);
+        repartoConNegativo.put(3L, -90);
+
+        assertThatThrownBy(() ->
+                service.confirmarLlegada(1L, Map.of(100L, repartoConNegativo)))
+                .isInstanceOf(IllegalArgumentException.class);
+
+        verify(stockActualRepository, never()).save(any());
+        verify(kardexRepository, never()).save(any());
+        verify(distribucionRepository, never()).save(any());
+    }
 }

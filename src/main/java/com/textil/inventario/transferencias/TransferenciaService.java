@@ -210,6 +210,22 @@ public class TransferenciaService {
         for (TransferenciaDetalle d : detalles) {
             Map<Long, Integer> reparto = repartoPorDetalle.getOrDefault(d.getId(), Map.of());
 
+            // Auditoria INV-01: rechazar cantidades negativas ANTES de sumar. Los
+            // negativos participaban en la suma total (un reparto +100/-90 sumaba
+            // 10, pasaba el tope de "no mas que lo despachado"), pero mas abajo el
+            // -90 se descartaba con `continue` y el +100 SI se agregaba al destino
+            // -> 90 rollos fabricados de la nada. Se validan aca, no con `continue`,
+            // para que un reparto invalido corte la operacion completa. El 0 se
+            // tolera (no mueve stock).
+            for (Map.Entry<Long, Integer> e : reparto.entrySet()) {
+                if (e.getValue() == null || e.getValue() < 0) {
+                    throw new IllegalArgumentException(
+                            "El reparto de una línea contiene una cantidad inválida (" + e.getValue()
+                            + ") para la ubicación " + e.getKey()
+                            + ". No se permiten cantidades negativas.");
+                }
+            }
+
             int totalRepartido = reparto.values().stream().mapToInt(Integer::intValue).sum();
             // Auditoria P0-1 (C4): no se puede recibir mas de lo que salio. Sin
             // este tope, repartir mas que lo despachado sumaba rollos de la nada

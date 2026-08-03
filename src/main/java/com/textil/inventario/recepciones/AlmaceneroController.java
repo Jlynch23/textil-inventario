@@ -24,6 +24,15 @@ public class AlmaceneroController {
     private final UsuarioActualService usuarioActualService;
     private final com.textil.inventario.auditoria.AuditLogService auditLogService;
 
+    // Auditoria FAST-01: tope de cordura para las cantidades rapidas (mismo
+    // criterio que RecepcionService.MAX_ROLLOS_POR_LINEA). Evita absurdos y el
+    // desborde de int al conciliar contra stock.
+    private static final int MAX_CANTIDAD_RAPIDA = 1_000_000;
+
+    private static boolean cantidadValida(Integer cantidad) {
+        return cantidad != null && cantidad > 0 && cantidad <= MAX_CANTIDAD_RAPIDA;
+    }
+
     @GetMapping
     public String home() {
         return "almacen/home";
@@ -38,6 +47,13 @@ public class AlmaceneroController {
     public String entradaGuardar(@RequestParam Integer totalRollos,
                                   @RequestParam("foto") MultipartFile foto,
                                   RedirectAttributes ra) throws java.io.IOException {
+        // Auditoria FAST-01: los @RequestParam se persistian sin validar. Un POST
+        // con null/0/negativo (o un absurdo) contaminaba la conciliacion, reportes
+        // y auditoria. Se valida en el backend (el front no es garantia).
+        if (!cantidadValida(totalRollos)) {
+            ra.addFlashAttribute("error", "La cantidad de rollos debe ser un número mayor que cero.");
+            return "redirect:/almacen/entrada";
+        }
         Usuario usuario = usuarioActualService.obtenerUsuarioActual();
 
         String ruta = documentoStorageService.guardarFotoRapida(foto, "Entradas");
@@ -63,6 +79,11 @@ public class AlmaceneroController {
     public String salidaGuardar(@RequestParam Integer cantidad,
                                  @RequestParam("foto") MultipartFile foto,
                                  RedirectAttributes ra) throws java.io.IOException {
+        // Auditoria FAST-01: misma validacion de backend que la entrada rapida.
+        if (!cantidadValida(cantidad)) {
+            ra.addFlashAttribute("error", "La cantidad debe ser un número mayor que cero.");
+            return "redirect:/almacen/salida";
+        }
         Usuario usuario = usuarioActualService.obtenerUsuarioActual();
 
         String ruta = documentoStorageService.guardarFotoRapida(foto, "Salidas");
