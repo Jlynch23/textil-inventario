@@ -4,38 +4,58 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TexControl — Ingreso</title>
+    <meta name="theme-color" content="#0B3A66">
+    <link rel="preload" href="/fonts/manrope-800.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/fonts/inter-400.woff2" as="font" type="font/woff2" crossorigin>
     <style>
-        :root { --azul:#1a82f0; --azul-oscuro:#1568c8; }
+        /* Lanzador de login.texcontrol.pe: mismo look que el login de la app
+           (navy de marca + filo dorado + Manrope/Inter). Estatico, sin build. */
+        @font-face { font-family:'Manrope'; font-weight:800; font-display:swap; src:url('/fonts/manrope-800.woff2') format('woff2'); }
+        @font-face { font-family:'Inter'; font-weight:400; font-display:swap; src:url('/fonts/inter-400.woff2') format('woff2'); }
+        @font-face { font-family:'Inter'; font-weight:600; font-display:swap; src:url('/fonts/inter-600.woff2') format('woff2'); }
+        :root { --azul:#1E6FB9; --oro:#D4A017; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
             min-height: 100vh; display: flex; align-items: center; justify-content: center;
-            background: radial-gradient(1200px 600px at 50% -10%, #16233b 0%, #0b1220 60%, #070c16 100%);
-            padding: 20px;
+            color: #E6EDF5; padding: 20px; -webkit-font-smoothing: antialiased;
+            background: radial-gradient(1100px 620px at 50% -12%, #10528F 0%, #0B3A66 42%, #061F38 100%);
+        }
+        body::before {
+            content: ""; position: fixed; inset: 0; pointer-events: none;
+            background-image: radial-gradient(rgba(255,255,255,.05) 1px, transparent 1px);
+            background-size: 26px 26px; opacity: .5;
         }
         .card {
-            background: #0f1a2e;
-            border: 1px solid rgba(148,163,184,.14);
-            border-radius: 18px; box-shadow: 0 24px 70px rgba(0,0,0,.55);
-            width: 100%; max-width: 440px; padding: 40px 38px; text-align: center;
+            position: relative; background: rgba(9,30,54,.72); backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,.10);
+            border-radius: 18px; box-shadow: 0 30px 80px rgba(0,0,0,.55);
+            width: 100%; max-width: 440px; padding: 42px 38px; text-align: center;
         }
-        .logo { width: 100%; max-width: 270px; height: auto; margin: 0 auto 10px; display: block; }
-        .sub { color: #93a4bd; font-size: 14px; margin-top: 2px; margin-bottom: 28px; }
-        label { display:block; text-align:left; font-weight:600; font-size:14px; margin-bottom:8px; color:#dbe4f0; }
-        .campo { display: flex; align-items: stretch; border: 1px solid #2b3a53; border-radius: 10px; overflow: hidden; background:#0b1424; }
-        .campo:focus-within { border-color: var(--azul); box-shadow: 0 0 0 3px rgba(26,130,240,.20); }
-        .campo input { flex: 1; border: none; outline: none; padding: 12px 14px; font-size: 16px; min-width: 0; background: transparent; color: #f1f5f9; }
-        .campo input::placeholder { color:#5b6b85; }
-        .campo .suf { display:flex; align-items:center; padding: 0 12px; background:#132038; color:#8ea3c2; font-size:14px; white-space:nowrap; border-left:1px solid #2b3a53; }
+        .card::before {
+            content: ""; position: absolute; left: 22px; right: 22px; top: 0; height: 3px;
+            border-radius: 0 0 3px 3px;
+            background: linear-gradient(90deg, transparent, var(--oro), transparent);
+        }
+        .logo { width: 100%; max-width: 240px; height: auto; margin: 4px auto 8px; display: block; }
+        .sub { color: #A7BCD6; font-size: 14px; margin-top: 2px; margin-bottom: 28px; font-weight: 500; }
+        label { display:block; text-align:left; font-weight:600; font-size:14px; margin-bottom:8px; color:#CBD9EA; }
+        .campo { display: flex; align-items: stretch; border: 1px solid rgba(255,255,255,.14); border-radius: 10px; overflow: hidden; background:rgba(5,18,34,.6); }
+        .campo:focus-within { border-color: var(--oro); box-shadow: 0 0 0 3px rgba(212,160,23,.22); }
+        .campo input { flex: 1; border: none; outline: none; padding: 12px 14px; font-size: 16px; min-width: 0; background: transparent; color: #F1F6FC; }
+        .campo .suf { display:flex; align-items:center; padding: 0 12px; background:rgba(255,255,255,.05); color:#8DA2BE; font-size:14px; white-space:nowrap; border-left:1px solid rgba(255,255,255,.12); }
         button {
-            margin-top: 22px; width: 100%; background: var(--azul); color: #fff; border: none;
-            padding: 13px; border-radius: 10px; font-size: 16px; font-weight: 700; cursor: pointer;
-            transition: background .15s;
+            margin-top: 22px; width: 100%; color: #fff; border: none;
+            padding: 13px; border-radius: 10px; font-size: 15.5px; font-weight: 700; cursor: pointer;
+            font-family: 'Manrope', system-ui, sans-serif; letter-spacing: .01em;
+            background: linear-gradient(180deg, #2A7FC9 0%, #1E6FB9 100%);
+            box-shadow: 0 6px 18px rgba(30,111,185,.35); transition: filter .15s, transform .05s;
         }
-        button:hover { background: var(--azul-oscuro); }
-        .ayuda { margin-top: 18px; font-size: 12.5px; color: #7c8ba6; }
-        .volver { display: inline-block; margin-top: 16px; color: #7c8ba6; font-size: 13px; text-decoration: none; }
-        .volver:hover { color: #f1f5f9; }
+        button:hover { filter: brightness(1.07); }
+        button:active { transform: translateY(1px); }
+        .ayuda { margin-top: 18px; font-size: 12.5px; color: #8DA2BE; }
+        .volver { display: inline-block; margin-top: 16px; color: #8DA2BE; font-size: 13px; text-decoration: none; font-weight: 500; }
+        .volver:hover { color: #F1F6FC; }
         .error { color: #f87171; font-size: 13px; margin-top: 10px; min-height: 18px; text-align:left; }
     </style>
 </head>

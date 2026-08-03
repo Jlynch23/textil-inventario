@@ -4,20 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sin conexion - TexControl</title>
-    <meta name="theme-color" content="#1F4E79">
+    <meta name="theme-color" content="#0B3A66">
     <style>
+        /* Pagina offline de la PWA: cacheada por el service worker, debe ser
+           auto-contenida. Colores de marca hardcodeados (navy #0B3A66 / azul
+           #1E6FB9), sin depender de CSS externo que podria no estar cacheado. */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
             min-height: 100vh; display: flex; align-items: center; justify-content: center;
-            background: #f0f4f8; color: #1F4E79; text-align: center; padding: 24px;
+            background: #F4F6FA; color: #0B3A66; text-align: center; padding: 24px;
         }
         .caja { max-width: 380px; }
         img { width: 96px; height: 96px; margin-bottom: 20px; }
-        h1 { font-size: 1.35rem; margin-bottom: 10px; }
+        h1 { font-size: 1.35rem; margin-bottom: 10px; font-weight: 800; }
         p { color: #55627a; line-height: 1.5; margin-bottom: 22px; }
         button {
-            background: #1F4E79; color: #fff; border: none; border-radius: 10px;
+            background: #1E6FB9; color: #fff; border: none; border-radius: 10px;
             padding: 12px 22px; font-size: 1rem; font-weight: 700; cursor: pointer;
         }
     </style>
