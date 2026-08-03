@@ -21,10 +21,10 @@ jobs:
           cache: maven
 
       - name: Compilar
-        run: mvn -B clean compile
+        run: ./mvnw -B clean compile
 
       - name: Ejecutar tests
-        run: mvn -B test
+        run: ./mvnw -B test
 
   # M15 (auditoria): valida que las entidades JPA calcen con las migraciones
   # Flyway arrancando el contexto de Spring contra un MySQL real. Sin esto, un
@@ -66,4 +66,4 @@ jobs:
           DB_PASSWORD: textil_pass
           # Requerida por SecurityConfig (no es secreto: solo para arrancar el contexto en CI).
           REMEMBER_ME_KEY: ci-clave-solo-para-validar-el-esquema
-        run: mvn -B test -Dtest=EsquemaFlywayTest,ConfirmacionConcurrenteTest,OsivFetchGraphTest -DfailIfNoTests=false
+        run: ./mvnw -B test -Dtest=EsquemaFlywayTest,ConfirmacionConcurrenteTest,OsivFetchGraphTest -DfailIfNoTests=false

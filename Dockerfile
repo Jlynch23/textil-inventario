@@ -1,16 +1,19 @@
-# --- Etapa de build: compila el jar con Maven ---
-FROM maven:3.9-eclipse-temurin-21 AS build
+# --- Etapa de build: compila el jar con el Maven Wrapper ---
+# Base JDK (sin Maven): la version de Maven la fija el wrapper (.mvn/wrapper),
+# no la imagen -> build reproducible (auditoria BUILD-01).
+FROM eclipse-temurin:21-jdk-jammy AS build
 WORKDIR /build
 
-# Copiar solo el pom primero para cachear las dependencias en una capa
+# Copiar el wrapper y el pom primero para cachear las dependencias en una capa
 # separada -- solo se re-descargan si pom.xml cambia, no en cada build.
-COPY pom.xml .
-RUN mvn -B -q dependency:go-offline
+COPY .mvn/ .mvn/
+COPY mvnw pom.xml ./
+RUN ./mvnw -B -q dependency:go-offline
 
 COPY src ./src
 # Los tests ya corrieron en CI antes de llegar a main (ver .github/workflows/ci.yml);
 # no repetirlos aca evita necesitar red/tiempo extra en cada build de imagen.
-RUN mvn -B -q -DskipTests package
+RUN ./mvnw -B -q -DskipTests package
 
 # --- Etapa final: solo el JRE + el jar, sin Maven ni el codigo fuente ---
 FROM eclipse-temurin:21-jre-jammy

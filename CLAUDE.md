@@ -23,12 +23,16 @@ ubicaciones/tiendas, con OCR por IA, trazabilidad por kardex y reportes.
 docker compose up -d
 
 # Ejecutar la app (http://localhost:8080). Flyway migra al arrancar.
-mvn spring-boot:run
+./mvnw spring-boot:run
 
 # Compilar / tests (lo mismo que corre CI en push/PR a main)
-mvn -B clean compile
-mvn -B test
+./mvnw -B clean compile
+./mvnw -B test
 ```
+
+> Usar el **Maven Wrapper** (`./mvnw`, `.mvn/wrapper/`), no un `mvn` del sistema:
+> fija la versión de Maven y hace el build autocontenido (auditoría BUILD-01).
+> CI y el Dockerfile también lo usan.
 
 ### Variables de entorno requeridas
 `DB_PASSWORD` es obligatoria (sin default). Para el OCR se necesita `ANTHROPIC_API_KEY`
@@ -140,7 +144,7 @@ parsing de guías, ese prompt es la fuente de verdad.
 `GeneradorUsernameTest`, `ValidadorPdfTest`, `VersionOptimistaTest`.
 
 CI (`.github/workflows/ci.yml`), en cada push/PR a `develop` y `main`, corre **dos jobs**:
-- `build-and-test`: `mvn -B clean compile` + `mvn -B test` (tests con Mockito, sin BD).
+- `build-and-test`: `./mvnw -B clean compile` + `./mvnw -B test` (tests con Mockito, sin BD).
 - `validar-esquema`: levanta un **MySQL 8** de servicio y corre los tests marcados
   `@EnabledIfEnvironmentVariable(RUN_DB_IT=true)` contra BD real: `EsquemaFlywayTest` (valida que
   el esquema Flyway calce con las entidades, `ddl-auto: validate`), `ConfirmacionConcurrenteTest`
