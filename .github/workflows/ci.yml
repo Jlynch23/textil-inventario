@@ -91,15 +91,12 @@ jobs:
         run: ./mvnw -B -DskipTests org.cyclonedx:cyclonedx-maven-plugin:2.9.1:makeBom
 
       - name: Escanear CVEs del SBOM (Trivy)
-        uses: aquasecurity/trivy-action@0.28.0
-        with:
-          scan-type: sbom
-          scan-ref: target/bom.json
-          severity: CRITICAL,HIGH
-          # No-bloqueante por ahora (ver comentario del job). Poner 1 para que
-          # falle ante CVEs CRITICAL/HIGH cuando se decida el gate.
-          exit-code: '0'
-          format: table
+        # Se instala Trivy con su script oficial y se escanea el SBOM (en vez del
+        # action aquasecurity/trivy-action, para no depender de una version de
+        # action puntual). No-bloqueante: --exit-code 0 (ver comentario del job).
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+          trivy sbom target/bom.json --severity CRITICAL,HIGH --exit-code 0
 
       - name: Subir SBOM como artefacto
         uses: actions/upload-artifact@v4
