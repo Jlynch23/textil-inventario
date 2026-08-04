@@ -16,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -31,6 +32,7 @@ public class RecepcionController {
     private final ColorRepository colorRepository;
     private final AnthropicOcrService anthropicOcrService;
     private final ArticuloMatchingService articuloMatchingService;
+    private final RecepcionDocumentoRepository recepcionDocumentoRepository;
 
     @GetMapping
     public String listar(Model model) {
@@ -93,6 +95,14 @@ public class RecepcionController {
         model.addAttribute("recepcion", recepcionService.buscarRecepcion(id));
         model.addAttribute("articulos", articuloRepository.findByActivoTrue());
         model.addAttribute("colores", colorRepository.findByActivoTrueOrderByNombreOficialAsc());
+        // Ojitos "ver guía / ver factura": id del PDF de cada tipo, si está archivado
+        // (el primero de cada tipo). Si no hay PDF, el ojo no se muestra.
+        for (RecepcionDocumento doc : recepcionDocumentoRepository.findByRecepcionId(id)) {
+            if ("GUIA".equals(doc.getTipoDocumento()) && !model.containsAttribute("guiaDocId"))
+                model.addAttribute("guiaDocId", doc.getId());
+            if ("FACTURA".equals(doc.getTipoDocumento()) && !model.containsAttribute("facturaDocId"))
+                model.addAttribute("facturaDocId", doc.getId());
+        }
         return "recepciones/detalle";
     }
 
@@ -143,8 +153,26 @@ public class RecepcionController {
     @GetMapping("/facturar")
     @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public String facturarForm(Model model) {
-        model.addAttribute("recepciones", recepcionService.listarRecepcionesSinFactura());
+        List<Recepcion> recepciones = recepcionService.listarRecepcionesSinFactura();
+        model.addAttribute("recepciones", recepciones);
+        // Ojito "ver guía" por fila: mapa recepcionId -> id del documento GUÍA.
+        model.addAttribute("guiaPorRecepcion", guiaDocPorRecepcion(recepciones));
         return "recepciones/facturar";
+    }
+
+    /**
+     * Para las recepciones mostradas, el id del documento GUÍA (PDF) de cada una,
+     * para el ojito "ver guía". Un solo query (sin N+1). Solo entran las que tienen
+     * guía adjunta; el resto no muestra ojo.
+     */
+    private Map<Long, Long> guiaDocPorRecepcion(List<Recepcion> recepciones) {
+        if (recepciones == null || recepciones.isEmpty()) return Map.of();
+        List<Long> ids = recepciones.stream().map(Recepcion::getId).toList();
+        Map<Long, Long> mapa = new HashMap<>();
+        for (Object[] fila : recepcionDocumentoRepository.guiaDocPorRecepcion(ids)) {
+            mapa.put(((Number) fila[0]).longValue(), ((Number) fila[1]).longValue());
+        }
+        return mapa;
     }
 
     @PostMapping("/extraer-factura")

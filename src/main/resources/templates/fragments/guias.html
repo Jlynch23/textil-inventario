@@ -18,5 +18,16 @@
     <i class="bi bi-eye"></i>
 </a>
 
+<!--
+  Igual que ojoGuia pero para el PDF de la FACTURA (color distinto para
+  diferenciarla de un vistazo). Uso: ~{fragments/guias :: ojoFactura(${docId})}
+-->
+<a th:fragment="ojoFactura(docId)" th:if="${docId != null}"
+   th:href="@{/documentos/{id}/ver(id=${docId})}"
+   target="_blank" rel="noopener"
+   class="btn btn-sm btn-outline-secondary" title="Ver factura (PDF)">
+    <i class="bi bi-eye"></i>
+</a>
+
 </body>
 </html>

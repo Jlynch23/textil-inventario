@@ -19,11 +19,21 @@
                 </div>
                 <div class="col-md-3">
                     <small class="text-muted">Guía</small>
-                    <p class="fw-bold mb-0"><code th:text="${recepcion.numeroGuia}"></code></p>
+                    <p class="fw-bold mb-0 d-flex align-items-center gap-2">
+                        <code th:text="${recepcion.numeroGuia}"></code>
+                        <th:block th:if="${guiaDocId != null}">
+                            <span th:replace="~{fragments/guias :: ojoGuia(${guiaDocId})}"></span>
+                        </th:block>
+                    </p>
                 </div>
                 <div class="col-md-3" th:if="${recepcion.numeroFactura}">
                     <small class="text-muted">Factura</small>
-                    <p class="fw-bold mb-0"><code th:text="${recepcion.numeroFactura}"></code></p>
+                    <p class="fw-bold mb-0 d-flex align-items-center gap-2">
+                        <code th:text="${recepcion.numeroFactura}"></code>
+                        <th:block th:if="${facturaDocId != null}">
+                            <span th:replace="~{fragments/guias :: ojoFactura(${facturaDocId})}"></span>
+                        </th:block>
+                    </p>
                 </div>
                 <div class="col-md-3">
                     <small class="text-muted">Fecha Guía</small>

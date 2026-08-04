@@ -53,7 +53,12 @@
                                 </tr>
                                 <tr th:each="r : ${recepciones}">
                                     <td><input type="checkbox" class="form-check-input chk-recepcion" th:value="${r.id}"></td>
-                                    <td><code th:text="${r.numeroGuia}"></code></td>
+                                    <td>
+                                        <code th:text="${r.numeroGuia}"></code>
+                                        <th:block th:if="${guiaPorRecepcion.containsKey(r.id)}">
+                                            <span th:replace="~{fragments/guias :: ojoGuia(${guiaPorRecepcion.get(r.id)})}"></span>
+                                        </th:block>
+                                    </td>
                                     <td th:text="${r.empresa.nombre}"></td>
                                     <td th:text="${r.fechaGuia != null ? #temporals.format(r.fechaGuia, 'dd/MM/yyyy') : '-'}"></td>
                                     <td>
