@@ -42,8 +42,8 @@
                             <td th:text="${r.id}"></td>
                             <td th:text="${r.empresa.nombre}"></td>
                             <td><code th:text="${r.numeroGuia}"></code></td>
-                            <td th:text="${r.fechaGuia}"></td>
-                            <td th:text="${r.fechaRecepcion}"></td>
+                            <td th:text="${r.fechaGuia != null ? #temporals.format(r.fechaGuia, 'dd/MM/yyyy') : '-'}"></td>
+                            <td th:text="${r.fechaRecepcion != null ? #temporals.format(r.fechaRecepcion, 'dd/MM/yyyy') : '-'}"></td>
                             <td>
                                 <span th:text="${r.estado}"
                                       th:class="${r.estado.name() == 'CONFIRMADA'} ? 'badge bg-success' :

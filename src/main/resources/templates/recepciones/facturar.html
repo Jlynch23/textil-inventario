@@ -55,7 +55,7 @@
                                     <td><input type="checkbox" class="form-check-input chk-recepcion" th:value="${r.id}"></td>
                                     <td><code th:text="${r.numeroGuia}"></code></td>
                                     <td th:text="${r.empresa.nombre}"></td>
-                                    <td th:text="${r.fechaGuia}"></td>
+                                    <td th:text="${r.fechaGuia != null ? #temporals.format(r.fechaGuia, 'dd/MM/yyyy') : '-'}"></td>
                                     <td>
                                         <span th:text="${r.estado}"
                                               th:class="${r.estado.name() == 'CONFIRMADA'} ? 'badge bg-success' : 'badge bg-secondary'"></span>
@@ -76,7 +76,7 @@
         </div>
     </div>
 
-    <script src="/js/facturacion-ocr.js"></script>
+    <script th:src="@{/js/facturacion-ocr.js}"></script>
 </section>
 </body>
 </html>

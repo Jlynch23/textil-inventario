@@ -42,6 +42,26 @@ spring:
     cache: false
     encoding: UTF-8
 
+  # Cache-busting de estaticos propios (/css, /js, /img): Spring agrega un hash
+  # de contenido a la URL (p.ej. /css/texcontrol-3f9a1c.css). Cuando el archivo
+  # cambia, cambia la URL, asi el navegador Y el service worker (cache-first en
+  # sw.js) lo ven como recurso nuevo y lo bajan solos -> los cambios de estilo/JS
+  # llegan a TODOS sin hard refresh ni tener que subir CACHE_VERSION a mano.
+  # Requiere que las plantillas referencien los estaticos con @{...} (th:href/
+  # th:src) para que Spring reescriba la URL con el hash. Las URLs SIN hash
+  # siguen resolviendo al archivo real (fallback), asi el manifest/sw/precache y
+  # cualquier ref cruda no se rompen.
+  web:
+    resources:
+      chain:
+        strategy:
+          content:
+            enabled: true
+            paths:
+              - /css/**
+              - /js/**
+              - /img/**
+
   servlet:
     multipart:
       max-file-size: ${MAX_UPLOAD_SIZE:25MB}

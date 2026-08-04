@@ -42,7 +42,7 @@
                         <tr th:each="t : ${transferencias}">
                             <td><code th:text="${t.numero}"></code></td>
                             <td th:text="${t.ubicacionOrigen.nombre}"></td>
-                            <td th:text="${t.fechaSolicitud}"></td>
+                            <td th:text="${t.fechaSolicitud != null ? #temporals.format(t.fechaSolicitud, 'dd/MM/yyyy HH:mm') : '-'}"></td>
                             <td>
                                 <span th:text="${t.estado}"
                                       th:class="${t.estado.name() == 'CONFIRMADA_LLEGADA'} ? 'badge bg-success' :

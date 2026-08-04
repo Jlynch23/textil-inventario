@@ -8,15 +8,15 @@
     <!-- PWA: app movil instalable (tambien desde la pantalla de login) -->
     <link rel="manifest" href="/manifest.webmanifest">
     <meta name="theme-color" content="#0B3A66">
-    <link rel="apple-touch-icon" href="/img/pwa/apple-touch-icon.png">
+    <link rel="apple-touch-icon" th:href="@{/img/pwa/apple-touch-icon.png}">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="TexControl">
-    <script src="/js/pwa-register.js" defer></script>
+    <script th:src="@{/js/pwa-register.js}" defer></script>
 
     <!-- Fuentes de marca precargadas + tokens del sistema de diseño. -->
     <link rel="preload" href="/fonts/manrope-800.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/fonts/inter-400.woff2" as="font" type="font/woff2" crossorigin>
-    <link href="/css/texcontrol.css" rel="stylesheet">
+    <link th:href="@{/css/texcontrol.css}" rel="stylesheet">
     <style>
         /* Login = pantalla propia (no usa layout/base). Fondo oscuro de marca
            (navy) + tarjeta translúcida. Todo con los tokens de texcontrol.css. */
@@ -100,7 +100,7 @@
 </head>
 <body>
     <div class="card" th:classappend="${entornoEtiqueta != null and !entornoEtiqueta.isEmpty()} ? 'entorno' : ''">
-        <img class="logo" src="/img/texcontrol-logo-recortado.png" alt="TexControl">
+        <img class="logo" th:src="@{/img/texcontrol-logo-recortado.png}" alt="TexControl">
         <div th:if="${entornoEtiqueta != null and !entornoEtiqueta.isEmpty()}"
              class="badge-entorno" th:text="${entornoEtiqueta}">BETA</div>
         <div class="sub">Control total para la industria textil</div>

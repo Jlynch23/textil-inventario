@@ -7,16 +7,16 @@
     <meta name="_csrf" th:content="${_csrf.token}"/>
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <!-- #13: helper CSRF compartido, definido antes que cualquier script de página. -->
-    <script src="/js/fetch-csrf.js"></script>
+    <script th:src="@{/js/fetch-csrf.js}"></script>
 
     <!-- PWA: app movil instalable (agregar a pantalla de inicio, modo standalone) -->
     <link rel="manifest" href="/manifest.webmanifest">
     <meta name="theme-color" content="#0B3A66">
-    <link rel="apple-touch-icon" href="/img/pwa/apple-touch-icon.png">
+    <link rel="apple-touch-icon" th:href="@{/img/pwa/apple-touch-icon.png}">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="TexControl">
-    <script src="/js/pwa-register.js" defer></script>
+    <script th:src="@{/js/pwa-register.js}" defer></script>
     <link href="/webjars/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <link href="/webjars/bootstrap-icons/1.11.0/font/bootstrap-icons.css" rel="stylesheet">
     <!-- Fuentes de marca críticas precargadas (evita FOUT en cuerpo y títulos). -->
@@ -24,7 +24,7 @@
     <link rel="preload" href="/fonts/manrope-700.woff2" as="font" type="font/woff2" crossorigin>
     <!-- Sistema de Diseño TexControl: se carga DESPUÉS de Bootstrap para poder
          sobreescribir sus tokens/componentes. Ver /css/texcontrol.css. -->
-    <link href="/css/texcontrol.css" rel="stylesheet">
+    <link th:href="@{/css/texcontrol.css}" rel="stylesheet">
     <script th:attr="nonce=${cspNonce}">
         // Modo oscuro: aplica el tema guardado ANTES de renderizar el body, para
         // evitar el "flash" claro al cargar. Bootstrap 5.3 lo lee de data-bs-theme.
@@ -41,7 +41,7 @@
     <!-- SIDEBAR -->
     <div class="sidebar">
         <div class="brand">
-            <img src="/img/texcontrol-icono.png" alt="TEXCONTROL">
+            <img th:src="@{/img/texcontrol-icono.png}" alt="TEXCONTROL">
             <h6>TEXCONTROL</h6>
             <small th:if="${nombreEmpresa != null and !nombreEmpresa.isEmpty()}" th:text="${nombreEmpresa}">Laura &amp; Clemente</small>
         </div>
@@ -140,6 +140,6 @@
     <!-- #13: sidebar/acordeón/tema/scroll movidos a /js/layout.js (JS estático,
          sin th:inline). El único dato del servidor va por data-sidebar-colapsado
          en el <body>. Sin defer: corre tras parsear el sidebar y antes del paint. -->
-    <script src="/js/layout.js"></script>
+    <script th:src="@{/js/layout.js}"></script>
 </body>
 </html>

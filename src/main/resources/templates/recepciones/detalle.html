@@ -27,7 +27,7 @@
                 </div>
                 <div class="col-md-3">
                     <small class="text-muted">Fecha Guía</small>
-                    <p class="fw-bold mb-0" th:text="${recepcion.fechaGuia}"></p>
+                    <p class="fw-bold mb-0" th:text="${recepcion.fechaGuia != null ? #temporals.format(recepcion.fechaGuia, 'dd/MM/yyyy') : '-'}"></p>
                 </div>
                 <div class="col-md-3">
                     <small class="text-muted">Estado</small>
