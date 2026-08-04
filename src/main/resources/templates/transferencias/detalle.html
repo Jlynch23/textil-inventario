@@ -36,7 +36,7 @@
                     <form th:action="@{/transferencias/{id}/agregar-linea(id=${transferencia.id})}" method="post">
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Artículo</label>
-                            <select class="form-select" name="articuloId" required>
+                            <select class="form-select" name="articuloId" id="selArticulo" required>
                                 <option value="">Seleccionar...</option>
                                 <option th:each="a : ${articulos}"
                                         th:value="${a.id}"
@@ -46,13 +46,10 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Color</label>
-                            <select class="form-select" name="colorId" required>
-                                <option value="">Seleccionar...</option>
-                                <option th:each="c : ${colores}"
-                                        th:value="${c.id}"
-                                        th:text="${c.nombreMostrar + ' (' + c.codigoFastDye + ')'}">
-                                </option>
+                            <select class="form-select" name="colorId" id="selColor" required>
+                                <option value="">Elige primero un artículo</option>
                             </select>
+                            <small class="text-muted">Solo aparecen los colores con stock en el origen (con sus rollos disponibles).</small>
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Cantidad Solicitada (rollos)</label>
@@ -119,6 +116,13 @@
     </div>
 
     <a th:href="@{/transferencias}" class="btn btn-light mt-3">← Volver a Transferencias</a>
+
+    <!-- Stock del origen (Praderas) por articulo+color, para el desplegable
+         dependiente del form de agregar linea. -->
+    <script th:inline="javascript" th:attr="nonce=${cspNonce}">
+        window.STOCK_ORIGEN = /*[[${stockOrigen}]]*/ [];
+    </script>
+    <script th:src="@{/js/transferencia-agregar-linea.js}"></script>
 </section>
 </body>
 </html>

@@ -3,6 +3,8 @@ package com.textil.inventario.transferencias;
 import com.textil.inventario.catalogo.ArticuloRepository;
 import com.textil.inventario.catalogo.ColorRepository;
 import com.textil.inventario.catalogo.UbicacionRepository;
+import com.textil.inventario.inventario.StockActual;
+import com.textil.inventario.inventario.StockActualRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
@@ -10,7 +12,9 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Controller
@@ -22,6 +26,7 @@ public class TransferenciaController {
     private final ArticuloRepository articuloRepository;
     private final ColorRepository colorRepository;
     private final UbicacionRepository ubicacionRepository;
+    private final StockActualRepository stockActualRepository;
 
     @GetMapping
     public String listar(Model model) {
@@ -64,9 +69,24 @@ public class TransferenciaController {
 
     @GetMapping("/{id}/detalle")
     public String detalle(@PathVariable Long id, Model model) {
-        model.addAttribute("transferencia", transferenciaService.buscarTransferencia(id));
+        Transferencia t = transferenciaService.buscarTransferencia(id);
+        model.addAttribute("transferencia", t);
         model.addAttribute("articulos", articuloRepository.findByActivoTrue());
         model.addAttribute("colores", colorRepository.findByActivoTrueOrderByNombreOficialAsc());
+        // Stock disponible en el ORIGEN (Praderas), por articulo+color, para el
+        // desplegable dependiente: al elegir un articulo, el color muestra SOLO lo
+        // que hay en Praderas de ese articulo (con cuantos rollos). Se serializa a
+        // JSON en la vista y lo filtra el JS.
+        List<Map<String, Object>> stockOrigen = new ArrayList<>();
+        for (StockActual s : stockActualRepository.findDisponibleConColorPorUbicacion(t.getUbicacionOrigen().getId())) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("articuloId", s.getArticulo().getId());
+            item.put("colorId", s.getColor().getId());
+            item.put("colorLabel", s.getColor().getNombreMostrar() + " (" + s.getColor().getCodigoFastDye() + ")");
+            item.put("rollos", s.getRollos());
+            stockOrigen.add(item);
+        }
+        model.addAttribute("stockOrigen", stockOrigen);
         return "transferencias/detalle";
     }
 

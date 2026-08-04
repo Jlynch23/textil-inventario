@@ -4,6 +4,7 @@ import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Optional;
 public interface StockActualRepository extends JpaRepository<StockActual, Long> {
@@ -29,4 +30,12 @@ public interface StockActualRepository extends JpaRepository<StockActual, Long> 
     })
     @Query("SELECT s FROM StockActual s WHERE s.rollos > 0 ORDER BY s.ubicacion.nombre, s.articulo.tipoTela.nombre")
     List<StockActual> findStockDisponible();
+
+    // Stock con rollos > 0 de UNA ubicacion (origen de la transferencia), con
+    // color y articulo YA cargados (@EntityGraph): lo consume el desplegable
+    // dependiente del form de agregar linea, que corre fuera de @Transactional
+    // (OSIV apagado), asi que las asociaciones deben venir inicializadas.
+    @EntityGraph(attributePaths = {"color", "articulo"})
+    @Query("SELECT s FROM StockActual s WHERE s.ubicacion.id = :ubicacionId AND s.rollos > 0")
+    List<StockActual> findDisponibleConColorPorUbicacion(@Param("ubicacionId") Long ubicacionId);
 }
