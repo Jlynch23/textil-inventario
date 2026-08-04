@@ -71,7 +71,7 @@ public class TransferenciaController {
     public String detalle(@PathVariable Long id, Model model) {
         Transferencia t = transferenciaService.buscarTransferencia(id);
         model.addAttribute("transferencia", t);
-        model.addAttribute("articulos", articuloRepository.findByActivoTrue());
+        model.addAttribute("articulos", articuloRepository.findByActivoTrueOrdenados());
         model.addAttribute("colores", colorRepository.findByActivoTrueOrderByNombreOficialAsc());
         // Stock disponible en el ORIGEN (Praderas), por articulo+color, para el
         // desplegable dependiente: al elegir un articulo, el color muestra SOLO lo

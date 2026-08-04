@@ -93,7 +93,7 @@ public class RecepcionController {
     @GetMapping("/{id}/detalle")
     public String detalle(@PathVariable Long id, Model model) {
         model.addAttribute("recepcion", recepcionService.buscarRecepcion(id));
-        model.addAttribute("articulos", articuloRepository.findByActivoTrue());
+        model.addAttribute("articulos", articuloRepository.findByActivoTrueOrdenados());
         model.addAttribute("colores", colorRepository.findByActivoTrueOrderByNombreOficialAsc());
         // Ojitos "ver guía / ver factura": id del PDF de cada tipo, si está archivado
         // (el primero de cada tipo). Si no hay PDF, el ojo no se muestra.
