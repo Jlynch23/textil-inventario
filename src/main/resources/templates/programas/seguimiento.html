@@ -14,26 +14,26 @@
     </div>
     <div class="card mb-4">
         <div class="card-body p-4">
-            <div class="row">
-                <div class="col-md-3">
-                    <small class="text-muted">Programa</small>
+            <div class="row g-3">
+                <div class="col-6 col-md-3">
+                    <div class="text-muted fw-semibold">Programa</div>
                     <p class="fs-3 fw-bold mb-0 text-primary" th:text="${programa.numero}"></p>
                 </div>
-                <div class="col-md-3">
-                    <small class="text-muted">Empresa</small>
-                    <p class="fw-bold mb-0" th:text="${programa.empresa.nombre}"></p>
+                <div class="col-6 col-md-3">
+                    <div class="text-muted fw-semibold">Empresa</div>
+                    <p class="fs-5 fw-bold mb-0" th:text="${programa.empresa.nombre}"></p>
                 </div>
-                <div class="col-md-3">
-                    <small class="text-muted">Fecha</small>
-                    <p class="fw-bold mb-0" th:text="${programa.fecha}"></p>
+                <div class="col-6 col-md-3">
+                    <div class="text-muted fw-semibold">Fecha</div>
+                    <p class="fs-5 fw-bold mb-0" th:text="${#temporals.format(programa.fecha, 'dd/MM/yyyy')}"></p>
                 </div>
-                <div class="col-md-3">
-                    <small class="text-muted">Total de Rollos</small>
-                    <p class="fw-bold mb-0" th:text="${programa.totalRollos}"></p>
+                <div class="col-6 col-md-3">
+                    <div class="text-muted fw-semibold">Total de Rollos</div>
+                    <p class="fs-5 fw-bold mb-0" th:text="${programa.totalRollos}"></p>
                 </div>
-                <div class="col-md-3">
-                    <small class="text-muted">Observaciones</small>
-                    <p class="fw-bold mb-0" th:text="${programa.observaciones ?: '-'}"></p>
+                <div class="col-12 mt-2">
+                    <div class="text-muted fw-semibold">Observaciones</div>
+                    <p class="fs-6 fw-bold mb-0" th:text="${programa.observaciones ?: '-'}"></p>
                 </div>
             </div>
         </div>

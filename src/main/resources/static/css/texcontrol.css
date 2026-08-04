@@ -63,9 +63,9 @@
   --tx-border:      #E3E8EF;
   --tx-border-strong:#CBD5E1;
   --tx-ink:         #16202E;   /* texto principal */
-  --tx-ink-soft:    #384657;
-  --tx-muted:       #64748B;   /* texto secundario */
-  --tx-faint:       #94A3B8;
+  --tx-ink-soft:    #33404F;
+  --tx-muted:       #55606E;   /* texto secundario (oscurecido para más contraste) */
+  --tx-faint:       #737F8C;
 
   /* -- Semánticos (desaturados, elegantes) -- */
   --tx-success:     #1E8A5F;  --tx-success-bg: #E6F4EC;
@@ -76,8 +76,10 @@
   /* -- Tipografía -- */
   --tx-font-head: 'Manrope', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --tx-font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --tx-fs-xs: .75rem; --tx-fs-sm: .8125rem; --tx-fs-base: .9375rem;
-  --tx-fs-md: 1rem;  --tx-fs-lg: 1.125rem; --tx-fs-xl: 1.375rem; --tx-fs-2xl: 1.75rem;
+  /* Escala subida un punto para mejor legibilidad (adultos mayores): el cuerpo
+     pasa de 15px a 16px y los tamaños chicos suben en consecuencia. */
+  --tx-fs-xs: .8125rem; --tx-fs-sm: .875rem; --tx-fs-base: 1rem;
+  --tx-fs-md: 1.0625rem;  --tx-fs-lg: 1.1875rem; --tx-fs-xl: 1.4rem; --tx-fs-2xl: 1.8rem;
 
   /* -- Espacio (base 8) -- */
   --tx-1: 4px; --tx-2: 8px; --tx-3: 12px; --tx-4: 16px;
@@ -112,8 +114,8 @@
   --tx-border-strong:#3A4859;
   --tx-ink:         #E6EDF5;
   --tx-ink-soft:    #C4D0DE;
-  --tx-muted:       #93A2B5;
-  --tx-faint:       #6B7B90;
+  --tx-muted:       #A2B1C4;
+  --tx-faint:       #8A97A8;
 
   --tx-success-bg: rgba(30,138,95,.16);
   --tx-warning-bg: rgba(183,121,31,.18);
@@ -320,7 +322,7 @@ body.sidebar-collapsed .topbar { margin-left: var(--tx-sidebar-rail); }
   color: var(--tx-muted); border-bottom: 1px solid var(--tx-border);
   padding: 10px 12px; white-space: nowrap;
 }
-.table > tbody td { padding: 11px 12px; vertical-align: middle; border-color: var(--tx-border); }
+.table > tbody td { padding: 13px 14px; vertical-align: middle; border-color: var(--tx-border); }
 .table-hover > tbody > tr:hover > * { background: var(--tx-blue-050); }
 /* Tarjeta que envuelve una tabla ancha: bordes redondeados + scroll propio. */
 .tx-table-card { border: 1px solid var(--tx-border); border-radius: var(--tx-radius-lg); overflow: hidden; background: var(--tx-surface); }
