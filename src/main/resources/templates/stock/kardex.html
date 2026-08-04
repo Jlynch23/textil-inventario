@@ -67,8 +67,12 @@
             <td th:text="${m.usuario.nombreMostrar}"></td>
             <td th:text="${m.observaciones}"></td>
             <td>
-                <span th:if="${m.recepcionDetalleId != null and guiaPorDetalle.containsKey(m.recepcionDetalleId)}"
-                      th:replace="~{fragments/guias :: ojoGuia(${guiaPorDetalle.get(m.recepcionDetalleId)})}"></span>
+                <!-- El guard va en el th:block (no en el mismo elemento que el
+                     th:replace: th:replace tiene mas prioridad y lo ignoraria). Asi,
+                     solo los movimientos con guia archivada muestran el ojito. -->
+                <th:block th:if="${m.recepcionDetalleId != null and guiaPorDetalle.containsKey(m.recepcionDetalleId)}">
+                    <span th:replace="~{fragments/guias :: ojoGuia(${guiaPorDetalle.get(m.recepcionDetalleId)})}"></span>
+                </th:block>
             </td>
         </tr>
         <tr th:if="${#lists.isEmpty(movimientos)}">

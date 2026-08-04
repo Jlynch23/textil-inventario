@@ -11,7 +11,7 @@
   para cualquier otra tabla que necesite el mismo ojo (misma idea que reutilizar
   el enlace a la factura), sin repetir el markup.
 -->
-<a th:fragment="ojoGuia(docId)"
+<a th:fragment="ojoGuia(docId)" th:if="${docId != null}"
    th:href="@{/documentos/{id}/ver(id=${docId})}"
    target="_blank" rel="noopener"
    class="btn btn-sm btn-outline-primary" title="Ver guía (PDF)">
