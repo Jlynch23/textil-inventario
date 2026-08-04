@@ -112,7 +112,8 @@ public class SecurityConfig {
 
                 // --- Autoservicio: cualquier usuario autenticado gestiona SU
                 // propia cuenta (cambiar su contraseña). Va PRIMERO que /usuarios/**.
-                .requestMatchers("/usuarios/mi-cuenta", "/usuarios/cambiar-mi-password").authenticated()
+                .requestMatchers("/usuarios/mi-cuenta", "/usuarios/cambiar-mi-password",
+                        "/usuarios/cambiar-mi-celular").authenticated()
 
                 // --- RESERVADO SOLO AL PROVEEDOR (SUPERADMIN) ---
                 // Reporte de Errores del Sistema (diagnostico tecnico/OCR). Debe ir

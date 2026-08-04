@@ -74,6 +74,7 @@ public class UsuarioController {
     public String guardar(@RequestParam String nombre,
                            @RequestParam String password,
                            @RequestParam Long rolId,
+                           @RequestParam(required = false) String celular,
                            RedirectAttributes ra,
                            Authentication authentication) {
         Rol rol = rolRepository.findById(rolId).orElseThrow();
@@ -100,6 +101,7 @@ public class UsuarioController {
         u.setUsername(username);
         u.setPasswordHash(passwordEncoder.encode(password));
         u.setRol(rol);
+        u.setCelular(normalizarCelular(celular));
         u.setActivo(true);
         u.setEsPrueba(false);
         Usuario guardado = usuarioRepository.save(u);
@@ -121,6 +123,7 @@ public class UsuarioController {
                           @RequestParam String nombre,
                           @RequestParam Long rolId,
                           @RequestParam(required = false) String password,
+                          @RequestParam(required = false) String celular,
                           RedirectAttributes ra,
                           Authentication authentication) {
         Usuario u = usuarioRepository.findById(id).orElseThrow();
@@ -152,6 +155,7 @@ public class UsuarioController {
         String usernameAnterior = u.getUsername();
         u.setNombre(nombre.trim());
         u.setRol(rol);
+        u.setCelular(normalizarCelular(celular));
         // Regenera el username del nuevo nombre, excluyendo al propio usuario.
         u.setUsername(generadorUsername.generar(nombre, u.getId()));
         usuarioRepository.save(u);
@@ -286,6 +290,21 @@ public class UsuarioController {
     }
 
     /**
+     * Normaliza el celular a formato E.164 para Twilio: saca espacios/guiones y,
+     * si viene un movil peruano de 9 digitos sin prefijo, le antepone +51. Un
+     * valor vacio devuelve null (el usuario no recibe SMS).
+     */
+    private String normalizarCelular(String celular) {
+        if (celular == null) return null;
+        String c = celular.trim().replaceAll("[\\s()\\-]", "");
+        if (c.isBlank()) return null;
+        if (!c.startsWith("+") && c.matches("\\d{9}")) {
+            c = "+51" + c;
+        }
+        return c;
+    }
+
+    /**
      * El ADMIN no puede tocar cuentas ocultas (SUPERADMIN o de prueba): ni las ve
      * en la lista, asi que si llega un id de una por URL directa se responde como
      * si no existiera. Solo el SUPERADMIN las opera.
@@ -348,6 +367,24 @@ public class UsuarioController {
         auditLogService.registrar("CAMBIAR_PASSWORD_PROPIA", "Usuario", u.getId(), "Cambio su propia contraseña");
 
         ra.addFlashAttribute("mensaje", "Tu contraseña se actualizó correctamente.");
+        return "redirect:/usuarios/mi-cuenta";
+    }
+
+    /**
+     * Autoservicio: cada usuario registra/actualiza su propio celular para recibir
+     * las alertas por SMS. Disponible para cualquier usuario autenticado (ver
+     * SecurityConfig, junto a mi-cuenta / cambiar-mi-password).
+     */
+    @PostMapping("/cambiar-mi-celular")
+    public String cambiarMiCelular(@RequestParam(required = false) String celular,
+                                    RedirectAttributes ra) {
+        Usuario u = usuarioActualService.obtenerUsuarioActual();
+        u.setCelular(normalizarCelular(celular));
+        usuarioRepository.save(u);
+        auditLogService.registrar("ACTUALIZAR_CELULAR", "Usuario", u.getId(), "Actualizo su celular");
+        ra.addFlashAttribute("mensaje", u.getCelular() != null
+                ? "Tu celular se guardó: " + u.getCelular()
+                : "Tu celular se quitó. No recibirás alertas por SMS.");
         return "redirect:/usuarios/mi-cuenta";
     }
 }

@@ -15,6 +15,11 @@ public class Usuario extends BaseEntity {
     @Column(nullable = false, length = 100)
     private String nombre;
 
+    // Celular en formato E.164 (+51987654321) para las alertas por SMS. Opcional:
+    // si esta vacio, el usuario no recibe avisos. Solo se usa para ADMIN/GERENTE.
+    @Column(length = 20)
+    private String celular;
+
     @Column(nullable = false, unique = true, length = 50)
     private String username;
 

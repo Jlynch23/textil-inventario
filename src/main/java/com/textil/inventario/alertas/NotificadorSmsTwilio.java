@@ -14,6 +14,7 @@ import java.net.http.HttpClient;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Base64;
+import java.util.List;
 
 /**
  * Envía la alerta de stock bajo por SMS usando la API de Twilio (un POST
@@ -21,9 +22,10 @@ import java.util.Base64;
  * Token). Mismo patrón que {@code AnthropicOcrService}: RestClient con timeouts
  * acotados porque corre en un hilo @Async y un proveedor caído no debe colgarlo.
  *
- * Si faltan credenciales (twilio.*) o hay error, se registra y se sigue: la
- * alerta es best-effort, nunca debe tumbar la app ni la operación que la disparó.
- * Migrar a WhatsApp/Meta = crear otra implementación de NotificadorStockBajo.
+ * Los destinatarios llegan resueltos (los ADMIN/GERENTE con celular). Si faltan
+ * credenciales (twilio.*) o hay error, se registra y se sigue: la alerta es
+ * best-effort, nunca debe tumbar la app ni la operación que la disparó. Migrar a
+ * WhatsApp/Meta = crear otra implementación de NotificadorStockBajo.
  */
 @Component
 public class NotificadorSmsTwilio implements NotificadorStockBajo {
@@ -33,8 +35,6 @@ public class NotificadorSmsTwilio implements NotificadorStockBajo {
     @Value("${twilio.account-sid:}") private String accountSid;
     @Value("${twilio.auth-token:}")  private String authToken;
     @Value("${twilio.from:}")        private String from;
-    // Uno o varios destinatarios separados por coma (formato E.164, ej. +51987654321).
-    @Value("${twilio.to:}")          private String to;
 
     private final RestClient restClient = crearRestClientConTimeouts();
 
@@ -48,9 +48,14 @@ public class NotificadorSmsTwilio implements NotificadorStockBajo {
     }
 
     @Override
-    public void alertar(StockBajoEvent e) {
-        if (blank(accountSid) || blank(authToken) || blank(from) || blank(to)) {
+    public void alertar(StockBajoEvent e, List<String> destinatarios) {
+        if (blank(accountSid) || blank(authToken) || blank(from)) {
             log.warn("Alerta de stock bajo NO enviada: faltan credenciales de Twilio (twilio.*). Aviso: {}",
+                    resumen(e));
+            return;
+        }
+        if (destinatarios == null || destinatarios.isEmpty()) {
+            log.warn("Alerta de stock bajo sin destinatarios (ningún ADMIN/GERENTE con celular). Aviso: {}",
                     resumen(e));
             return;
         }
@@ -65,12 +70,11 @@ public class NotificadorSmsTwilio implements NotificadorStockBajo {
         String basic = "Basic " + Base64.getEncoder().encodeToString(
                 (accountSid + ":" + authToken).getBytes(StandardCharsets.UTF_8));
 
-        for (String destinoRaw : to.split(",")) {
-            String destino = destinoRaw.trim();
-            if (destino.isEmpty()) continue;
+        for (String destino : destinatarios) {
+            if (destino == null || destino.isBlank()) continue;
 
             MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
-            form.add("To", destino);
+            form.add("To", destino.trim());
             form.add("From", from);
             form.add("Body", cuerpo);
 
@@ -81,9 +85,9 @@ public class NotificadorSmsTwilio implements NotificadorStockBajo {
                         .body(form)
                         .retrieve()
                         .toBodilessEntity();
-                log.info("SMS de stock bajo enviado a {} -> {}", destino, cuerpo);
+                log.info("SMS de stock bajo enviado a {} -> {}", destino.trim(), cuerpo);
             } catch (Exception ex) {
-                log.error("Error enviando SMS de stock bajo a {}: {}", destino, ex.getMessage());
+                log.error("Error enviando SMS de stock bajo a {}: {}", destino.trim(), ex.getMessage());
             }
         }
     }

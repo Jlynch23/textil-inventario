@@ -30,12 +30,17 @@
                             <input type="password" class="form-control" name="password" minlength="8" required>
                             <small class="text-muted">Mínimo 8 caracteres. Evita datos públicos como el DNI.</small>
                         </div>
-                        <div class="mb-4">
+                        <div class="mb-3">
                             <label class="form-label fw-semibold">Rol</label>
                             <select class="form-select" name="rolId" required>
                                 <option value="">Seleccionar...</option>
                                 <option th:each="r : ${roles}" th:value="${r.id}" th:text="${r.nombre}"></option>
                             </select>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Celular <span class="text-muted fw-normal">(opcional)</span></label>
+                            <input type="tel" class="form-control" name="celular" inputmode="tel">
+                            <small class="text-muted">Para recibir alertas por SMS (solo ADMIN y GERENTE). Formato +51987654321 (o 9 dígitos y se le agrega +51).</small>
                         </div>
                         <button type="submit" class="btn btn-primary w-100">
                             <i class="bi bi-person-plus me-2"></i>Crear Usuario
@@ -59,6 +64,7 @@
                                 <tr>
                                     <th>Nombre</th>
                                     <th>Usuario</th>
+                                    <th>Celular</th>
                                     <th>Rol</th>
                                     <th>Estado</th>
                                     <th>Acciones</th>
@@ -68,6 +74,7 @@
                                 <tr th:each="u : ${usuarios}">
                                     <td th:text="${u.nombre}"></td>
                                     <td th:text="${u.username}"></td>
+                                    <td th:text="${u.celular != null ? u.celular : '—'}"></td>
                                     <td>
                                         <span class="badge bg-primary" th:text="${u.rol.nombre}"></span>
                                     </td>
@@ -124,6 +131,11 @@
                                                                     <option th:each="r : ${roles}" th:value="${r.id}" th:text="${r.nombre}"
                                                                             th:selected="${r.id == u.rol.id}"></option>
                                                                 </select>
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label class="form-label fw-semibold">Celular <span class="text-muted fw-normal">(opcional)</span></label>
+                                                                <input type="tel" class="form-control" name="celular" th:value="${u.celular}" inputmode="tel">
+                                                                <small class="text-muted">Para alertas por SMS. Formato +51987654321.</small>
                                                             </div>
                                                             <div class="mb-2">
                                                                 <label class="form-label fw-semibold">Nueva contraseña <span class="text-muted fw-normal">(opcional)</span></label>
