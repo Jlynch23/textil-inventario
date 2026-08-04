@@ -81,6 +81,12 @@
                            class="btn btn-success btn-sm">
                             <i class="bi bi-check-lg me-1"></i>Confirmar Salida
                         </a>
+                        <a th:if="${transferencia.estado.name() == 'CONFIRMADA_SALIDA'}"
+                           th:href="@{/transferencias/{id}/confirmar-llegada(id=${transferencia.id})}"
+                           sec:authorize="hasAnyRole('ADMIN','SUPERADMIN')"
+                           class="btn btn-success btn-sm">
+                            <i class="bi bi-check-lg me-1"></i>Confirmar Llegada
+                        </a>
                     </div>
                     <div class="table-responsive">
                         <table class="table table-hover mb-0">
@@ -111,6 +117,8 @@
             </div>
         </div>
     </div>
+
+    <a th:href="@{/transferencias}" class="btn btn-light mt-3">← Volver a Transferencias</a>
 </section>
 </body>
 </html>

@@ -40,7 +40,12 @@
                             </td>
                         </tr>
                         <tr th:each="t : ${transferencias}">
-                            <td><code th:text="${t.numero}"></code></td>
+                            <td>
+                                <a th:href="@{/transferencias/{id}/detalle(id=${t.id})}"
+                                   class="text-decoration-none" title="Ver detalle">
+                                    <code th:text="${t.numero}"></code>
+                                </a>
+                            </td>
                             <td th:text="${t.ubicacionOrigen.nombre}"></td>
                             <td th:text="${t.fechaSolicitud != null ? #temporals.format(t.fechaSolicitud, 'dd/MM/yyyy HH:mm') : '-'}"></td>
                             <td>
@@ -52,10 +57,6 @@
                                 </span>
                             </td>
                             <td>
-                                <a th:if="${t.estado.name() == 'BORRADOR'}"
-                                   th:href="@{/transferencias/{id}/detalle(id=${t.id})}"
-                                   sec:authorize="hasAnyRole('ADMIN','SUPERADMIN')"
-                                   class="btn btn-sm btn-outline-primary">Agregar líneas</a>
                                 <a th:if="${t.estado.name() == 'BORRADOR'}"
                                    th:href="@{/transferencias/{id}/confirmar-salida(id=${t.id})}"
                                    sec:authorize="hasAnyRole('ADMIN','SUPERADMIN')"
