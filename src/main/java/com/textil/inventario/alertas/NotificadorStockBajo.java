@@ -12,5 +12,6 @@ import java.util.List;
  */
 public interface NotificadorStockBajo {
 
-    void alertar(StockBajoEvent evento, List<String> destinatarios);
+    /** @return true si el aviso se entregó al menos a un destinatario. */
+    boolean alertar(StockBajoEvent evento, List<String> destinatarios);
 }

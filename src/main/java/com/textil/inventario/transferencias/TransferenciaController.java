@@ -80,9 +80,12 @@ public class TransferenciaController {
         List<Map<String, Object>> stockOrigen = new ArrayList<>();
         for (StockActual s : stockActualRepository.findDisponibleConColorPorUbicacion(t.getUbicacionOrigen().getId())) {
             Map<String, Object> item = new HashMap<>();
+            String codigo = s.getColor().getCodigoFastDye();
+            String colorLabel = s.getColor().getNombreMostrar()
+                    + (codigo != null && !codigo.isBlank() ? " (" + codigo + ")" : "");
             item.put("articuloId", s.getArticulo().getId());
             item.put("colorId", s.getColor().getId());
-            item.put("colorLabel", s.getColor().getNombreMostrar() + " (" + s.getColor().getCodigoFastDye() + ")");
+            item.put("colorLabel", colorLabel);
             item.put("rollos", s.getRollos());
             stockOrigen.add(item);
         }

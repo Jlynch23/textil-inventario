@@ -48,16 +48,16 @@ public class NotificadorSmsTwilio implements NotificadorStockBajo {
     }
 
     @Override
-    public void alertar(StockBajoEvent e, List<String> destinatarios) {
+    public boolean alertar(StockBajoEvent e, List<String> destinatarios) {
         if (blank(accountSid) || blank(authToken) || blank(from)) {
             log.warn("Alerta de stock bajo NO enviada: faltan credenciales de Twilio (twilio.*). Aviso: {}",
                     resumen(e));
-            return;
+            return false;
         }
         if (destinatarios == null || destinatarios.isEmpty()) {
             log.warn("Alerta de stock bajo sin destinatarios (ningún ADMIN/GERENTE con celular). Aviso: {}",
                     resumen(e));
-            return;
+            return false;
         }
 
         // ASCII y sin emoji a propósito: mantiene el SMS en 1 segmento GSM-7 (más
@@ -70,6 +70,7 @@ public class NotificadorSmsTwilio implements NotificadorStockBajo {
         String basic = "Basic " + Base64.getEncoder().encodeToString(
                 (accountSid + ":" + authToken).getBytes(StandardCharsets.UTF_8));
 
+        boolean algunoEntregado = false;
         for (String destino : destinatarios) {
             if (destino == null || destino.isBlank()) continue;
 
@@ -86,10 +87,12 @@ public class NotificadorSmsTwilio implements NotificadorStockBajo {
                         .retrieve()
                         .toBodilessEntity();
                 log.info("SMS de stock bajo enviado a {} -> {}", destino.trim(), cuerpo);
+                algunoEntregado = true;
             } catch (Exception ex) {
                 log.error("Error enviando SMS de stock bajo a {}: {}", destino.trim(), ex.getMessage());
             }
         }
+        return algunoEntregado;
     }
 
     private static boolean blank(String s) {

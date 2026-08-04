@@ -60,8 +60,16 @@ public class AlertaStockListener {
             log.debug("Alerta de stock bajo omitida (ya avisada hoy): {}", clave);
             return;
         }
-        ultimoAvisoPorClave.put(clave, hoy);
-        notificador.alertar(e, destinatarios);
+        // Se marca como avisado SOLO si el envío fue exitoso: si el SMS falla
+        // (faltan credenciales, Twilio caído o pendiente de aprobación), NO se quema
+        // el aviso del día y el próximo cruce puede reintentar.
+        boolean entregado = notificador.alertar(e, destinatarios);
+        if (entregado) {
+            ultimoAvisoPorClave.put(clave, hoy);
+        } else {
+            log.warn("Alerta de stock bajo NO entregada; no se marca como avisada, "
+                    + "se reintentará en el próximo cruce: {}", clave);
+        }
     }
 
     /** ADMIN/GERENTE con celular (de la base local) + los extra opcionales, sin duplicar. */
