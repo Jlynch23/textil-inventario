@@ -60,9 +60,16 @@
         <div th:class="${esAdmin} ? 'col-md-8' : 'col-md-8 offset-md-2'">
             <div class="card">
                 <div class="card-body p-0">
-                    <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
-                        <span class="fw-bold">Carta de Colores</span>
-                        <span class="badge bg-secondary" th:text="${colores.size()} + ' colores'"></span>
+                    <div class="p-3 border-bottom">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-bold">Carta de Colores</span>
+                            <span class="badge bg-secondary" id="contadorColores" th:text="${colores.size()} + ' colores'"></span>
+                        </div>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <input type="text" id="buscadorColores" class="form-control"
+                                   aria-label="Buscar color por nombre o código" autocomplete="off">
+                        </div>
                     </div>
                     <div class="table-responsive">
                         <table class="table table-hover mb-0">
@@ -73,8 +80,9 @@
                                     <th sec:authorize="hasAnyRole('ADMIN','SUPERADMIN')">Acciones</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                <tr th:each="c : ${colores}">
+                            <tbody id="tablaColoresBody">
+                                <tr th:each="c : ${colores}"
+                                    th:attr="data-buscar=${(c.nombreMostrar ?: '') + '|' + (c.nombreOficial ?: '') + '|' + (c.codigoFastDye ?: '')}">
                                     <td>
                                         <span th:text="${c.nombreMostrar}"></span>
                                         <br th:if="${c.apodo != null and !#strings.isEmpty(c.apodo)}">
@@ -101,6 +109,9 @@
                                         </form>
                                     </td>
                                 </tr>
+                                <tr id="sinResultadosColores" hidden>
+                                    <td colspan="3" class="text-center text-muted py-3">No se encontraron colores con esa búsqueda.</td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -108,6 +119,8 @@
             </div>
         </div>
     </div>
+
+    <script th:src="@{/js/catalogo-colores.js}"></script>
 </section>
 </body>
 </html>
