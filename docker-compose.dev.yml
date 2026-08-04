@@ -64,6 +64,16 @@ services:
       ENTORNO_ETIQUETA: ${ENTORNO_ETIQUETA:-DEV}
       REMEMBER_ME_KEY: ${REMEMBER_ME_KEY}
       SPRING_PROFILES_ACTIVE: prod
+      # Alerta de stock bajo por SMS (Twilio). Apagada si no se setea en .env.dev:
+      # la app corre igual. Para la demo: poner ALERTA_STOCK_ENABLED=true + las
+      # credenciales TWILIO_* y el numero verificado en TWILIO_TO.
+      ALERTA_STOCK_ENABLED: ${ALERTA_STOCK_ENABLED:-false}
+      ALERTA_STOCK_UMBRAL: ${ALERTA_STOCK_UMBRAL:-5}
+      ALERTA_STOCK_UBICACION: ${ALERTA_STOCK_UBICACION:-}
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
+      TWILIO_FROM: ${TWILIO_FROM:-}
+      TWILIO_TO: ${TWILIO_TO:-}
       # Tope de heap para dev: sin esto la JVM toma por defecto ~25% de la RAM del
       # HOST (~1GB en el VPS de 4GB) y compite con produccion. Dev solo sirve para
       # probar, con 512m sobra. -XX:+ExitOnOutOfMemoryError = si se queda sin heap,
