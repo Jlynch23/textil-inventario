@@ -28,6 +28,7 @@ public class TransferenciaService {
     private final UbicacionRepository ubicacionRepository;
     private final CorrelativoRepository correlativoRepository;
     private final com.textil.inventario.auditoria.AuditLogService auditLogService;
+    private final com.textil.inventario.alertas.AlertaStockPublisher alertaStockPublisher;
 
     // R-C2 (red-team): cota superior por linea para que sumar cantidades enormes
     // a stock.rollos (int) no desborde en silencio a negativo.
@@ -162,9 +163,15 @@ public class TransferenciaService {
                 : BigDecimal.ZERO;
             BigDecimal pesoMovido = pesoPromedio.multiply(new BigDecimal(cantidad)).setScale(2, RoundingMode.HALF_UP);
 
-            stockOrigen.setRollos(stockOrigen.getRollos() - cantidad);
+            int rollosAntes = stockOrigen.getRollos();
+            stockOrigen.setRollos(rollosAntes - cantidad);
             stockOrigen.setPesoKg(stockOrigen.getPesoKg().subtract(pesoMovido));
             stockActualRepository.save(stockOrigen);
+            // Alerta de stock bajo (SMS): publica un evento si ESTA salida cruzó el
+            // umbral en la ubicación vigilada. El envío es post-commit y async
+            // (AlertaStockPublisher decide; AlertaStockListener lo manda).
+            alertaStockPublisher.evaluarSalida(t.getUbicacionOrigen(), d.getArticulo(), d.getColor(),
+                    rollosAntes, rollosAntes - cantidad);
 
             KardexMovimiento k = new KardexMovimiento();
             k.setArticulo(d.getArticulo());

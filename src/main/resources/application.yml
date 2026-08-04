@@ -107,6 +107,25 @@ anthropic:
 documentos:
   ruta-base: ${DOCUMENTOS_PATH:./documentos}
 
+# Alerta de stock bajo por SMS (Twilio). Apagada por defecto: si no se configura,
+# la app funciona igual y no manda nada. Al activarla, cuando una SALIDA deja a un
+# artículo/color por debajo del umbral en la ubicación vigilada, se manda un SMS
+# (post-commit, async, 1 aviso por artículo+color por día). Migrar a WhatsApp más
+# adelante = cambiar la implementación de NotificadorStockBajo, sin tocar esto.
+alerta:
+  stock:
+    enabled: ${ALERTA_STOCK_ENABLED:false}
+    umbral: ${ALERTA_STOCK_UMBRAL:5}
+    # Nombre de la ubicación a vigilar. Vacío = todas las salidas (hoy = Praderas).
+    ubicacion: ${ALERTA_STOCK_UBICACION:}
+
+twilio:
+  account-sid: ${TWILIO_ACCOUNT_SID:}
+  auth-token: ${TWILIO_AUTH_TOKEN:}
+  from: ${TWILIO_FROM:}
+  # Uno o varios destinatarios en formato E.164, separados por coma (+51987654321).
+  to: ${TWILIO_TO:}
+
 app:
   nombre-empresa: ${NOMBRE_EMPRESA:Laura & Clemente}
   # Etiqueta del entorno (ej. "BETA"). Vacia en produccion; el stack de dev

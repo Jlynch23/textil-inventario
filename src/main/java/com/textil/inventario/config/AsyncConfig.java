@@ -36,4 +36,21 @@ public class AsyncConfig {
         executor.initialize();
         return executor;
     }
+
+    /**
+     * Pool chico y aparte para las alertas de stock bajo (SMS/Twilio). Va en su
+     * propio executor para NO compartir el hilo único del archivo histórico: una
+     * alerta nunca debe quedar encolada detrás de un ZIP grande, ni al revés.
+     * Volumen esperado: bajísimo (un color cruza el umbral de vez en cuando).
+     */
+    @Bean(name = "alertaTaskExecutor")
+    public Executor alertaTaskExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(1);
+        executor.setMaxPoolSize(2);
+        executor.setQueueCapacity(50);
+        executor.setThreadNamePrefix("alerta-stock-");
+        executor.initialize();
+        return executor;
+    }
 }

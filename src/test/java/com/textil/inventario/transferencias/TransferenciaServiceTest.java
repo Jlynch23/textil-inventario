@@ -48,6 +48,7 @@ class TransferenciaServiceTest {
     @Mock private UbicacionRepository ubicacionRepository;
     @Mock private CorrelativoRepository correlativoRepository;
     @Mock private AuditLogService auditLogService;
+    @Mock private com.textil.inventario.alertas.AlertaStockPublisher alertaStockPublisher;
 
     @InjectMocks
     private TransferenciaService service;
