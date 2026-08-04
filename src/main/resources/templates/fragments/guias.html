@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head><title>Fragments de guías</title></head>
+<body>
+
+<!--
+  Ojito reutilizable para abrir el PDF de una guía en una pestaña nueva.
+  Uso:  <span th:replace="~{fragments/guias :: ojoGuia(${docId})}"></span>
+  donde docId es el id del documento GUÍA (no se renderiza nada si es null;
+  quien llama decide cuándo incluirlo). Se usa en el kardex y queda disponible
+  para cualquier otra tabla que necesite el mismo ojo (misma idea que reutilizar
+  el enlace a la factura), sin repetir el markup.
+-->
+<a th:fragment="ojoGuia(docId)"
+   th:href="@{/documentos/{id}/ver(id=${docId})}"
+   target="_blank" rel="noopener"
+   class="btn btn-sm btn-outline-primary" title="Ver guía (PDF)">
+    <i class="bi bi-eye"></i>
+</a>
+
+</body>
+</html>

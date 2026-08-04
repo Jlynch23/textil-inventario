@@ -342,6 +342,24 @@ body.sidebar-collapsed .topbar { margin-left: var(--tx-sidebar-rail); }
 
 /* -- Badges / estados -- */
 .badge { font-weight: 600; font-size: .72rem; padding: .38em .62em; border-radius: var(--tx-radius-pill); letter-spacing: .01em; }
+
+/* Chip de CÓDIGO (FAST DYE): monoespaciado y más grande que un badge normal,
+   para diferenciar de un vistazo el código numérico del nombre del color en las
+   tablas (programa/seguimiento). Superficie + borde en vez del blanco duro, así
+   se ve bien en claro y oscuro. */
+.chip-codigo {
+  display: inline-block;
+  font-family: ui-monospace, "SFMono-Regular", "Menlo", "Consolas", monospace;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  line-height: 1.1;
+  padding: .3em .7em;
+  border-radius: 8px;
+  background: var(--tx-surface-2);
+  color: var(--tx-ink);
+  border: 1px solid var(--tx-border-strong);
+}
 .tx-badge { display: inline-flex; align-items: center; gap: 5px; padding: .3em .7em; border-radius: var(--tx-radius-pill); font-size: var(--tx-fs-xs); font-weight: 600; }
 .tx-badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .9; }
 .tx-badge.is-success { color: var(--tx-success); background: var(--tx-success-bg); }
