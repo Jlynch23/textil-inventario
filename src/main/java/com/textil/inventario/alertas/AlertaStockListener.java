@@ -47,12 +47,10 @@ public class AlertaStockListener {
     @Async("alertaTaskExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onStockBajo(StockBajoEvent e) {
+        // Los "destinatarios" resueltos son CELULARES (canal SMS). El canal activo
+        // (email, @Primary) usa su propia lista (alerta.email.to) y los ignora, asi
+        // que NO se corta aca aunque venga vacia: cada notificador decide.
         List<String> destinatarios = resolverDestinatarios();
-        if (destinatarios.isEmpty()) {
-            log.warn("Stock bajo detectado pero SIN destinatarios (ningún ADMIN/GERENTE con celular): {}",
-                    e.colorNombre());
-            return; // no se marca como avisado: si cargan un celular hoy, aún puede salir
-        }
 
         String clave = e.articuloId() + ":" + e.colorId() + ":" + e.ubicacionId();
         LocalDate hoy = LocalDate.now();

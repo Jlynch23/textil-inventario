@@ -62,6 +62,26 @@ spring:
               - /js/**
               - /img/**
 
+  # SMTP para la alerta de stock bajo por CORREO (NotificadorEmailSmtp).
+  # Default Gmail: requiere una "contraseña de aplicación" (no la clave normal)
+  # en MAIL_PASSWORD. Sin credenciales el canal queda apagado (la app arranca
+  # igual y solo se loggea el aviso no enviado). Timeouts acotados: corre en el
+  # hilo @Async de la alerta y un SMTP caído no debe colgarlo (regla SEC-03).
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          connectiontimeout: 10000
+          timeout: 15000
+          writetimeout: 15000
+
   servlet:
     multipart:
       max-file-size: ${MAX_UPLOAD_SIZE:25MB}
@@ -125,6 +145,14 @@ twilio:
   from: ${TWILIO_FROM:}
   # Uno o varios destinatarios en formato E.164, separados por coma (+51987654321).
   to: ${TWILIO_TO:}
+
+# Canal de CORREO de la alerta de stock bajo (el activo, @Primary). Los
+# destinatarios van por config (los usuarios ya no tienen email en la BD, V28).
+alerta.email:
+  # Uno o varios correos separados por coma. Vacío = canal apagado.
+  to: ${ALERTA_EMAIL_TO:}
+  # Remitente; vacío = se usa MAIL_USERNAME (lo usual en Gmail).
+  from: ${ALERTA_EMAIL_FROM:}
 
 app:
   nombre-empresa: ${NOMBRE_EMPRESA:Laura & Clemente}

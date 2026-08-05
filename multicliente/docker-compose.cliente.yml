@@ -69,6 +69,17 @@ services:
       # Lo que distingue a cada cliente en la UI (bajo el logo TEXCONTROL).
       NOMBRE_EMPRESA: ${NOMBRE_EMPRESA}
       SPRING_PROFILES_ACTIVE: prod
+      # Alerta de stock bajo por CORREO (apagada si no se configura en el .env
+      # del cliente). MAIL_PASSWORD en Gmail = "contraseña de aplicación".
+      ALERTA_STOCK_ENABLED: ${ALERTA_STOCK_ENABLED:-false}
+      ALERTA_STOCK_UMBRAL: ${ALERTA_STOCK_UMBRAL:-5}
+      ALERTA_STOCK_UBICACION: ${ALERTA_STOCK_UBICACION:-}
+      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      ALERTA_EMAIL_TO: ${ALERTA_EMAIL_TO:-}
+      ALERTA_EMAIL_FROM: ${ALERTA_EMAIL_FROM:-}
       # Techo de heap de la JVM para caber varios clientes en 4 GB (ver el
       # dimensionamiento en DEPLOY.md). Ajustable por cliente via JVM_XMX.
       JAVA_TOOL_OPTIONS: -Xmx${JVM_XMX:-384m}
