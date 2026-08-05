@@ -83,27 +83,88 @@ public class ArticuloMatchingService {
                 p.programaTenido(), p.rollos(), p.pesoBrutoKg(), true, null);
     }
 
+    /**
+     * Palabras que NO distinguen a una empresa de otra: aparecen en casi todas
+     * las razones sociales del rubro. Si se cuentan, "TEXTIL LAURA" y "TEXTIL
+     * CLEMENTE" empatan contra cualquier guia que diga "TEXTIL" y el desempate
+     * termina siendo el orden de la lista, es decir, azar.
+     */
+    private static final java.util.Set<String> PALABRAS_GENERICAS = java.util.Set.of(
+            "TEXTIL", "TEXTILES", "EMPRESA", "COMPANIA", "COMPAÑIA", "INDUSTRIA", "INDUSTRIAS",
+            "CONFECCIONES", "COMERCIAL", "CORPORACION", "GRUPO", "PERU", "LIMA",
+            "S.A.C.", "SAC", "S.A.", "E.I.R.L.", "EIRL", "S.R.L.", "SRL", "S.A.A.", "SAA");
+
+    /**
+     * Resuelve a que empresa del catalogo local corresponde el DESTINATARIO de
+     * la guia, con el RUC como identificador principal.
+     *
+     * El RUC es unico por empresa (constraint en `empresas.ruc`) y viene impreso
+     * en toda guia peruana, asi que el cruce es exacto y no admite ambiguedad.
+     * La comparacion por razon social queda solo como respaldo para documentos
+     * donde el RUC no se pudo leer, y ante un empate devuelve null a proposito:
+     * es preferible que el usuario elija la empresa a sugerirle una al azar
+     * (una recepcion imputada a la empresa equivocada desordena su inventario).
+     *
+     * @param rucDetectado RUC del destinatario leido del documento (puede venir
+     *                     con guiones o espacios; se normaliza a solo digitos)
+     * @return id de la empresa, o null si no hay match confiable
+     */
+    public Long matchEmpresa(String rucDetectado, String razonSocialDetectada, List<Empresa> empresas) {
+        String ruc = soloDigitos(rucDetectado);
+        if (ruc != null) {
+            for (Empresa e : empresas) {
+                if (ruc.equals(soloDigitos(e.getRuc()))) {
+                    return e.getId();
+                }
+            }
+        }
+        return matchEmpresaPorNombre(razonSocialDetectada, empresas);
+    }
+
+    /**
+     * Compatibilidad: cruce solo por razon social, para los flujos que no
+     * disponen del RUC (Archivo Historico clasifica por el texto del documento).
+     */
     public Long matchEmpresa(String razonSocialDetectada, List<Empresa> empresas) {
+        return matchEmpresa(null, razonSocialDetectada, empresas);
+    }
+
+    private Long matchEmpresaPorNombre(String razonSocialDetectada, List<Empresa> empresas) {
         if (razonSocialDetectada == null || razonSocialDetectada.isBlank()) return null;
 
         String textoDetectado = razonSocialDetectada.toUpperCase();
         Empresa mejor = null;
         int mejorScore = 0;
+        boolean empatado = false;
 
         for (Empresa e : empresas) {
-            String[] palabras = e.getNombre().toUpperCase().split("\\s+");
             int score = 0;
-            for (String palabra : palabras) {
-                if (palabra.length() > 3 && textoDetectado.contains(palabra)) {
+            for (String palabra : e.getNombre().toUpperCase().split("\\s+")) {
+                // Solo cuentan las palabras que realmente identifican a ESTA
+                // empresa: las genericas del rubro se descartan.
+                if (palabra.length() > 3 && !PALABRAS_GENERICAS.contains(palabra)
+                        && textoDetectado.contains(palabra)) {
                     score++;
                 }
             }
             if (score > mejorScore) {
                 mejorScore = score;
                 mejor = e;
+                empatado = false;
+            } else if (score == mejorScore && score > 0) {
+                empatado = true;
             }
         }
 
-        return mejor != null ? mejor.getId() : null;
+        // Empate = el documento no distingue entre dos empresas del catalogo:
+        // no se sugiere ninguna y el usuario decide.
+        return (mejor != null && !empatado) ? mejor.getId() : null;
+    }
+
+    /** Deja solo digitos (los RUC pueden venir como "20549819028" o "20-54981902-8"). */
+    private static String soloDigitos(String valor) {
+        if (valor == null) return null;
+        String limpio = valor.replaceAll("\\D", "");
+        return limpio.isEmpty() ? null : limpio;
     }
 }

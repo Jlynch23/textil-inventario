@@ -218,6 +218,12 @@ class ArticuloMatchingServiceTest {
         return e;
     }
 
+    private Empresa empresaConRuc(long id, String nombre, String ruc) {
+        Empresa e = empresa(id, nombre);
+        e.setRuc(ruc);
+        return e;
+    }
+
     @Test
     void matchEmpresa_razonSocialVacia_devuelveNull() {
         assertThat(service.matchEmpresa("", List.of(empresa(1L, "TEXTIL LAURA")))).isNull();
@@ -237,15 +243,60 @@ class ArticuloMatchingServiceTest {
     }
 
     @Test
-    void matchEmpresa_empateDeScore_seQuedaConLaPrimeraEncontrada() {
-        // Ambas tienen score 1 ("LAURA" vs "CLEMENTE"). La comparacion es con
-        // ">" estricto, no ">=", asi que ante un empate gana la primera
-        // recorrida de la lista (no la ultima) -- se deja explicito con un
-        // test, para que un cambio futuro a ">=" no pase desapercibido.
+    void matchEmpresa_empateDeScore_noSugiereNinguna() {
+        // Ambas tienen score 1 ("LAURA" vs "CLEMENTE"): el documento no permite
+        // distinguirlas. Antes ganaba la primera de la lista, o sea el azar del
+        // orden, y la recepcion podia quedar imputada a la empresa equivocada.
+        // Ahora no se sugiere ninguna y el usuario elige.
         Empresa laura = empresa(1L, "TEXTIL LAURA");
         Empresa clemente = empresa(2L, "TEXTIL CLEMENTE");
 
         Long resultado = service.matchEmpresa("CLEMENTE AROTINGO LAURA PALMIRA", List.of(laura, clemente));
+
+        assertThat(resultado).isNull();
+    }
+
+    @Test
+    void matchEmpresa_palabraGenericaCompartida_noAlcanzaParaSugerir() {
+        // El caso real que rompia: "TEXTIL" esta en el nombre de las dos
+        // empresas, asi que contarla las empataba a ambas contra CUALQUIER guia
+        // que dijera "TEXTIL" y se elegia una al azar. Las palabras genericas
+        // del rubro ya no puntuan.
+        Empresa laura = empresa(1L, "TEXTIL LAURA");
+        Empresa clemente = empresa(2L, "TEXTIL CLEMENTE");
+
+        Long resultado = service.matchEmpresa("TEXTIL SAC", List.of(laura, clemente));
+
+        assertThat(resultado).isNull();
+    }
+
+    @Test
+    void matchEmpresa_porRuc_identificaAunqueElNombreNoCoincida() {
+        // El RUC es unico por empresa: alcanza por si solo, incluso cuando la
+        // razon social del documento esta abreviada o escrita distinto.
+        Empresa laura = empresaConRuc(1L, "TEXTIL LAURA E.I.R.L.", "20549819028");
+        Empresa clemente = empresaConRuc(2L, "TEXTIL CLEMENTE E.I.R.L.", "20549819029");
+
+        Long resultado = service.matchEmpresa("20549819029", "T. CLEM", List.of(laura, clemente));
+
+        assertThat(resultado).isEqualTo(2L);
+    }
+
+    @Test
+    void matchEmpresa_rucConGuionesYEspacios_seNormaliza() {
+        Empresa laura = empresaConRuc(1L, "TEXTIL LAURA", "20549819028");
+
+        assertThat(service.matchEmpresa("20-54981902-8", null, List.of(laura))).isEqualTo(1L);
+        assertThat(service.matchEmpresa(" 20549819028 ", null, List.of(laura))).isEqualTo(1L);
+    }
+
+    @Test
+    void matchEmpresa_rucDesconocido_caeAlNombre() {
+        // Un RUC que no esta en el catalogo no debe descartar la deteccion: se
+        // usa la razon social como respaldo.
+        Empresa laura = empresaConRuc(1L, "TEXTIL LAURA", "20549819028");
+
+        Long resultado = service.matchEmpresa("20999999999", "GUIA PARA LAURA", List.of(laura));
 
         assertThat(resultado).isEqualTo(1L);
     }

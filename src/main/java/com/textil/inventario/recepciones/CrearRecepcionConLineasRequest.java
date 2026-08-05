@@ -10,6 +10,11 @@ public record CrearRecepcionConLineasRequest(
         String numeroFactura,
         LocalDate fechaGuia,
         String observaciones,
+        // Emisor (tintoreria) que el OCR leyo de la guia. Opcional: si la guia
+        // se carga a mano o el dato no se pudo leer, viaja null y la recepcion
+        // simplemente queda sin emisor registrado.
+        String emisorNombre,
+        String emisorRuc,
         List<LineaRequest> lineas
 ) {
     public record LineaRequest(

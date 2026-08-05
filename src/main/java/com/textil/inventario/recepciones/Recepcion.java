@@ -21,6 +21,16 @@ public class Recepcion extends BaseEntity {
     @JoinColumn(name = "empresa_id", nullable = false)
     private Empresa empresa;
 
+    // EMISOR de la guia: la tintoreria que tiño y despacho (V45). Se lee del
+    // propio documento con el OCR, NO se asume: en el modelo multi-cliente cada
+    // cliente trabaja con su propia tintoreria. Nullable porque las recepciones
+    // anteriores a V45 no lo tienen y una guia puede no traerlo legible.
+    @Column(name = "emisor_nombre", length = 150)
+    private String emisorNombre;
+
+    @Column(name = "emisor_ruc", length = 11)
+    private String emisorRuc;
+
     // Auditoria INV-02: numero_guia lleva UNIQUE (una guia = una recepcion). Es
     // NULLABLE a proposito: una recepcion puede quedar sin guia, y en MySQL el
     // UNIQUE permite multiples NULL (las guias en blanco se guardan como NULL, no

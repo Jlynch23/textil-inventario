@@ -385,8 +385,16 @@ public class RecepcionService {
     @Transactional
     public Recepcion crearRecepcionConLineas(Long empresaId, String numeroGuia, String numeroFactura, LocalDate fechaGuia,
                                               String observaciones,
+                                              String emisorNombre, String emisorRuc,
                                               List<CrearRecepcionConLineasRequest.LineaRequest> lineas) {
         Recepcion r = crearRecepcion(empresaId, numeroGuia, numeroFactura, fechaGuia, observaciones);
+        // Emisor (tintoreria) tal como vino en la guia (V45): queda registrado
+        // para trazabilidad. En blanco -> NULL, mismo criterio que guia/factura.
+        String emisorNombreNorm = normalizar(emisorNombre);
+        String emisorRucNorm = emisorRuc == null ? null : emisorRuc.replaceAll("\\D", "");
+        r.setEmisorNombre(emisorNombreNorm == null || emisorNombreNorm.isBlank() ? null : emisorNombreNorm);
+        r.setEmisorRuc(emisorRucNorm == null || emisorRucNorm.isBlank() ? null : emisorRucNorm);
+        recepcionRepository.save(r);
         for (CrearRecepcionConLineasRequest.LineaRequest linea : lineas) {
             if (linea.articuloId() == null || linea.colorId() == null) continue;
             agregarDetalle(r.getId(), linea.articuloId(), linea.colorId(), linea.programaTenido(),

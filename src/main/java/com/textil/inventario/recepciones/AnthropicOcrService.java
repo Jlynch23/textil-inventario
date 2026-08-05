@@ -44,8 +44,14 @@ public class AnthropicOcrService {
     private final ObjectMapper mapper = new ObjectMapper();
 
     private static final String SYSTEM_PROMPT = """
-        Eres un asistente que extrae datos estructurados de guias de remision de la empresa FAST DYE (tintoreria textil).
+        Eres un asistente que extrae datos estructurados de guias de remision emitidas por tintorerias textiles.
         Analiza el PDF y devuelve EXCLUSIVAMENTE un objeto JSON valido, sin texto adicional, sin markdown, sin backticks.
+
+        En el documento intervienen DOS empresas distintas; no las confundas:
+        - EMISOR: la tintoreria que tiñe y despacha la tela (quien emite la guia). Suele figurar
+          en la cabecera del documento, con su logo y su RUC.
+        - DESTINATARIO: el cliente que recibe la tela, normalmente bajo etiquetas como
+          "Señor(es)", "Cliente", "Razon Social" o "Destinatario", con su propio RUC.
 
         En la descripcion de cada producto suele aparecer un texto como:
         "Servicio Tenido: Tela RIB 2X1 30/1 ALG ACANALADO Color 631085 COCOA LOLA / Rollos: 27 / P.Bruto: 602.52 Guia: 658"
@@ -82,7 +88,10 @@ public class AnthropicOcrService {
           "numeroGuia": "string, el numero de guia principal del documento (ej: TG01-00022558), NO el numero de programa",
           "numeroFactura": "string, el numero de factura si aparece en el documento (puede llamarse Factura, Comprobante, o similar), o null si no aparece",
           "fechaGuia": "string en formato YYYY-MM-DD, tomado de Fecha Emision",
-          "razonSocialDetectada": "string, el valor de Nombre/Razon Social del documento",
+          "razonSocialDetectada": "string, la razon social del DESTINATARIO (el cliente que recibe la tela), NO la del emisor",
+          "rucDetectado": "string, el RUC del DESTINATARIO: 11 digitos, solo numeros, sin guiones ni espacios. null si no aparece",
+          "emisorNombre": "string, la razon social del EMISOR (la tintoreria que emite la guia), o null si no se puede leer",
+          "emisorRuc": "string, el RUC del EMISOR: 11 digitos, solo numeros, sin guiones ni espacios. null si no aparece",
           "productos": [
             {
               "tipoTela": "string",
@@ -103,14 +112,21 @@ public class AnthropicOcrService {
         """;
 
     private static final String SYSTEM_PROMPT_FACTURA = """
-        Eres un asistente que extrae datos de facturas de la empresa FAST DYE (tintoreria textil).
+        Eres un asistente que extrae datos de facturas emitidas por tintorerias textiles.
         Analiza el PDF y devuelve EXCLUSIVAMENTE un objeto JSON valido, sin texto adicional, sin markdown, sin backticks.
+
+        En el documento intervienen DOS empresas distintas; no las confundas:
+        - EMISOR: la tintoreria que factura el servicio de teñido (cabecera del documento, con su RUC).
+        - DESTINATARIO: el cliente al que se le factura ("Señor(es)", "Cliente", "Razon Social"), con su propio RUC.
 
         Formato exacto requerido:
         {
           "numeroFactura": "string, el numero de factura o comprobante del documento",
           "fechaFactura": "string en formato YYYY-MM-DD",
-          "razonSocialDetectada": "string, el nombre/razon social del cliente que aparece en el documento",
+          "razonSocialDetectada": "string, la razon social del DESTINATARIO (el cliente facturado), NO la del emisor",
+          "rucDetectado": "string, el RUC del DESTINATARIO: 11 digitos, solo numeros, sin guiones ni espacios. null si no aparece",
+          "emisorNombre": "string, la razon social del EMISOR (la tintoreria que emite la factura), o null si no se puede leer",
+          "emisorRuc": "string, el RUC del EMISOR: 11 digitos, solo numeros, sin guiones ni espacios. null si no aparece",
           "guiasReferenciadas": ["lista de strings con los numeros de guia de remision relacionados/referenciados en la factura, tal como aparecen en el documento (ej: TG01-00022836). Si no hay ninguna referencia a guias, devolver una lista vacia []"],
           "advertencia": "string opcional; si algun dato no se pudo leer con confianza, explica cual; si todo se leyo bien, usa null"
         }

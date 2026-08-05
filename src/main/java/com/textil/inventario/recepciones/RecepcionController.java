@@ -240,8 +240,10 @@ public class RecepcionController {
             ExtraccionGuiaResponse extraccion = anthropicOcrService.extraerDatosGuia(file);
             List<Empresa> empresas = empresaRepository.findByActivoTrue();
 
+            // El RUC manda: identifica a la empresa sin ambiguedad. La razon
+            // social viaja solo como respaldo para guias que no lo traen legible.
             Long empresaIdSugerida = articuloMatchingService.matchEmpresa(
-                    extraccion.razonSocialDetectada(), empresas);
+                    extraccion.rucDetectado(), extraccion.razonSocialDetectada(), empresas);
 
             List<LineaSugerida> lineas = extraccion.productos().stream()
                     .map(articuloMatchingService::matchLinea)
@@ -253,6 +255,8 @@ public class RecepcionController {
                     extraccion.fechaGuia(),
                     empresaIdSugerida,
                     extraccion.razonSocialDetectada(),
+                    extraccion.emisorNombre(),
+                    extraccion.emisorRuc(),
                     lineas,
                     extraccion.advertencia()
             );
@@ -285,7 +289,7 @@ public class RecepcionController {
         try {
             Recepcion r = recepcionService.crearRecepcionConLineas(
                     request.empresaId(), request.numeroGuia(), request.numeroFactura(), request.fechaGuia(),
-                    request.observaciones(), request.lineas());
+                    request.observaciones(), request.emisorNombre(), request.emisorRuc(), request.lineas());
             return ResponseEntity.ok(Map.of("id", r.getId(), "redirectUrl", "/recepciones/" + r.getId() + "/detalle"));
         } catch (IllegalArgumentException e) {
             // Errores esperados y accionables por el usuario (ej. guía duplicada):

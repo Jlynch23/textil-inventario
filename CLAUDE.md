@@ -121,9 +121,19 @@ parsing de guías, ese prompt es la fuente de verdad.
 
 - Todo cambio de esquema es una migración Flyway nueva en
   `src/main/resources/db/migration/V<n>__descripcion.sql`. **Nunca** editar una migración ya
-  aplicada; sumar una nueva con el siguiente número (actualmente van hasta **V41**). Las últimas:
-  V38 (`@Version` en recepción/transferencia), V39 (flag de cambio de password forzado),
-  V40 (número normalizado para dedup de documentos históricos), V41 (tabla `correlativo`).
+  aplicada; sumar una nueva con el siguiente número (actualmente van hasta **V45**). Las últimas:
+  V41 (tabla `correlativo`), V42 (UNIQUE en `numero_guia`), V43 (`@Version` en `programa_detalle`),
+  V44 (celular de usuario), V45 (emisor de la guía en `recepciones`).
+
+### Empresas de la guía: destinatario por RUC, emisor leído del documento (V45)
+Una guía tiene **dos** empresas y el sistema ya no confunde ninguna:
+- **Destinatario** (empresa del cliente): el OCR extrae también su **RUC** y `ArticuloMatchingService.
+  matchEmpresa(ruc, razonSocial, empresas)` cruza **por RUC** (es `unique` en `empresas`), exacto y sin
+  ambigüedad. La razón social quedó solo como respaldo, y **ante un empate no sugiere nada** (antes
+  ganaba la primera de la lista: eso imputaba recepciones a la empresa equivocada).
+- **Emisor** (la tintorería que tiñó): se lee del documento y se guarda en `recepciones.emisor_nombre`
+  / `emisor_ruc`. **No se asume FAST DYE** — el `SYSTEM_PROMPT` del OCR ya es genérico, porque en el
+  modelo multicliente cada cliente trabaja con su propia tintorería (ver `ROADMAP.md`, V2).
 - `ddl-auto: validate`: si una entidad no calza con el esquema migrado, la app no arranca.
 - `baseline-on-migrate: true`.
 

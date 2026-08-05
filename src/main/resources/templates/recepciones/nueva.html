@@ -117,6 +117,9 @@
 <script th:inline="javascript" th:attr="nonce=${cspNonce}">
     const articulos = /*[[${articulos}]]*/ [];
     let lineasExtraidas = [];
+    // Emisor (tintoreria) que el OCR leyo de la guia. Queda en null si la
+    // recepcion se carga a mano o si el documento no lo trae legible.
+    let emisorDetectado = { nombre: null, ruc: null };
 
     // Seguridad (auditoria A3/A4): los datos del OCR provienen del PDF (contenido
     // NO confiable). Antes se concatenaban crudos en innerHTML -> una guia con
@@ -168,6 +171,10 @@
             }
 
             const data = await resp.json();
+
+            // Emisor (tintoreria) leido de la guia: se conserva para enviarlo al
+            // crear la recepcion, que lo guarda como dato de trazabilidad.
+            emisorDetectado = { nombre: data.emisorNombre || null, ruc: data.emisorRuc || null };
 
             document.getElementById('numeroGuia').value = data.numeroGuia || '';
             document.getElementById('numeroFactura').value = data.numeroFactura || '';
@@ -466,7 +473,8 @@
             const resp = await fetchConCsrf('/recepciones/crear-con-lineas', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ empresaId: parseInt(empresaId), numeroGuia, numeroFactura, fechaGuia, observaciones, lineas })
+                body: JSON.stringify({ empresaId: parseInt(empresaId), numeroGuia, numeroFactura, fechaGuia, observaciones,
+                                       emisorNombre: emisorDetectado.nombre, emisorRuc: emisorDetectado.ruc, lineas })
             });
             // R-J2: el backend puede responder HTML de error (500/403) en vez de
             // JSON; sin este guard, resp.json() lanzaba y la creacion fallaba en
