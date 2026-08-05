@@ -92,6 +92,12 @@ public class UsuarioController {
             ra.addFlashAttribute("error", "El nombre es obligatorio.");
             return "redirect:/usuarios";
         }
+        String celularNormalizado = normalizarCelular(celular);
+        String errorCelular = errorCelular(celularNormalizado);
+        if (errorCelular != null) {
+            ra.addFlashAttribute("error", errorCelular);
+            return "redirect:/usuarios";
+        }
 
         // El username se genera del nombre (ej. "Oscar Clemente" -> "oclemente").
         String username = generadorUsername.generar(nombre);
@@ -101,7 +107,7 @@ public class UsuarioController {
         u.setUsername(username);
         u.setPasswordHash(passwordEncoder.encode(password));
         u.setRol(rol);
-        u.setCelular(normalizarCelular(celular));
+        u.setCelular(celularNormalizado);
         u.setActivo(true);
         u.setEsPrueba(false);
         Usuario guardado = usuarioRepository.save(u);
@@ -140,6 +146,12 @@ public class UsuarioController {
             ra.addFlashAttribute("error", "No tienes permiso para asignar ese rol.");
             return "redirect:/usuarios";
         }
+        String celularNormalizado = normalizarCelular(celular);
+        String errorCelular = errorCelular(celularNormalizado);
+        if (errorCelular != null) {
+            ra.addFlashAttribute("error", errorCelular);
+            return "redirect:/usuarios";
+        }
         // Contraseña opcional: si viene en blanco, no se cambia.
         if (password != null && !password.isBlank()) {
             String errorPassword = validarPassword(password);
@@ -155,7 +167,7 @@ public class UsuarioController {
         String usernameAnterior = u.getUsername();
         u.setNombre(nombre.trim());
         u.setRol(rol);
-        u.setCelular(normalizarCelular(celular));
+        u.setCelular(celularNormalizado);
         // Regenera el username del nuevo nombre, excluyendo al propio usuario.
         u.setUsername(generadorUsername.generar(nombre, u.getId()));
         usuarioRepository.save(u);
@@ -294,7 +306,8 @@ public class UsuarioController {
      * si viene un movil peruano de 9 digitos sin prefijo, le antepone +51. Un
      * valor vacio devuelve null (el usuario no recibe SMS).
      */
-    private String normalizarCelular(String celular) {
+    // package-private y static para poder testearlos sin levantar el contexto.
+    static String normalizarCelular(String celular) {
         if (celular == null) return null;
         String c = celular.trim().replaceAll("[\\s()\\-]", "");
         if (c.isBlank()) return null;
@@ -302,6 +315,26 @@ public class UsuarioController {
             c = "+51" + c;
         }
         return c;
+    }
+
+    /**
+     * Forma valida de E.164: "+" y entre 8 y 15 digitos. Se validaba solo el
+     * formato PERUANO de 9 digitos (para anteponerle +51) pero cualquier otra
+     * cosa se guardaba tal cual: un "no tengo" quedaba en la columna y salia
+     * despues como destinatario de las alertas, o pasaba de los 20 caracteres
+     * de la columna y reventaba con un error de base al guardar el usuario.
+     *
+     * @return el mensaje de error, o null si el celular es valido (o esta vacio,
+     *         que es legitimo: significa "no me mandes avisos")
+     */
+    static String errorCelular(String celularNormalizado) {
+        if (celularNormalizado == null) return null;
+        if (!celularNormalizado.matches("\\+\\d{8,15}")) {
+            return "El celular debe ser un número válido: 9 dígitos si es peruano "
+                    + "(987654321) o con código de país (+51987654321). Déjalo vacío "
+                    + "si no quieres recibir avisos.";
+        }
+        return null;
     }
 
     /**
@@ -379,7 +412,13 @@ public class UsuarioController {
     public String cambiarMiCelular(@RequestParam(required = false) String celular,
                                     RedirectAttributes ra) {
         Usuario u = usuarioActualService.obtenerUsuarioActual();
-        u.setCelular(normalizarCelular(celular));
+        String celularNormalizado = normalizarCelular(celular);
+        String errorCelular = errorCelular(celularNormalizado);
+        if (errorCelular != null) {
+            ra.addFlashAttribute("error", errorCelular);
+            return "redirect:/usuarios/mi-cuenta";
+        }
+        u.setCelular(celularNormalizado);
         usuarioRepository.save(u);
         auditLogService.registrar("ACTUALIZAR_CELULAR", "Usuario", u.getId(), "Actualizo su celular");
         ra.addFlashAttribute("mensaje", u.getCelular() != null
