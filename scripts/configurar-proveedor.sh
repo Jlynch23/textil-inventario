@@ -68,8 +68,12 @@ if [ "$APLICAR" -eq 1 ]; then
             echo "ANTHROPIC_API_KEY=$CLAVE" >> "$env_file"
         fi
         if docker ps --format '{{.Names}}' | grep -q "^app_$slug$"; then
-            echo "[$slug] clave actualizada; reiniciando app_$slug para que la tome..."
-            docker restart "app_$slug" >/dev/null
+            # OJO: `docker restart` NO relee el .env (las variables se fijan al
+            # CREAR el contenedor). Hay que RECREARLO via compose, que detecta el
+            # cambio de entorno y recrea solo el servicio app (la BD no se toca).
+            echo "[$slug] clave actualizada; recreando app_$slug para que la tome..."
+            docker compose -p "texcontrol_$slug" --env-file "$env_file" \
+                -f "$RAIZ/multicliente/docker-compose.cliente.yml" up -d app
         else
             echo "[$slug] clave actualizada (app apagada; la tomara al arrancar)."
         fi
