@@ -63,18 +63,22 @@ public class HomeController {
                         Collectors.summingInt(StockActual::getRollos)
                 ));
 
-        Map<Long, Integer> totalPorArticulo = stockDisponible.stream()
+        // Por ARTICULO+COLOR (no por articulo entero): sumar todos los colores
+        // escondia el color que quedo bajo (ej. Rojo en 4) detras del total del
+        // articulo. Mismo criterio que el reporte de stock bajo y que la alerta
+        // por correo (StockBajoEvent), que ya son por articulo+color.
+        Map<String, Integer> totalPorArticuloColor = stockDisponible.stream()
                 .collect(Collectors.groupingBy(
-                        s -> s.getArticulo().getId(),
+                        s -> s.getArticulo().getId() + ":" + s.getColor().getId(),
                         Collectors.summingInt(StockActual::getRollos)
                 ));
 
         List<StockActual> articulosStockBajo = new ArrayList<>();
-        Set<Long> vistos = new HashSet<>();
+        Set<String> vistos = new HashSet<>();
         for (StockActual s : stockDisponible) {
-            Long articuloId = s.getArticulo().getId();
-            if (!vistos.contains(articuloId) && totalPorArticulo.get(articuloId) < UMBRAL_STOCK_BAJO) {
-                vistos.add(articuloId);
+            String clave = s.getArticulo().getId() + ":" + s.getColor().getId();
+            if (!vistos.contains(clave) && totalPorArticuloColor.get(clave) < UMBRAL_STOCK_BAJO) {
+                vistos.add(clave);
                 articulosStockBajo.add(s);
             }
         }
@@ -88,7 +92,7 @@ public class HomeController {
         model.addAttribute("entradasSalidasPendientes", entradasSalidasPendientes);
         model.addAttribute("stockPorUbicacion", stockPorUbicacion);
         model.addAttribute("articulosStockBajo", articulosStockBajo);
-        model.addAttribute("totalPorArticulo", totalPorArticulo);
+        model.addAttribute("totalPorArticuloColor", totalPorArticuloColor);
         model.addAttribute("umbralStockBajo", UMBRAL_STOCK_BAJO);
 
         // #9 (OSIV off): el conteo se calcula en el servicio dentro de una

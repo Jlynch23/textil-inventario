@@ -108,7 +108,7 @@
                                 <span th:text="${s.articulo.titulo.valor}"></span> -
                                 <span th:text="${s.color.nombreMostrar}"></span>
                             </span>
-                            <span class="badge bg-danger" th:text="|${totalPorArticulo.get(s.articulo.id)} rollos|"></span>
+                            <span class="badge bg-danger" th:text="|${totalPorArticuloColor.get(s.articulo.id + ':' + s.color.id)} rollos|"></span>
                         </li>
                     </ul>
                 </div>
