@@ -210,7 +210,6 @@ public class CatalogoService {
     public Optional<Titulo> buscarTituloPorValor(String valor) { return tituloRepository.findByValorIgnoreCase(valor.trim()); }
     public Optional<Composicion> buscarComposicionPorNombre(String nombre) { return composicionRepository.findByNombreIgnoreCase(nombre.trim()); }
     public Optional<Acabado> buscarAcabadoPorNombre(String nombre) { return acabadoRepository.findByNombreIgnoreCase(nombre.trim()); }
-    public Optional<Color> buscarColorPorCodigoFastDye(String codigo) { return resolverColorPorCodigo(codigo, null); }
 
     /**
      * FAST DYE reasigna codigos con el tiempo, asi que puede haber mas de un
@@ -268,16 +267,6 @@ public class CatalogoService {
             sufijo++;
         }
         return codigo;
-    }
-
-    /**
-     * Combina el codigo interno de un Articulo (tela+titulo+composicion, ya
-     * fijo) con el Color de un movimiento especifico (stock, kardex,
-     * programa, recepcion, transferencia), para mostrar un codigo completo
-     * igual de descriptivo que antes de sacar Color del Articulo.
-     */
-    public String codigoConColor(Articulo articulo, Color color) {
-        return articulo.getCodigoInterno() + "-" + abreviarPalabra(color.getNombreOficial(), 4);
     }
 
     private String abreviarPalabra(String texto, int longitud) {

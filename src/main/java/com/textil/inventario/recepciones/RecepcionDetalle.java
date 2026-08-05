@@ -47,8 +47,4 @@ public class RecepcionDetalle {
     @Column(columnDefinition = "TEXT")
     private String observacion;
 
-    public Integer getDiferenciaRollos() {
-        if (rollosRecibidos == null) return null;
-        return rollosRecibidos - rollosGuia;
-    }
 }

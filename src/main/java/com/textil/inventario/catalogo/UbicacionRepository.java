@@ -6,6 +6,5 @@ import java.util.Optional;
 
 public interface UbicacionRepository extends JpaRepository<Ubicacion, Long> {
     List<Ubicacion> findByActivoTrue();
-    Optional<Ubicacion> findByCodigo(String codigo);
     Optional<Ubicacion> findByEsPrincipalTrue();
 }

@@ -306,10 +306,6 @@ public class ProgramaService {
         }
     }
 
-    public List<RecepcionDetalle> historialDeLinea(Long programaDetalleId) {
-        return recepcionDetalleRepository.findByProgramaDetalleId(programaDetalleId);
-    }
-
     /**
      * Vista simplificada del historial de una linea para la pantalla de
      * seguimiento: por cada recepcion que aporto a esta linea, incluye el

@@ -82,8 +82,10 @@ class TransferenciaServiceTest {
 
         assertThat(creada.getNumero()).isEqualTo("TRF-000008");
         assertThat(corr.getUltimoValor()).isEqualTo(8L);
+        // La numeracion sale de la tabla `correlativo`, nunca de contar filas
+        // (borrar una BORRADOR intermedia reusaba un numero y violaba el UNIQUE).
+        // findMaxNumero() ya ni existe: se elimino por quedar sin uso.
         verify(transferenciaRepository, never()).count();
-        verify(transferenciaRepository, never()).findMaxNumero();
     }
 
     @Test

@@ -82,10 +82,6 @@ public class DocumentoStorageService {
         return rutaCompleta.toString();
     }
 
-    public Path resolverRuta(String rutaGuardada) {
-        return Paths.get(rutaGuardada);
-    }
-
     /**
      * Resuelve una ruta guardada en BD garantizando que quede DENTRO de
      * {@code documentos.ruta-base} (auditoría FILE-02). Las rutas de descarga se

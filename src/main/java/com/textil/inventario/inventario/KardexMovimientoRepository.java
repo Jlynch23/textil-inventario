@@ -28,15 +28,9 @@ public interface KardexMovimientoRepository extends JpaRepository<KardexMovimien
             + "AND (:hasta IS NULL OR k.fecha < :hasta) ORDER BY k.fecha DESC")
     List<KardexMovimiento> buscarPorRango(@Param("desde") LocalDateTime desde, @Param("hasta") LocalDateTime hasta);
 
-    // M5 (auditoria): trae las asociaciones to-one del kardex en un solo query
-    // (LEFT JOINs) para no disparar un SELECT por fila al listar/exportar (N+1).
-    @EntityGraph(attributePaths = {
-            "articulo", "articulo.tipoTela", "articulo.titulo", "articulo.composicion", "articulo.acabado",
-            "color", "empresa", "ubicacionOrigen", "ubicacionDestino", "usuario"
-    })
-    List<KardexMovimiento> findAllByOrderByFechaDesc();
-    List<KardexMovimiento> findByEmpresaIdOrderByFechaDesc(Long empresaId);
-
+    // M5 (auditoria): las asociaciones to-one del kardex se traen en un solo
+    // query (LEFT JOINs) para no disparar un SELECT por fila al listar/exportar.
+    //
     // El kardex crece sin limite (un registro por cada linea de recepcion y
     // transferencia, para siempre). Sin filtro por articulo no tiene sentido
     // cargar la tabla completa en memoria; se acota a los mas recientes.

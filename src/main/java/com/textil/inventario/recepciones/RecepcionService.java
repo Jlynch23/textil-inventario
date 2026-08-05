@@ -154,11 +154,6 @@ public class RecepcionService {
     }
 
     @Transactional
-    public Recepcion crearRecepcion(Long empresaId, String numeroGuia, LocalDate fechaGuia, String observaciones) {
-        return crearRecepcion(empresaId, numeroGuia, null, fechaGuia, observaciones);
-    }
-
-    @Transactional
     public Recepcion crearRecepcion(Long empresaId, String numeroGuia, String numeroFactura, LocalDate fechaGuia, String observaciones) {
         String guiaNorm = normalizar(numeroGuia);
         // Guias en blanco -> NULL: una recepcion puede no llevar guia, y el UNIQUE

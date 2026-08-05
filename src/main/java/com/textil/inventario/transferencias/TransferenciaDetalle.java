@@ -40,13 +40,4 @@ public class TransferenciaDetalle {
     @Column(columnDefinition = "TEXT")
     private String observaciones;
 
-    public Integer getDiferenciaSalida() {
-        if (cantidadConfirmadaSalida == null) return null;
-        return cantidadConfirmadaSalida - cantidadSolicitada;
-    }
-
-    public Integer getDiferenciaLlegada() {
-        if (cantidadConfirmadaLlegada == null || cantidadConfirmadaSalida == null) return null;
-        return cantidadConfirmadaLlegada - cantidadConfirmadaSalida;
-    }
 }

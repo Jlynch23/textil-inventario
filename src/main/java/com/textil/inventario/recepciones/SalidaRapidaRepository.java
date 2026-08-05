@@ -5,5 +5,4 @@ import java.util.List;
 
 public interface SalidaRapidaRepository extends JpaRepository<SalidaRapida, Long> {
     List<SalidaRapida> findByEstadoOrderByCreatedAtDesc(String estado);
-    List<SalidaRapida> findAllByOrderByCreatedAtDesc();
 }
