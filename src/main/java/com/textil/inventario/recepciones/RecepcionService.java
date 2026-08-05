@@ -46,6 +46,11 @@ public class RecepcionService {
 
     @Transactional
     public void asignarFactura(String numeroFactura, LocalDate fechaFactura, List<Long> recepcionIds) {
+        // Guarda de dominio: asignar una factura en blanco dejaria '' (no NULL) y
+        // la recepcion "desapareceria" de la lista de pendientes sin factura real.
+        if (numeroFactura == null || numeroFactura.isBlank()) {
+            throw new IllegalArgumentException("El número de factura es obligatorio.");
+        }
         for (Long id : recepcionIds) {
             Recepcion r = recepcionRepository.findById(id).orElseThrow();
             r.setNumeroFactura(normalizar(numeroFactura));
@@ -174,7 +179,11 @@ public class RecepcionService {
         Recepcion r = new Recepcion();
         r.setEmpresa(empresaRepository.findById(empresaId).orElseThrow());
         r.setNumeroGuia(guiaFinal);
-        r.setNumeroFactura(normalizar(numeroFactura));
+        // Factura en blanco -> NULL (mismo criterio que la guia). El formulario y
+        // el OCR mandan "" cuando no hay factura; si se guarda '', la recepcion
+        // jamas aparece en Facturar (esa lista filtra por numero_factura IS NULL).
+        String facturaNorm = normalizar(numeroFactura);
+        r.setNumeroFactura((facturaNorm == null || facturaNorm.isBlank()) ? null : facturaNorm);
         r.setFechaGuia(fechaGuia);
         r.setFechaRecepcion(LocalDate.now());
         r.setObservaciones(observaciones);
