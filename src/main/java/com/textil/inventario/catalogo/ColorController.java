@@ -1,5 +1,6 @@
 package com.textil.inventario.catalogo;
 
+import com.textil.inventario.common.RespuestaJson;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,13 +24,6 @@ public class ColorController {
 
     private final CatalogoService catalogoService;
 
-    private String primerError(BindingResult bindingResult) {
-        return bindingResult.getFieldErrors().stream()
-                .map(fe -> fe.getDefaultMessage())
-                .distinct()
-                .collect(Collectors.joining(" "));
-    }
-
     // #7: mapea la entidad al DTO para poblar el form en edicion.
     private ColorForm aColorForm(Color c) {
         ColorForm f = new ColorForm();
@@ -50,7 +44,7 @@ public class ColorController {
     @PostMapping("/colores/guardar")
     public String guardarColor(@Valid @ModelAttribute("color") ColorForm color, BindingResult bindingResult, RedirectAttributes ra) {
         if (bindingResult.hasErrors()) {
-            ra.addFlashAttribute("error", primerError(bindingResult));
+            ra.addFlashAttribute("error", RespuestaJson.primerError(bindingResult));
             return "redirect:/catalogo/colores";
         }
         catalogoService.guardarColor(color);
@@ -91,30 +85,26 @@ public class ColorController {
     @PostMapping("/colores/crear-rapido")
     @ResponseBody
     public ResponseEntity<?> crearColorRapido(@RequestBody ColorRapidoRequest request) {
-        try {
-            if (request.nombreOficial() == null || request.nombreOficial().isBlank()) {
-                return ResponseEntity.status(400).body(Map.of("error", "El nombre oficial es obligatorio."));
-            }
-            // Idempotente: si ya existe un color activo con ese codigo FAST DYE,
-            // se reutiliza en vez de intentar crear un duplicado.
-            if (request.codigoFastDye() != null && !request.codigoFastDye().isBlank()) {
-                Optional<Color> existente = catalogoService.resolverColorPorCodigo(request.codigoFastDye(), request.nombreOficial());
-                if (existente.isPresent()) {
-                    return ResponseEntity.ok(Map.of("id", existente.get().getId(), "nombreOficial", existente.get().getNombreOficial(), "yaExistia", true));
+        return RespuestaJson.responder("crearColorRapido",
+                "Ya existe un color con ese nombre. FAST DYE repite nombres con códigos distintos: usa un nombre diferenciado (ej. BLANCO AZULADO / BLANCO CREMOSO).",
+                () -> {
+                if (request.nombreOficial() == null || request.nombreOficial().isBlank()) {
+                    throw new IllegalArgumentException("El nombre oficial es obligatorio.");
                 }
-            }
-            Color color = new Color();
-            color.setNombreOficial(request.nombreOficial());
-            color.setCodigoFastDye(request.codigoFastDye());
-            color.setActivo(true);
-            Color guardado = catalogoService.guardarColor(color);
-            return ResponseEntity.ok(Map.of("id", guardado.getId(), "nombreOficial", guardado.getNombreOficial()));
-        } catch (DataIntegrityViolationException e) {
-            return ResponseEntity.status(400).body(Map.of("error",
-                    "Ya existe un color con ese nombre. FAST DYE repite nombres con códigos distintos: usa un nombre diferenciado (ej. BLANCO AZULADO / BLANCO CREMOSO)."));
-        } catch (Exception e) {
-            log.error("Error en crearColorRapido: {}", e.getMessage(), e);
-            return ResponseEntity.status(500).body(Map.of("error", "Ocurrió un error interno. Intenta de nuevo o contacta al administrador."));
-        }
+                // Idempotente: si ya existe un color activo con ese codigo FAST DYE,
+                // se reutiliza en vez de intentar crear un duplicado.
+                if (request.codigoFastDye() != null && !request.codigoFastDye().isBlank()) {
+                    Optional<Color> existente = catalogoService.resolverColorPorCodigo(request.codigoFastDye(), request.nombreOficial());
+                    if (existente.isPresent()) {
+                        return Map.of("id", existente.get().getId(), "nombreOficial", existente.get().getNombreOficial(), "yaExistia", true);
+                    }
+                }
+                Color color = new Color();
+                color.setNombreOficial(request.nombreOficial());
+                color.setCodigoFastDye(request.codigoFastDye());
+                color.setActivo(true);
+                Color guardado = catalogoService.guardarColor(color);
+                return Map.of("id", guardado.getId(), "nombreOficial", guardado.getNombreOficial());
+                });
     }
 }

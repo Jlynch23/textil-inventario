@@ -1,5 +1,6 @@
 package com.textil.inventario.catalogo;
 
+import com.textil.inventario.common.RespuestaJson;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,13 +24,6 @@ public class TipoTelaController {
 
     private final CatalogoService catalogoService;
 
-    private String primerError(BindingResult bindingResult) {
-        return bindingResult.getFieldErrors().stream()
-                .map(fe -> fe.getDefaultMessage())
-                .distinct()
-                .collect(Collectors.joining(" "));
-    }
-
     // #7: entidad -> DTO para poblar el form en edicion.
     private TipoTelaForm aTipoTelaForm(TipoTela e) {
         TipoTelaForm f = new TipoTelaForm();
@@ -50,7 +44,7 @@ public class TipoTelaController {
     @PostMapping("/tipos-tela/guardar")
     public String guardarTipoTela(@Valid @ModelAttribute("tipoTela") TipoTelaForm tipoTela, BindingResult bindingResult, RedirectAttributes ra) {
         if (bindingResult.hasErrors()) {
-            ra.addFlashAttribute("error", primerError(bindingResult));
+            ra.addFlashAttribute("error", RespuestaJson.primerError(bindingResult));
             return "redirect:/catalogo/tipos-tela";
         }
         try {
@@ -95,25 +89,21 @@ public class TipoTelaController {
     @PostMapping("/tipos-tela/crear-rapido")
     @ResponseBody
     public ResponseEntity<?> crearTipoTelaRapido(@RequestBody TipoTelaRapidoRequest request) {
-        try {
-            if (request.nombre() == null || request.nombre().isBlank()) {
-                return ResponseEntity.status(400).body(Map.of("error", "El nombre es obligatorio."));
-            }
-            Optional<TipoTela> existente = catalogoService.buscarTipoTelaPorNombre(request.nombre());
-            if (existente.isPresent()) {
-                return ResponseEntity.ok(Map.of("id", existente.get().getId(), "nombre", existente.get().getNombre(), "yaExistia", true));
-            }
-            TipoTela tipoTela = new TipoTela();
-            tipoTela.setNombre(request.nombre().trim());
-            tipoTela.setActivo(true);
-            TipoTela guardado = catalogoService.guardarTipoTela(tipoTela);
-            return ResponseEntity.ok(Map.of("id", guardado.getId(), "nombre", guardado.getNombre(), "yaExistia", false));
-        } catch (DataIntegrityViolationException e) {
-            return ResponseEntity.status(400).body(Map.of("error",
-                    "Ya existe un tipo de tela con ese nombre. Puede que otro usuario lo haya creado justo ahora — recarga e intenta de nuevo."));
-        } catch (Exception e) {
-            log.error("Error en crearTipoTelaRapido: {}", e.getMessage(), e);
-            return ResponseEntity.status(500).body(Map.of("error", "Ocurrió un error interno. Intenta de nuevo o contacta al administrador."));
-        }
+        return RespuestaJson.responder("crearTipoTelaRapido",
+                "Ya existe un tipo de tela con ese nombre. Puede que otro usuario lo haya creado justo ahora — recarga e intenta de nuevo.",
+                () -> {
+                if (request.nombre() == null || request.nombre().isBlank()) {
+                    throw new IllegalArgumentException("El nombre es obligatorio.");
+                }
+                Optional<TipoTela> existente = catalogoService.buscarTipoTelaPorNombre(request.nombre());
+                if (existente.isPresent()) {
+                    return Map.of("id", existente.get().getId(), "nombre", existente.get().getNombre(), "yaExistia", true);
+                }
+                TipoTela tipoTela = new TipoTela();
+                tipoTela.setNombre(request.nombre().trim());
+                tipoTela.setActivo(true);
+                TipoTela guardado = catalogoService.guardarTipoTela(tipoTela);
+                return Map.of("id", guardado.getId(), "nombre", guardado.getNombre(), "yaExistia", false);
+                });
     }
 }

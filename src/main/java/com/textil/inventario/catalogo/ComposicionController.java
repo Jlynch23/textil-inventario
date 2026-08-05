@@ -1,5 +1,6 @@
 package com.textil.inventario.catalogo;
 
+import com.textil.inventario.common.RespuestaJson;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,13 +24,6 @@ public class ComposicionController {
 
     private final CatalogoService catalogoService;
 
-    private String primerError(BindingResult bindingResult) {
-        return bindingResult.getFieldErrors().stream()
-                .map(fe -> fe.getDefaultMessage())
-                .distinct()
-                .collect(Collectors.joining(" "));
-    }
-
     // #7: entidad -> DTO para poblar el form en edicion.
     private ComposicionForm aComposicionForm(Composicion e) {
         ComposicionForm f = new ComposicionForm();
@@ -50,7 +44,7 @@ public class ComposicionController {
     @PostMapping("/composiciones/guardar")
     public String guardarComposicionForm(@Valid @ModelAttribute("composicion") ComposicionForm composicion, BindingResult bindingResult, RedirectAttributes ra) {
         if (bindingResult.hasErrors()) {
-            ra.addFlashAttribute("error", primerError(bindingResult));
+            ra.addFlashAttribute("error", RespuestaJson.primerError(bindingResult));
             return "redirect:/catalogo/composiciones";
         }
         try {
@@ -95,25 +89,21 @@ public class ComposicionController {
     @PostMapping("/composiciones/crear-rapido")
     @ResponseBody
     public ResponseEntity<?> crearComposicionRapido(@RequestBody ComposicionRapidoRequest request) {
-        try {
-            if (request.nombre() == null || request.nombre().isBlank()) {
-                return ResponseEntity.status(400).body(Map.of("error", "El nombre es obligatorio."));
-            }
-            Optional<Composicion> existente = catalogoService.buscarComposicionPorNombre(request.nombre());
-            if (existente.isPresent()) {
-                return ResponseEntity.ok(Map.of("id", existente.get().getId(), "nombre", existente.get().getNombre(), "yaExistia", true));
-            }
-            Composicion composicion = new Composicion();
-            composicion.setNombre(request.nombre().trim());
-            composicion.setActivo(true);
-            Composicion guardado = catalogoService.guardarComposicion(composicion);
-            return ResponseEntity.ok(Map.of("id", guardado.getId(), "nombre", guardado.getNombre(), "yaExistia", false));
-        } catch (DataIntegrityViolationException e) {
-            return ResponseEntity.status(400).body(Map.of("error",
-                    "Ya existe una composición con ese nombre. Puede que otro usuario la haya creado justo ahora — recarga e intenta de nuevo."));
-        } catch (Exception e) {
-            log.error("Error en crearComposicionRapido: {}", e.getMessage(), e);
-            return ResponseEntity.status(500).body(Map.of("error", "Ocurrió un error interno. Intenta de nuevo o contacta al administrador."));
-        }
+        return RespuestaJson.responder("crearComposicionRapido",
+                "Ya existe una composición con ese nombre. Puede que otro usuario la haya creado justo ahora — recarga e intenta de nuevo.",
+                () -> {
+                if (request.nombre() == null || request.nombre().isBlank()) {
+                    throw new IllegalArgumentException("El nombre es obligatorio.");
+                }
+                Optional<Composicion> existente = catalogoService.buscarComposicionPorNombre(request.nombre());
+                if (existente.isPresent()) {
+                    return Map.of("id", existente.get().getId(), "nombre", existente.get().getNombre(), "yaExistia", true);
+                }
+                Composicion composicion = new Composicion();
+                composicion.setNombre(request.nombre().trim());
+                composicion.setActivo(true);
+                Composicion guardado = catalogoService.guardarComposicion(composicion);
+                return Map.of("id", guardado.getId(), "nombre", guardado.getNombre(), "yaExistia", false);
+                });
     }
 }

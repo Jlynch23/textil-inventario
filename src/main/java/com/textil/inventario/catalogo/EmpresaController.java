@@ -1,5 +1,6 @@
 package com.textil.inventario.catalogo;
 
+import com.textil.inventario.common.RespuestaJson;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,13 +24,6 @@ public class EmpresaController {
 
     private final CatalogoService catalogoService;
 
-    private String primerError(BindingResult bindingResult) {
-        return bindingResult.getFieldErrors().stream()
-                .map(fe -> fe.getDefaultMessage())
-                .distinct()
-                .collect(Collectors.joining(" "));
-    }
-
     // #7: entidad -> DTO para poblar el form en edicion.
     private EmpresaForm aEmpresaForm(Empresa e) {
         EmpresaForm f = new EmpresaForm();
@@ -50,7 +44,7 @@ public class EmpresaController {
     @PostMapping("/empresas/guardar")
     public String guardarEmpresaForm(@Valid @ModelAttribute("empresa") EmpresaForm empresa, BindingResult bindingResult, RedirectAttributes ra) {
         if (bindingResult.hasErrors()) {
-            ra.addFlashAttribute("error", primerError(bindingResult));
+            ra.addFlashAttribute("error", RespuestaJson.primerError(bindingResult));
             return "redirect:/catalogo/empresas";
         }
         try {

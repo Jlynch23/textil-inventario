@@ -1,5 +1,6 @@
 package com.textil.inventario.catalogo;
 
+import com.textil.inventario.common.RespuestaJson;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,13 +23,6 @@ import java.util.stream.Collectors;
 public class UbicacionController {
 
     private final CatalogoService catalogoService;
-
-    private String primerError(BindingResult bindingResult) {
-        return bindingResult.getFieldErrors().stream()
-                .map(fe -> fe.getDefaultMessage())
-                .distinct()
-                .collect(Collectors.joining(" "));
-    }
 
     // #7: entidad -> DTO para poblar el form en edicion.
     private UbicacionForm aUbicacionForm(Ubicacion e) {
@@ -60,7 +54,7 @@ public class UbicacionController {
     @PostMapping("/ubicaciones/guardar")
     public String guardarUbicacion(@Valid @ModelAttribute("ubicacion") UbicacionForm ubicacion, BindingResult bindingResult, RedirectAttributes ra) {
         if (bindingResult.hasErrors()) {
-            ra.addFlashAttribute("error", primerError(bindingResult));
+            ra.addFlashAttribute("error", RespuestaJson.primerError(bindingResult));
             return "redirect:/catalogo/ubicaciones";
         }
         catalogoService.guardarUbicacion(ubicacion);

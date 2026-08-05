@@ -1,5 +1,6 @@
 package com.textil.inventario.catalogo;
 
+import com.textil.inventario.common.RespuestaJson;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,13 +23,6 @@ import java.util.stream.Collectors;
 public class TituloController {
 
     private final CatalogoService catalogoService;
-
-    private String primerError(BindingResult bindingResult) {
-        return bindingResult.getFieldErrors().stream()
-                .map(fe -> fe.getDefaultMessage())
-                .distinct()
-                .collect(Collectors.joining(" "));
-    }
 
     // #7: entidad -> DTO para poblar el form en edicion.
     private TituloForm aTituloForm(Titulo e) {
@@ -55,7 +49,7 @@ public class TituloController {
     @PostMapping("/titulos/guardar")
     public String guardarTituloForm(@Valid @ModelAttribute("tituloForm") TituloForm tituloForm, BindingResult bindingResult, RedirectAttributes ra) {
         if (bindingResult.hasErrors()) {
-            ra.addFlashAttribute("error", primerError(bindingResult));
+            ra.addFlashAttribute("error", RespuestaJson.primerError(bindingResult));
             return "redirect:/catalogo/titulos";
         }
         try {
@@ -100,25 +94,21 @@ public class TituloController {
     @PostMapping("/titulos/crear-rapido")
     @ResponseBody
     public ResponseEntity<?> crearTituloRapido(@RequestBody TituloRapidoRequest request) {
-        try {
-            if (request.valor() == null || request.valor().isBlank()) {
-                return ResponseEntity.status(400).body(Map.of("error", "El valor es obligatorio."));
-            }
-            Optional<Titulo> existente = catalogoService.buscarTituloPorValor(request.valor());
-            if (existente.isPresent()) {
-                return ResponseEntity.ok(Map.of("id", existente.get().getId(), "valor", existente.get().getValor(), "yaExistia", true));
-            }
-            Titulo titulo = new Titulo();
-            titulo.setValor(request.valor().trim());
-            titulo.setActivo(true);
-            Titulo guardado = catalogoService.guardarTitulo(titulo);
-            return ResponseEntity.ok(Map.of("id", guardado.getId(), "valor", guardado.getValor(), "yaExistia", false));
-        } catch (DataIntegrityViolationException e) {
-            return ResponseEntity.status(400).body(Map.of("error",
-                    "Ya existe un título con ese valor. Puede que otro usuario lo haya creado justo ahora — recarga e intenta de nuevo."));
-        } catch (Exception e) {
-            log.error("Error en crearTituloRapido: {}", e.getMessage(), e);
-            return ResponseEntity.status(500).body(Map.of("error", "Ocurrió un error interno. Intenta de nuevo o contacta al administrador."));
-        }
+        return RespuestaJson.responder("crearTituloRapido",
+                "Ya existe un título con ese valor. Puede que otro usuario lo haya creado justo ahora — recarga e intenta de nuevo.",
+                () -> {
+                if (request.valor() == null || request.valor().isBlank()) {
+                    throw new IllegalArgumentException("El valor es obligatorio.");
+                }
+                Optional<Titulo> existente = catalogoService.buscarTituloPorValor(request.valor());
+                if (existente.isPresent()) {
+                    return Map.of("id", existente.get().getId(), "valor", existente.get().getValor(), "yaExistia", true);
+                }
+                Titulo titulo = new Titulo();
+                titulo.setValor(request.valor().trim());
+                titulo.setActivo(true);
+                Titulo guardado = catalogoService.guardarTitulo(titulo);
+                return Map.of("id", guardado.getId(), "valor", guardado.getValor(), "yaExistia", false);
+                });
     }
 }

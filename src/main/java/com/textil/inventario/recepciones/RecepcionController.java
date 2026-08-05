@@ -1,5 +1,6 @@
 package com.textil.inventario.recepciones;
 
+import com.textil.inventario.common.RespuestaJson;
 import com.textil.inventario.catalogo.ArticuloRepository;
 import com.textil.inventario.catalogo.ColorRepository;
 import com.textil.inventario.catalogo.Empresa;
@@ -178,65 +179,46 @@ public class RecepcionController {
     @PostMapping("/extraer-factura")
     @ResponseBody
     public ResponseEntity<?> extraerFactura(@RequestParam("file") MultipartFile file) {
-        try {
-            ExtraccionFacturaResponse resultado = anthropicOcrService.extraerDatosFactura(file);
-            return ResponseEntity.ok(resultado);
-        } catch (IllegalArgumentException e) {
-            // Validacion de PDF (vacio / tamaño / no es PDF): error del cliente -> 400.
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        } catch (Exception e) {
-            log.error("Error en extraerFactura: {}", e.getMessage(), e);
-            return ResponseEntity.status(500).body(Map.of("error", "Ocurrió un error interno. Intenta de nuevo o contacta al administrador."));
-        }
+        // La validacion del PDF (vacio / tamaño / no es PDF) lanza
+        // IllegalArgumentException; el helper la traduce a 400 con su mensaje.
+        return RespuestaJson.responder("extraerFactura",
+                () -> anthropicOcrService.extraerDatosFactura(file));
     }
 
     @PostMapping("/asignar-factura")
     @ResponseBody
     public ResponseEntity<?> asignarFactura(@RequestBody AsignarFacturaRequest request) {
-        try {
-            recepcionService.asignarFactura(request.numeroFactura(), request.fechaFactura(), request.recepcionIds());
-            return ResponseEntity.ok(Map.of("ok", true));
-        } catch (Exception e) {
-            log.error("Error en asignarFactura: {}", e.getMessage(), e);
-            return ResponseEntity.status(500).body(Map.of("error", "Ocurrió un error interno. Intenta de nuevo o contacta al administrador."));
-        }
+        return RespuestaJson.responder("asignarFactura", () -> {
+                recepcionService.asignarFactura(request.numeroFactura(), request.fechaFactura(), request.recepcionIds());
+                return Map.of("ok", true);
+        });
     }
 
     @PostMapping("/{id}/guardar-documento-guia")
     @ResponseBody
     public ResponseEntity<?> guardarDocumentoGuia(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
-        try {
+        return RespuestaJson.responder("guardarDocumentoGuia", () -> {
             recepcionService.guardarDocumentoGuia(id, file);
-            return ResponseEntity.ok(Map.of("ok", true));
-        } catch (IllegalArgumentException e) {
-            // Validacion de PDF (vacio / tamaño / no es PDF): error del cliente -> 400.
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        } catch (Exception e) {
-            log.error("Error en guardarDocumentoGuia: {}", e.getMessage(), e);
-            return ResponseEntity.status(500).body(Map.of("error", "Ocurrió un error interno. Intenta de nuevo o contacta al administrador."));
-        }
+            return Map.of("ok", true);
+        });
     }
 
     @PostMapping("/guardar-documento-factura")
     @ResponseBody
     public ResponseEntity<?> guardarDocumentoFactura(@RequestParam("recepcionIds") List<Long> recepcionIds,
                                                        @RequestParam("file") MultipartFile file) {
-        try {
+        return RespuestaJson.responder("guardarDocumentoFactura", () -> {
             recepcionService.guardarDocumentoFactura(recepcionIds, file);
-            return ResponseEntity.ok(Map.of("ok", true));
-        } catch (IllegalArgumentException e) {
-            // Validacion de PDF (vacio / tamaño / no es PDF): error del cliente -> 400.
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        } catch (Exception e) {
-            log.error("Error en guardarDocumentoFactura: {}", e.getMessage(), e);
-            return ResponseEntity.status(500).body(Map.of("error", "Ocurrió un error interno. Intenta de nuevo o contacta al administrador."));
-        }
+            return Map.of("ok", true);
+        });
     }
 
     @PostMapping("/extraer-guia")
     @ResponseBody
     public ResponseEntity<?> extraerGuia(@RequestParam("file") MultipartFile file) {
-        try {
+        // La validacion del PDF (vacio / tamaño / no es PDF) lanza
+        // IllegalArgumentException; el helper la traduce a 400 con su mensaje.
+        return RespuestaJson.responder("extraerGuia", () -> {
             ExtraccionGuiaResponse extraccion = anthropicOcrService.extraerDatosGuia(file);
             List<Empresa> empresas = empresaRepository.findByActivoTrue();
 
@@ -261,43 +243,27 @@ public class RecepcionController {
                     extraccion.advertencia()
             );
 
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            // Validacion de PDF (vacio / tamaño / no es PDF): error del cliente -> 400.
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        } catch (Exception e) {
-            log.error("Error en extraerGuia: {}", e.getMessage(), e);
-            return ResponseEntity.status(500).body(Map.of("error", "Ocurrió un error interno. Intenta de nuevo o contacta al administrador."));
-        }
+            return response;
+        });
     }
 
     @PostMapping("/rematch-linea")
     @ResponseBody
     public ResponseEntity<?> rematchLinea(@RequestBody ProductoExtraido producto) {
-        try {
-            LineaSugerida resultado = articuloMatchingService.matchLinea(producto);
-            return ResponseEntity.ok(resultado);
-        } catch (Exception e) {
-            log.error("Error en rematchLinea: {}", e.getMessage(), e);
-            return ResponseEntity.status(500).body(Map.of("error", "Ocurrió un error interno. Intenta de nuevo o contacta al administrador."));
-        }
+        return RespuestaJson.responder("rematchLinea", () -> {
+                LineaSugerida resultado = articuloMatchingService.matchLinea(producto);
+                return resultado;
+        });
     }
 
     @PostMapping("/crear-con-lineas")
     @ResponseBody
     public ResponseEntity<?> crearConLineas(@RequestBody CrearRecepcionConLineasRequest request) {
-        try {
-            Recepcion r = recepcionService.crearRecepcionConLineas(
-                    request.empresaId(), request.numeroGuia(), request.numeroFactura(), request.fechaGuia(),
-                    request.observaciones(), request.emisorNombre(), request.emisorRuc(), request.lineas());
-            return ResponseEntity.ok(Map.of("id", r.getId(), "redirectUrl", "/recepciones/" + r.getId() + "/detalle"));
-        } catch (IllegalArgumentException e) {
-            // Errores esperados y accionables por el usuario (ej. guía duplicada):
-            // devolver el mensaje real con 400, no el 500 genérico.
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        } catch (Exception e) {
-            log.error("Error en crearConLineas: {}", e.getMessage(), e);
-            return ResponseEntity.status(500).body(Map.of("error", "Ocurrió un error interno. Intenta de nuevo o contacta al administrador."));
-        }
+        return RespuestaJson.responder("crearConLineas", () -> {
+                Recepcion r = recepcionService.crearRecepcionConLineas(
+                        request.empresaId(), request.numeroGuia(), request.numeroFactura(), request.fechaGuia(),
+                        request.observaciones(), request.emisorNombre(), request.emisorRuc(), request.lineas());
+                return Map.of("id", r.getId(), "redirectUrl", "/recepciones/" + r.getId() + "/detalle");
+        });
     }
 }
