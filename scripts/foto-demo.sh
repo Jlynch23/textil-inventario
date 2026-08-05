@@ -85,12 +85,14 @@ volver)
         mysql -u root --default-character-set=utf8mb4 textil_inventario
 
     echo "[foto:$NOMBRE] Restaurando la carpeta de documentos..."
-    # Se limpia y desempaqueta con un contenedor efimero (root): la carpeta es
-    # del uid 999 (appuser) y el usuario del host no puede borrarla directo.
+    # Limpieza Y desempaquetado dentro de un contenedor efimero (root): la
+    # carpeta es del uid 999 (appuser); si el tar corre como usuario del host,
+    # falla con "Cannot utime: Operation not permitted" al tocar la carpeta
+    # ajena y (con set -e) corta el script a medio restaurar.
     docker run --rm -v "$DIR_CLIENTE/documentos:/d" alpine sh -c 'rm -rf /d/* /d/..?* /d/.[!.]* 2>/dev/null || true'
     if [ -f "$DOCS" ]; then
-        tar -xzf "$DOCS" -C "$DIR_CLIENTE"
-        docker run --rm -v "$DIR_CLIENTE/documentos:/d" alpine chown -R 999:999 /d
+        docker run --rm -v "$DIR_CLIENTE:/c" -v "$CARPETA:/fotos:ro" alpine \
+            sh -c "tar -xzf /fotos/$(basename "$DOCS") -C /c && chown -R 999:999 /c/documentos"
     fi
     echo "Listo: el demo volvio a la foto '$NOMBRE'. No hace falta reiniciar nada."
     ;;
