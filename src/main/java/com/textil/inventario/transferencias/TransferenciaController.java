@@ -160,15 +160,37 @@ public class TransferenciaController {
             if (!key.startsWith("reparto_")) continue;
             String[] partes = key.substring("reparto_".length()).split("_");
             if (partes.length != 2) continue;
-            Long detalleId = Long.valueOf(partes[0]);
-            Long ubicacionId = Long.valueOf(partes[1]);
-            Integer cantidad;
+            Long detalleId;
+            Long ubicacionId;
             try {
-                cantidad = entry.getValue().isBlank() ? 0 : Integer.valueOf(entry.getValue());
+                detalleId = Long.valueOf(partes[0]);
+                ubicacionId = Long.valueOf(partes[1]);
             } catch (NumberFormatException e) {
-                cantidad = 0;
+                // Clave manipulada o basura: no corresponde a ninguna linea real
+                // del formulario. Se ignora en vez de reventar con un 500.
+                continue;
             }
-            if (cantidad <= 0) continue;
+            Integer cantidad;
+            if (entry.getValue().isBlank()) {
+                cantidad = 0;   // campo dejado vacio: ese destino no recibe nada
+            } else {
+                try {
+                    cantidad = Integer.valueOf(entry.getValue().trim());
+                } catch (NumberFormatException e) {
+                    // Antes se convertia a 0 y seguia: los rollos de esa linea
+                    // quedaban sin destino y la llegada se confirmaba igual, sin
+                    // ningun aviso. Un valor no numerico es un error del usuario
+                    // y hay que decirselo.
+                    ra.addFlashAttribute("error",
+                            "La cantidad «" + entry.getValue() + "» no es un número válido. Revisa el reparto.");
+                    return "redirect:/transferencias/" + id + "/confirmar-llegada";
+                }
+            }
+            if (cantidad < 0) {
+                ra.addFlashAttribute("error", "Las cantidades del reparto no pueden ser negativas.");
+                return "redirect:/transferencias/" + id + "/confirmar-llegada";
+            }
+            if (cantidad == 0) continue;
             repartoPorDetalle.computeIfAbsent(detalleId, k -> new HashMap<>()).put(ubicacionId, cantidad);
         }
 

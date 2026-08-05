@@ -413,8 +413,20 @@ public class RecepcionService {
         r.setEmisorNombre(emisorNombreNorm == null || emisorNombreNorm.isBlank() ? null : emisorNombreNorm);
         r.setEmisorRuc(emisorRucNorm == null || emisorRucNorm.isBlank() ? null : emisorRucNorm);
         recepcionRepository.save(r);
+        // Una linea sin articulo o sin color no se puede registrar. Antes se
+        // descartaba en silencio: la recepcion quedaba con MENOS lineas que la
+        // guia y nadie se enteraba hasta cuadrar el inventario a mano. Ahora se
+        // rechaza indicando cual, para que se resuelva el match (o se cree el
+        // articulo/color al vuelo) antes de guardar.
+        for (int i = 0; i < lineas.size(); i++) {
+            CrearRecepcionConLineasRequest.LineaRequest linea = lineas.get(i);
+            if (linea.articuloId() == null || linea.colorId() == null) {
+                throw new IllegalArgumentException(
+                        "La línea " + (i + 1) + " no tiene artículo o color identificado. "
+                        + "Resuélvela (o créalos) antes de guardar la recepción.");
+            }
+        }
         for (CrearRecepcionConLineasRequest.LineaRequest linea : lineas) {
-            if (linea.articuloId() == null || linea.colorId() == null) continue;
             agregarDetalle(r.getId(), linea.articuloId(), linea.colorId(), linea.programaTenido(),
                     linea.rollosGuia(), linea.pesoBrutoKg());
         }

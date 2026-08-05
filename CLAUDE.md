@@ -121,9 +121,16 @@ parsing de guías, ese prompt es la fuente de verdad.
 
 - Todo cambio de esquema es una migración Flyway nueva en
   `src/main/resources/db/migration/V<n>__descripcion.sql`. **Nunca** editar una migración ya
-  aplicada; sumar una nueva con el siguiente número (actualmente van hasta **V45**). Las últimas:
-  V41 (tabla `correlativo`), V42 (UNIQUE en `numero_guia`), V43 (`@Version` en `programa_detalle`),
-  V44 (celular de usuario), V45 (emisor de la guía en `recepciones`).
+  aplicada; sumar una nueva con el siguiente número (actualmente van hasta **V46**). Las últimas:
+  V42 (UNIQUE en `numero_guia`), V43 (`@Version` en `programa_detalle`), V44 (celular de usuario),
+  V45 (emisor de la guía en `recepciones`), V46 (blancos `''` → NULL en guía/factura/color).
+
+### Blanco = NULL (no `''`)
+Un campo opcional vacío se guarda **NULL**, nunca cadena vacía: `''` rompe en silencio las
+consultas `IsNull` y los `findBy`. Ya mordió dos veces — `numero_factura = ''` dejaba la recepción
+invisible en **Facturar**, y `codigo_fast_dye = ''` hacía que el OCR eligiera un color al azar
+entre todos los que tenían el código vacío. Los servicios normalizan blanco → NULL y **V46** reparó
+las filas viejas. Al agregar un campo opcional, mantener el criterio.
 
 ### Empresas de la guía: destinatario por RUC, emisor leído del documento (V45)
 Una guía tiene **dos** empresas y el sistema ya no confunde ninguna:

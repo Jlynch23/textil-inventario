@@ -250,6 +250,11 @@ public class ProgramaService {
         }
         for (int i = 0; i < detalleIdsExistentes.size(); i++) {
             ProgramaDetalle pd = programaDetalleRepository.findById(detalleIdsExistentes.get(i)).orElseThrow();
+            // Guard de pertenencia (mismo criterio que confirmarRecepcion): las
+            // lineas se cargan por id venido del POST, asi que sin esta
+            // verificacion un formulario manipulado editaba lineas de OTRO
+            // programa desde la pantalla de este.
+            exigirQuePertenezcaAlPrograma(pd, programaId);
             Integer cant = cantidadesExistentes.get(i);
             // R-P1: sin esto, una cantidad vacia se persistia como NULL (viola
             // NOT NULL -> 500) y una negativa dejaba la linea incoherente.
@@ -266,7 +271,11 @@ public class ProgramaService {
         }
 
         for (Long detalleId : detalleIdsAEliminar) {
-            programaDetalleRepository.deleteById(detalleId);
+            // Igual que arriba: sin el guard, un POST manipulado BORRABA lineas
+            // de otro programa (deleteById no mira a quien pertenecen).
+            ProgramaDetalle pd = programaDetalleRepository.findById(detalleId).orElseThrow();
+            exigirQuePertenezcaAlPrograma(pd, programaId);
+            programaDetalleRepository.delete(pd);
         }
 
         // R-P1: las listas de lineas nuevas tambien se indexan en paralelo.
@@ -321,4 +330,17 @@ public class ProgramaService {
             return new HistorialGuiaView(rd.getRecepcion().getId(), rd.getRecepcion().getNumeroGuia(), docId);
         }).toList();
     }
+
+    /**
+     * Una linea solo puede editarse o borrarse desde el programa al que
+     * pertenece. Los ids llegan del formulario (entrada no confiable) y tanto
+     * findById como deleteById los aceptan sin mirar el dueño.
+     */
+    private void exigirQuePertenezcaAlPrograma(ProgramaDetalle pd, Long programaId) {
+        if (pd.getPrograma() == null || !pd.getPrograma().getId().equals(programaId)) {
+            throw new IllegalArgumentException(
+                    "La línea " + pd.getId() + " no pertenece a este programa.");
+        }
+    }
+
 }
