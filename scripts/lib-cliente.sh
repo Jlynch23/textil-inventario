@@ -12,6 +12,17 @@ MC_NGINX_CONTENEDOR="texcontrol_proxy_nginx"
 # Subdominios que NO se pueden asignar como empresa (chocan con la infra).
 MC_RESERVADOS="login www adminer api mail ftp admin"
 
+# --- Credenciales del proveedor (guardadas UNA vez en el VPS) ---------------
+# Si ANTHROPIC_API_KEY no viene en el entorno, se toma de ~/.texcontrol/
+# proveedor.env (lo escribe scripts/configurar-proveedor.sh, permisos 600).
+# Asi nuevo-cliente.sh / nuevo-demo.sh no necesitan el prefijo
+# ANTHROPIC_API_KEY=... en cada corrida. El entorno siempre tiene prioridad.
+MC_PROVEEDOR_ENV="$HOME/.texcontrol/proveedor.env"
+if [ -z "${ANTHROPIC_API_KEY:-}" ] && [ -f "$MC_PROVEEDOR_ENV" ]; then
+    # shellcheck source=/dev/null
+    source "$MC_PROVEEDOR_ENV"
+fi
+
 # --- Validación del slug (subdominio) --------------------------------------
 # El slug debe ser exactamente lo que aceptaría el lanzador: [a-z0-9].
 mc_validar_slug() {

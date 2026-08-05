@@ -40,9 +40,14 @@ wildcard emitido (igual que cualquier cliente; ver `DEPLOY.md`):
 
 ```bash
 cd ~/textil-inventario        # clon en main (o la rama que quieras demostrar)
-ANTHROPIC_API_KEY=... ./scripts/nuevo-demo.sh
+./scripts/nuevo-demo.sh
 #   -> queda en https://demo.texcontrol.pe
 ```
+
+> La `ANTHROPIC_API_KEY` del OCR ya no se antepone en cada comando: se guarda UNA
+> vez con `./scripts/configurar-proveedor.sh` (queda en `~/.texcontrol/proveedor.env`
+> y `lib-cliente.sh` la carga sola). Con `--aplicar` también se copia a los clientes
+> ya creados (actualiza su `.env` y reinicia sus apps).
 
 `nuevo-demo.sh` se apoya en los scripts que ya existen: crea el stack con
 `nuevo-cliente.sh --prueba demo`, aplica el seed y llama a `endurecer-cliente.sh`

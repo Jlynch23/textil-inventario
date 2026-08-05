@@ -241,8 +241,10 @@ despliegue de producción es el bucle multicliente de arriba (el `deploy-dev.sh`
   clave única e imprime UNA vez, borra cuentas de prueba). Otros: `listar-clientes.sh`,
   `backup-cliente.sh --todos` (cron diario 2am via `instalar-cron-backups.sh`),
   `eliminar-cliente.sh`, `endurecer-cliente.sh` (re-rota `jlynch`), `migrar-cliente.sh`.
-  **OCR**: `ANTHROPIC_API_KEY` (del proveedor, la MISMA para todos) debe estar en el
-  entorno al correr `nuevo-cliente.sh` — se copia al `.env` del cliente.
+  **OCR**: `ANTHROPIC_API_KEY` (del proveedor, la MISMA para todos) se guarda UNA vez en
+  el VPS con `configurar-proveedor.sh` (queda en `~/.texcontrol/proveedor.env`, 600;
+  `lib-cliente.sh` la carga sola) — ya no hace falta anteponerla en cada comando.
+  `--aplicar` además la copia a los clientes ya creados y reinicia sus apps.
 - **Ambiente DEMO** (`demo.texcontrol.pe`, público, para prospectos): `nuevo-demo.sh`
   (alta + seed + endurecer) y `resetear-demo.sh` (foja cero manual). Ver `DEMO.md`.
   Cuesta ~0.8–1 GB de RAM como cualquier cliente — cuenta para el techo del VPS.
