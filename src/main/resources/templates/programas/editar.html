@@ -348,93 +348,61 @@
         }
         engancharBotones();
 
-        document.getElementById('btnGuardarColorRapidoPrograma').addEventListener('click', async () => {
+        // Alta al vuelo desde los modales: la logica comun (guard de doble
+        // click, dedupe, refresco de todos los selects) vive en /js/crear-rapido.js.
+        document.getElementById('btnGuardarColorRapidoPrograma').addEventListener('click', async (ev) => {
             const nombreOficial = document.getElementById('modalColorNombre').value.trim();
             const codigoFastDye = document.getElementById('modalColorCodigo').value.trim();
             const errorDiv = document.getElementById('modalColorError');
             if (!nombreOficial || !codigoFastDye) { errorDiv.textContent = 'Nombre y código son obligatorios.'; return; }
-            try {
-                const resp = await fetchConCsrf('/catalogo/colores/crear-rapido', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ nombreOficial, codigoFastDye })
-                });
-                const data = await resp.json();
-                if (!resp.ok) { errorDiv.textContent = data.error || 'Error al crear el color.'; return; }
-                coloresData.push({ id: data.id, nombreOficial: data.nombreOficial, codigoFastDye: codigoFastDye });
-                document.querySelectorAll('.select-color').forEach(sel => {
-                    const idPreseleccionar = sel === selectColorActual ? data.id : null;
-                    const valorActual = sel.value;
-                    sel.innerHTML = opcionesColores(idPreseleccionar);
-                    if (!idPreseleccionar && valorActual) sel.value = valorActual;
-                });
-                bootstrap.Modal.getInstance(document.getElementById('modalColorRapidoPrograma')).hide();
-            } catch (e) { errorDiv.textContent = 'Error de conexión: ' + e.message; }
+            await crearRapido({
+                boton: ev.currentTarget, url: '/catalogo/colores/crear-rapido',
+                payload: { nombreOficial, codigoFastDye }, errorDiv,
+                lista: coloresData,
+                mapear: d => ({ id: d.id, nombreOficial: d.nombreOficial, codigoFastDye: codigoFastDye }),
+                selectorSelects: '.select-color', renderOpciones: opcionesColores,
+                selectActual: selectColorActual, modalId: 'modalColorRapidoPrograma',
+                mensajeError: 'Error al crear el color.'
+            });
         });
 
-        document.getElementById('btnGuardarTipoTelaPrograma').addEventListener('click', async () => {
+        document.getElementById('btnGuardarTipoTelaPrograma').addEventListener('click', async (ev) => {
             const nombre = document.getElementById('modalTipoTelaNombre').value.trim();
             const errorDiv = document.getElementById('modalTipoTelaError');
             if (!nombre) { errorDiv.textContent = 'El nombre es obligatorio.'; return; }
-            try {
-                const resp = await fetchConCsrf('/catalogo/tipos-tela/crear-rapido', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ nombre })
-                });
-                const data = await resp.json();
-                if (!resp.ok) { errorDiv.textContent = data.error || 'Error al crear.'; return; }
-                tiposTelaData.push({ id: data.id, nombre: data.nombre });
-                document.querySelectorAll('.select-tipo-tela').forEach(sel => {
-                    const idPreseleccionar = sel === selectTipoTelaActual ? data.id : null;
-                    const valorActual = sel.value;
-                    sel.innerHTML = opcionesTipoTela(idPreseleccionar);
-                    if (!idPreseleccionar && valorActual) sel.value = valorActual;
-                });
-                bootstrap.Modal.getInstance(document.getElementById('modalTipoTelaPrograma')).hide();
-            } catch (e) { errorDiv.textContent = 'Error de conexión: ' + e.message; }
+            await crearRapido({
+                boton: ev.currentTarget, url: '/catalogo/tipos-tela/crear-rapido',
+                payload: { nombre }, errorDiv,
+                lista: tiposTelaData, mapear: d => ({ id: d.id, nombre: d.nombre }),
+                selectorSelects: '.select-tipo-tela', renderOpciones: opcionesTipoTela,
+                selectActual: selectTipoTelaActual, modalId: 'modalTipoTelaPrograma'
+            });
         });
 
-        document.getElementById('btnGuardarTituloPrograma').addEventListener('click', async () => {
+        document.getElementById('btnGuardarTituloPrograma').addEventListener('click', async (ev) => {
             const valor = document.getElementById('modalTituloValor').value.trim();
             const errorDiv = document.getElementById('modalTituloError');
             if (!valor) { errorDiv.textContent = 'El valor es obligatorio.'; return; }
-            try {
-                const resp = await fetchConCsrf('/catalogo/titulos/crear-rapido', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ valor })
-                });
-                const data = await resp.json();
-                if (!resp.ok) { errorDiv.textContent = data.error || 'Error al crear.'; return; }
-                titulosData.push({ id: data.id, valor: data.valor });
-                document.querySelectorAll('.select-titulo').forEach(sel => {
-                    const idPreseleccionar = sel === selectTituloActual ? data.id : null;
-                    const valorActual = sel.value;
-                    sel.innerHTML = opcionesTitulos(idPreseleccionar);
-                    if (!idPreseleccionar && valorActual) sel.value = valorActual;
-                });
-                bootstrap.Modal.getInstance(document.getElementById('modalTituloPrograma')).hide();
-            } catch (e) { errorDiv.textContent = 'Error de conexión: ' + e.message; }
+            await crearRapido({
+                boton: ev.currentTarget, url: '/catalogo/titulos/crear-rapido',
+                payload: { valor }, errorDiv,
+                lista: titulosData, mapear: d => ({ id: d.id, valor: d.valor }),
+                selectorSelects: '.select-titulo', renderOpciones: opcionesTitulos,
+                selectActual: selectTituloActual, modalId: 'modalTituloPrograma'
+            });
         });
 
-        document.getElementById('btnGuardarComposicionPrograma').addEventListener('click', async () => {
+        document.getElementById('btnGuardarComposicionPrograma').addEventListener('click', async (ev) => {
             const nombre = document.getElementById('modalComposicionNombre').value.trim();
             const errorDiv = document.getElementById('modalComposicionError');
             if (!nombre) { errorDiv.textContent = 'El nombre es obligatorio.'; return; }
-            try {
-                const resp = await fetchConCsrf('/catalogo/composiciones/crear-rapido', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ nombre })
-                });
-                const data = await resp.json();
-                if (!resp.ok) { errorDiv.textContent = data.error || 'Error al crear.'; return; }
-                composicionesData.push({ id: data.id, nombre: data.nombre });
-                document.querySelectorAll('.select-composicion').forEach(sel => {
-                    const idPreseleccionar = sel === selectComposicionActual ? data.id : null;
-                    const valorActual = sel.value;
-                    sel.innerHTML = opcionesComposicion(idPreseleccionar);
-                    if (!idPreseleccionar && valorActual) sel.value = valorActual;
-                });
-                bootstrap.Modal.getInstance(document.getElementById('modalComposicionPrograma')).hide();
-            } catch (e) { errorDiv.textContent = 'Error de conexión: ' + e.message; }
+            await crearRapido({
+                boton: ev.currentTarget, url: '/catalogo/composiciones/crear-rapido',
+                payload: { nombre }, errorDiv,
+                lista: composicionesData, mapear: d => ({ id: d.id, nombre: d.nombre }),
+                selectorSelects: '.select-composicion', renderOpciones: opcionesComposicion,
+                selectActual: selectComposicionActual, modalId: 'modalComposicionPrograma'
+            });
         });
     </script>
 </section>

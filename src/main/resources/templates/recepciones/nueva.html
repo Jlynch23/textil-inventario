@@ -351,7 +351,7 @@
     });
     }
 
-    document.getElementById('btnGuardarColorRapido').addEventListener('click', async () => {
+    document.getElementById('btnGuardarColorRapido').addEventListener('click', async (ev) => {
         const nombreOficial = document.getElementById('modalColorNombre').value.trim();
         const codigoFastDye = document.getElementById('modalColorCodigo').value.trim();
         const errorDiv = document.getElementById('modalColorError');
@@ -361,6 +361,9 @@
             return;
         }
 
+        // Guard de doble click (/js/crear-rapido.js): sin el, dos clicks seguidos
+        // creaban el color dos veces y disparaban dos rematch de la misma linea.
+        await sinDobleClick(ev.currentTarget, async () => {
         try {
             const resp = await fetchConCsrf('/catalogo/colores/crear-rapido', {
                 method: 'POST',
@@ -407,6 +410,7 @@
         } catch (e) {
             errorDiv.textContent = 'Error de conexión: ' + e.message;
         }
+        });
     });
 
     document.getElementById('formRecepcion').addEventListener('submit', async (e) => {

@@ -8,6 +8,10 @@
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <!-- #13: helper CSRF compartido, definido antes que cualquier script de página. -->
     <script th:src="@{/js/fetch-csrf.js}"></script>
+    <!-- Alta "al vuelo" de catalogo desde un modal (crear color/tipo de tela/...).
+         Un solo punto para las pantallas que lo usan: antes estaba copiado en
+         cada una y el fix del doble click habia llegado solo a una. -->
+    <script th:src="@{/js/crear-rapido.js}"></script>
 
     <!-- PWA: app movil instalable (agregar a pantalla de inicio, modo standalone) -->
     <link rel="manifest" href="/manifest.webmanifest">
