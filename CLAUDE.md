@@ -159,7 +159,7 @@ CI (`.github/workflows/ci.yml`), en cada push/PR a `develop` y `main`, corre **d
 `script-src-attr 'unsafe-inline'` para no reescribir los ~30 `onclick/onchange` inline. Al agregar
 un `<script>` inline nuevo, ponele `th:attr="nonce=${cspNonce}"` o la CSP lo bloqueará.
 
-## Flujo de trabajo (ramas)
+## Flujo de trabajo (ramas y ambientes)
 
 **Solo existen DOS ramas y NO se crean otras** (nada de `feature/*`, `claude/*`, ni ramas efímeras
 por tarea — es una molestia explícita del dueño):
@@ -169,8 +169,23 @@ por tarea — es una molestia explícita del dueño):
   se reinician las apps de los clientes (ver "Actualizar el código de TODOS los clientes" en
   Infraestructura). **Solo** se mergea `develop → main` cuando está probado y estable.
 
+Sobre esas dos ramas corren **TRES ambientes** (ambiente ≠ rama: el demo NO tiene rama propia,
+es la misma app con datos/config distintos):
+
+| Ambiente | URL | Rama que corre | Para quién | Acceso |
+|---|---|---|---|---|
+| **DEV** (staging) | `dev.texcontrol.pe` | `develop` | El proveedor (probar lo nuevo) | Oculto, Basic Auth (`STAGING.md`) |
+| **DEMO** | `demo.texcontrol.pe` | `main` (estable) | **Clientes potenciales** (prospectos) | Público, cuentas demo (`DEMO.md`) |
+| **PRODUCCIÓN** | `<empresa>.texcontrol.pe` | `main` | Clientes que pagan | Cada uno su instancia y BD |
+
+El **DEMO** es una instancia más del modelo multi-cliente (BD `db_demo` aislada) sembrada con
+datos de ejemplo y 10 cuentas para repartir (`scripts/nuevo-demo.sh`, reset manual con
+`scripts/resetear-demo.sh`, seed en `scripts/demo-seed.sql`; jlynch queda con clave rotada
+privada porque el ambiente es público). Detalle completo en `DEMO.md`.
+
 Regla: nunca pushear features a medio hacer a `main`; probar en `develop` (staging `dev.texcontrol.pe`),
-y recién cuando anda, promover a `main` y reconstruir los clientes. CI (`.github/workflows/ci.yml`) corre
+y recién cuando anda, promover a `main` y reconstruir los clientes (el demo, al correr `main`, se
+actualiza reconstruyendo su stack igual que un cliente). CI (`.github/workflows/ci.yml`) corre
 en push/PR a **ambas**. Nota: `scripts/deploy.sh`/`deploy-dev.sh` eran del modelo single-cliente; hoy el
 despliegue de producción es el bucle multicliente de arriba (el `deploy-dev.sh` sí sigue vigente para staging).
 
@@ -228,6 +243,9 @@ despliegue de producción es el bucle multicliente de arriba (el `deploy-dev.sh`
   `eliminar-cliente.sh`, `endurecer-cliente.sh` (re-rota `jlynch`), `migrar-cliente.sh`.
   **OCR**: `ANTHROPIC_API_KEY` (del proveedor, la MISMA para todos) debe estar en el
   entorno al correr `nuevo-cliente.sh` — se copia al `.env` del cliente.
+- **Ambiente DEMO** (`demo.texcontrol.pe`, público, para prospectos): `nuevo-demo.sh`
+  (alta + seed + endurecer) y `resetear-demo.sh` (foja cero manual). Ver `DEMO.md`.
+  Cuesta ~0.8–1 GB de RAM como cualquier cliente — cuenta para el techo del VPS.
 - **Actualizar el código de TODOS los clientes** (comparten imagen): en el VPS, con
   el clon en **`main`**, `git pull` → `docker build -t texcontrol-app:latest .` →
   reiniciar cada app: `for e in clientes/*/.env; do s=$(basename $(dirname $e)); \
