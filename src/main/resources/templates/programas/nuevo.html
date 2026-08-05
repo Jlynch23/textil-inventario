@@ -118,97 +118,11 @@
         </div>
     </div>
 
-    <!-- Modal: Tipo de Tela nuevo -->
-    <div class="modal fade" id="modalTipoTelaPrograma" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h6 class="modal-title fw-bold">Crear Tipo de Tela Nuevo</h6>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <label class="form-label fw-semibold">Nombre</label>
-                    <input type="text" class="form-control" id="modalTipoTelaNombre">
-                    <div id="modalTipoTelaError" class="text-danger small mt-2"></div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary" id="btnGuardarTipoTelaPrograma">Crear</button>
-                </div>
-            </div>
-        </div>
-    </div>
+        <!-- Modales de alta rapida de catalogo (compartidos con la otra
+         pantalla de programa): fragments/modales-catalogo.html -->
+    <div th:replace="~{fragments/modales-catalogo :: modalesPrograma}"></div>
 
-    <!-- Modal: Título nuevo -->
-    <div class="modal fade" id="modalTituloPrograma" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h6 class="modal-title fw-bold">Crear Título Nuevo</h6>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <label class="form-label fw-semibold">Valor</label>
-                    <input type="text" class="form-control" id="modalTituloValor">
-                    <div id="modalTituloError" class="text-danger small mt-2"></div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary" id="btnGuardarTituloPrograma">Crear</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal: Composición nueva -->
-    <div class="modal fade" id="modalComposicionPrograma" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h6 class="modal-title fw-bold">Crear Composición Nueva</h6>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <label class="form-label fw-semibold">Nombre</label>
-                    <input type="text" class="form-control" id="modalComposicionNombre">
-                    <div id="modalComposicionError" class="text-danger small mt-2"></div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary" id="btnGuardarComposicionPrograma">Crear</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal: Color nuevo -->
-    <div class="modal fade" id="modalColorRapidoPrograma" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h6 class="modal-title fw-bold">Crear Color Nuevo</h6>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Nombre del Color</label>
-                        <input type="text" class="form-control" id="modalColorNombre">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Código FAST DYE</label>
-                        <input type="text" class="form-control" id="modalColorCodigo">
-                    </div>
-                    <div id="modalColorError" class="text-danger small"></div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary" id="btnGuardarColorRapidoPrograma">Crear Color</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script th:inline="javascript" th:attr="nonce=${cspNonce}">
+<script th:inline="javascript" th:attr="nonce=${cspNonce}">
         const tiposTelaData = /*[[${tiposTela}]]*/ [];
         const titulosData = /*[[${titulos}]]*/ [];
         let coloresData = /*[[${colores}]]*/ [];
