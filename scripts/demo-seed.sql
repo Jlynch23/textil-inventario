@@ -116,6 +116,61 @@ JOIN articulos   ar ON ar.codigo_interno = s.art
 JOIN colores     co ON co.nombre_oficial = s.col
 JOIN ubicaciones ub ON ub.codigo         = s.ubi;
 
+-- --- PROGRAMAS DE TEÑIDO -----------------------------------------------------
+-- Tres programas COMPLETOS (todas sus lineas cargadas, total_rollos = suma de
+-- las lineas, como valida ProgramaService). Estados distintos para que la
+-- pantalla de seguimiento luzca con datos reales:
+--   PROG-2026-001: terminado (recibido 100%).
+--   PROG-2026-002: en curso (recibido parcial).
+--   PROG-2026-003: pendiente (sin recibir) -> sirve para DEMOSTRAR una
+--                  recepcion contra programa con saldo disponible.
+-- Fechas relativas a hoy (CURDATE()) para que el demo nunca se vea viejo.
+INSERT IGNORE INTO programas (numero, empresa_id, fecha, total_rollos, observaciones, created_at)
+SELECT 'PROG-2026-001', e.id, CURDATE() - INTERVAL 21 DAY, 60,
+       'Programa de ejemplo terminado: todo recibido.', NOW()
+FROM empresas e WHERE e.ruc = '20000000001';
+
+INSERT IGNORE INTO programas (numero, empresa_id, fecha, total_rollos, observaciones, created_at)
+SELECT 'PROG-2026-002', e.id, CURDATE() - INTERVAL 10 DAY, 60,
+       'Programa de ejemplo en curso: recibido parcial.', NOW()
+FROM empresas e WHERE e.ruc = '20000000001';
+
+INSERT IGNORE INTO programas (numero, empresa_id, fecha, total_rollos, observaciones, created_at)
+SELECT 'PROG-2026-003', e.id, CURDATE() - INTERVAL 3 DAY, 60,
+       'Programa de ejemplo pendiente: usar para probar una recepcion.', NOW()
+FROM empresas e WHERE e.ruc = '20000000001';
+
+-- Lineas de los programas. programa_detalles NO tiene clave unica natural, asi
+-- que la idempotencia se garantiza con NOT EXISTS por (programa, articulo,
+-- color): re-correr el seed no duplica lineas. version=0 (lock optimista V43).
+INSERT INTO programa_detalles (programa_id, articulo_id, color_id, cantidad_solicitada, cantidad_recibida, version, created_at)
+SELECT p.id, ar.id, co.id, s.solicitado, s.recibido, 0, NOW()
+FROM (
+    -- PROG-2026-001 (terminado: recibido = solicitado)
+    SELECT 'PROG-2026-001' AS num, 'DEMO-001' AS art, 'Negro'          AS col, 20 AS solicitado, 20 AS recibido UNION ALL
+    SELECT 'PROG-2026-001',         'DEMO-001',        'Blanco',               15,               15             UNION ALL
+    SELECT 'PROG-2026-001',         'DEMO-002',        'Turqueza Medio',       10,               10             UNION ALL
+    SELECT 'PROG-2026-001',         'DEMO-003',        'Melange 10%',          15,               15             UNION ALL
+    -- PROG-2026-002 (en curso: avance parcial)
+    SELECT 'PROG-2026-002',         'DEMO-001',        'Rojo',                 12,                8             UNION ALL
+    SELECT 'PROG-2026-002',         'DEMO-002',        'Negro',                18,               12             UNION ALL
+    SELECT 'PROG-2026-002',         'DEMO-004',        'Verde Botella',        10,                6             UNION ALL
+    SELECT 'PROG-2026-002',         'DEMO-005',        'Blanco',               14,                8             UNION ALL
+    SELECT 'PROG-2026-002',         'DEMO-001',        'Azulino',               6,                0             UNION ALL
+    -- PROG-2026-003 (pendiente: nada recibido, listo para demo de recepcion)
+    SELECT 'PROG-2026-003',         'DEMO-001',        'Negro',                25,                0             UNION ALL
+    SELECT 'PROG-2026-003',         'DEMO-002',        'Blanco',               15,                0             UNION ALL
+    SELECT 'PROG-2026-003',         'DEMO-003',        'Melange 10%',          12,                0             UNION ALL
+    SELECT 'PROG-2026-003',         'DEMO-004',        'Verde Botella',         8,                0
+) s
+JOIN programas  p  ON p.numero          = s.num
+JOIN articulos  ar ON ar.codigo_interno = s.art
+JOIN colores    co ON co.nombre_oficial = s.col
+WHERE NOT EXISTS (
+    SELECT 1 FROM programa_detalles pd
+    WHERE pd.programa_id = p.id AND pd.articulo_id = ar.id AND pd.color_id = co.id
+);
+
 -- --- CUENTAS DEMO ------------------------------------------------------------
 -- 10 cuentas activas y usables (una por persona/prospecto). No son es_prueba
 -- (esas quedan ocultas e inactivas): estas se ven en el equipo y entran directo.
