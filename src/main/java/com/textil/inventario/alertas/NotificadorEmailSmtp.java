@@ -81,13 +81,25 @@ public class NotificadorEmailSmtp implements NotificadorStockBajo {
                 msg.setSubject(asunto);
                 msg.setText(cuerpo);
                 mailSender.send(msg);
-                log.info("Email de stock bajo enviado a {} -> {}", d, asunto);
+                log.info("Email de stock bajo enviado a {} -> {}", enmascarar(d), asunto);
                 algunoEntregado = true;
             } catch (Exception ex) {
-                log.error("Error enviando email de stock bajo a {}: {}", d, ex.getMessage());
+                log.error("Error enviando email de stock bajo a {}: {}", enmascarar(d), ex.getMessage());
             }
         }
         return algunoEntregado;
+    }
+
+    /**
+     * Deja el destinatario reconocible en el log sin escribirlo completo:
+     * "jlynch@gmail.com" -> "j***@gmail.com". Los logs de una instancia se
+     * comparten al depurar y no tienen por que llevar datos de contacto en claro.
+     */
+    private static String enmascarar(String destino) {
+        if (destino == null || destino.isBlank()) return "(vacio)";
+        int arroba = destino.indexOf('@');
+        if (arroba <= 0) return destino.charAt(0) + "***";
+        return destino.charAt(0) + "***" + destino.substring(arroba);
     }
 
     private static boolean blank(String s) {

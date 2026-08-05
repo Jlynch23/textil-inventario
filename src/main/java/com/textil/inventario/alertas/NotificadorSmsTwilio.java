@@ -86,13 +86,25 @@ public class NotificadorSmsTwilio implements NotificadorStockBajo {
                         .body(form)
                         .retrieve()
                         .toBodilessEntity();
-                log.info("SMS de stock bajo enviado a {} -> {}", destino.trim(), cuerpo);
+                log.info("SMS de stock bajo enviado a {} -> {}", enmascarar(destino), cuerpo);
                 algunoEntregado = true;
             } catch (Exception ex) {
-                log.error("Error enviando SMS de stock bajo a {}: {}", destino.trim(), ex.getMessage());
+                log.error("Error enviando SMS de stock bajo a {}: {}", enmascarar(destino), ex.getMessage());
             }
         }
         return algunoEntregado;
+    }
+
+    /**
+     * Deja el numero reconocible en el log sin escribirlo completo:
+     * "+51987654321" -> "+51*****4321". Los logs no tienen por que llevar
+     * datos de contacto en claro.
+     */
+    private static String enmascarar(String numero) {
+        if (numero == null || numero.isBlank()) return "(vacio)";
+        String n = numero.trim();
+        if (n.length() <= 7) return "***";
+        return n.substring(0, 3) + "*****" + n.substring(n.length() - 4);
     }
 
     private static boolean blank(String s) {

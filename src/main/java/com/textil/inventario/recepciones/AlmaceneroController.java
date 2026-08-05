@@ -1,5 +1,6 @@
 package com.textil.inventario.recepciones;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import com.textil.inventario.seguridad.Usuario;
 import com.textil.inventario.seguridad.UsuarioActualService;
 import com.textil.inventario.transferencias.TransferenciaService;
@@ -103,6 +104,10 @@ public class AlmaceneroController {
     // ─── REVISION ADMIN ───────────────────────────────────────
 
     @GetMapping("/revision")
+    // Defensa en profundidad: la cola de revision es del ADMIN. Hasta ahora solo
+    // la protegia el orden de las reglas de URL en SecurityConfig; los POST de
+    // aprobacion ya llevaban la anotacion, la pantalla que los lista no.
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public String revision(Model model) {
         model.addAttribute("entradas", entradaRapidaRepository.findByEstadoOrderByCreatedAtDesc("PENDIENTE"));
         model.addAttribute("salidas", salidaRapidaRepository.findByEstadoOrderByCreatedAtDesc("PENDIENTE"));
@@ -112,19 +117,25 @@ public class AlmaceneroController {
     }
 
     @GetMapping("/revision/entrada/{id}/foto")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public ResponseEntity<org.springframework.core.io.Resource> verFotoEntrada(@PathVariable Long id) throws java.net.MalformedURLException {
         EntradaRapida er = entradaRapidaRepository.findById(id).orElseThrow();
         return servirFoto(er.getFotoRuta());
     }
 
     @GetMapping("/revision/salida/{id}/foto")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public ResponseEntity<org.springframework.core.io.Resource> verFotoSalida(@PathVariable Long id) throws java.net.MalformedURLException {
         SalidaRapida sr = salidaRapidaRepository.findById(id).orElseThrow();
         return servirFoto(sr.getFotoRuta());
     }
 
     private ResponseEntity<org.springframework.core.io.Resource> servirFoto(String ruta) throws java.net.MalformedURLException {
-        java.nio.file.Path path = java.nio.file.Paths.get(ruta);
+        // FILE-02: unico punto que servia un archivo sin exigir que la ruta caiga
+        // DENTRO de documentos.ruta-base. La ruta sale de la BD, pero el resto de
+        // los endpoints que sirven archivos ya pasan por esta validacion y no hay
+        // motivo para que este sea la excepcion (defensa en profundidad).
+        java.nio.file.Path path = documentoStorageService.resolverRutaSegura(ruta);
         org.springframework.core.io.Resource resource = new org.springframework.core.io.UrlResource(path.toUri());
         String contentType = ruta.toLowerCase().endsWith(".png") ? "image/png" : "image/jpeg";
         return ResponseEntity.ok()
