@@ -67,6 +67,7 @@ public class ColorController {
     }
 
     @PostMapping("/colores/inactivar/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public String inactivarColor(@PathVariable Long id, RedirectAttributes ra) {
         Color c = catalogoService.buscarColor(id);
         c.setActivo(false);
@@ -76,6 +77,7 @@ public class ColorController {
     }
 
     @PostMapping("/colores/eliminar/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public String eliminarColor(@PathVariable Long id, RedirectAttributes ra) {
         try {
             catalogoService.eliminarColor(id);

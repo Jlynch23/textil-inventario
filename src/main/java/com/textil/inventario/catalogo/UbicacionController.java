@@ -69,6 +69,7 @@ public class UbicacionController {
     }
 
     @PostMapping("/ubicaciones/eliminar/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public String eliminarUbicacion(@PathVariable Long id, RedirectAttributes ra) {
         try {
             catalogoService.eliminarUbicacion(id);

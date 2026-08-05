@@ -71,6 +71,7 @@ public class AcabadoController {
     }
 
     @PostMapping("/acabados/inactivar/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public String inactivarAcabado(@PathVariable Long id, RedirectAttributes ra) {
         Acabado a = catalogoService.buscarAcabado(id);
         a.setActivo(false);

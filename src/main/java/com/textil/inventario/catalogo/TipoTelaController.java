@@ -71,6 +71,7 @@ public class TipoTelaController {
     }
 
     @PostMapping("/tipos-tela/inactivar/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public String inactivarTipoTela(@PathVariable Long id, RedirectAttributes ra) {
         TipoTela t = catalogoService.buscarTipoTela(id);
         t.setActivo(false);
@@ -80,6 +81,7 @@ public class TipoTelaController {
     }
 
     @PostMapping("/tipos-tela/eliminar/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public String eliminarTipoTela(@PathVariable Long id, RedirectAttributes ra) {
         try {
             catalogoService.eliminarTipoTela(id);

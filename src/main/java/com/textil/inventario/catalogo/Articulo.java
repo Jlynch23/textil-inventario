@@ -36,4 +36,21 @@ public class Articulo extends BaseEntity {
 
     @Column(nullable = false)
     private Boolean activo = true;
+
+    /**
+     * Descripcion legible del articulo, UNICA para toda la aplicacion.
+     *
+     * Antes cada pantalla, cada reporte y cada alerta armaba este texto por su
+     * cuenta y ya habian divergido: el Excel del kardex y el reporte de stock
+     * bajo omitian composicion y acabado (por eso agrupaban como uno solo dos
+     * articulos distintos, ocultando stock bajo real), y la alerta omitia el
+     * acabado. Las cuatro asociaciones son EAGER, asi que es seguro llamarlo
+     * tambien fuera de la sesion de Hibernate (open-in-view esta apagado).
+     *
+     * El acabado LISO no se muestra: es el valor por defecto y solo agrega ruido.
+     */
+    public String getDescripcion() {
+        String base = tipoTela.getNombre() + " " + titulo.getValor() + " / " + composicion.getNombre();
+        return "LISO".equalsIgnoreCase(acabado.getNombre()) ? base : base + " · " + acabado.getNombre();
+    }
 }

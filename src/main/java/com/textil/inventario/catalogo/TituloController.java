@@ -76,6 +76,7 @@ public class TituloController {
     }
 
     @PostMapping("/titulos/inactivar/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public String inactivarTitulo(@PathVariable Long id, RedirectAttributes ra) {
         Titulo t = catalogoService.buscarTitulo(id);
         t.setActivo(false);

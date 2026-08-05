@@ -157,6 +157,7 @@ public class ArticuloController {
     }
 
     @PostMapping("/articulos/eliminar/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public String eliminarArticulo(@PathVariable Long id, RedirectAttributes ra) {
         try {
             catalogoService.eliminarArticulo(id);

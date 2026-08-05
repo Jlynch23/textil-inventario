@@ -49,9 +49,10 @@ public class AlertaStockPublisher {
         if (ubicacionVigilada != null && !ubicacionVigilada.isBlank()
                 && !ubicacionVigilada.trim().equalsIgnoreCase(origen.getNombre())) return;
 
-        String articuloLabel = articulo.getTipoTela().getNombre() + " "
-                + articulo.getTitulo().getValor() + " / "
-                + articulo.getComposicion().getNombre();
+        // Mismo texto que ve el usuario en las pantallas y reportes: se arma en
+        // Articulo.getDescripcion(). Armado a mano aca se omitia el acabado, asi
+        // que la alerta podia nombrar un articulo distinto del que quedo bajo.
+        String articuloLabel = articulo.getDescripcion();
 
         publisher.publishEvent(new StockBajoEvent(
                 articulo.getId(), color.getId(), origen.getId(),

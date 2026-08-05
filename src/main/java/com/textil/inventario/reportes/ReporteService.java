@@ -165,7 +165,13 @@ public class ReporteService {
     }
 
     public String descripcionArticulo(Articulo a, Color c) {
-        return a.getTipoTela().getNombre() + " - " + a.getTitulo().getValor() + " - " + c.getNombreMostrar();
+        // Articulo.getDescripcion() es la unica fuente del texto (incluye
+        // composicion y acabado). Antes aca se armaba a mano con solo tipo de
+        // tela + titulo + color: el Excel del kardex mostraba menos que la
+        // pantalla equivalente y, peor, el reporte de stock bajo agrupaba como
+        // un mismo item a articulos que solo se diferencian por composicion o
+        // acabado, sumando sus rollos y ocultando faltantes reales.
+        return a.getDescripcion() + " - " + c.getNombreMostrar();
     }
 
     // ---------- ERRORES DEL SISTEMA ----------

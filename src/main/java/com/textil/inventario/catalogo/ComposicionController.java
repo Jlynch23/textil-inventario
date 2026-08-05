@@ -71,6 +71,7 @@ public class ComposicionController {
     }
 
     @PostMapping("/composiciones/inactivar/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public String inactivarComposicion(@PathVariable Long id, RedirectAttributes ra) {
         Composicion c = catalogoService.buscarComposicion(id);
         c.setActivo(false);
