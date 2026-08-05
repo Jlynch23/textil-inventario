@@ -66,6 +66,7 @@ class OsivFetchGraphTest {
     @Autowired private ProgramaDetalleRepository programaDetalleRepository;
     @Autowired private TransferenciaRepository transferenciaRepository;
     @Autowired private TransferenciaDetalleRepository transferenciaDetalleRepository;
+    @Autowired private com.textil.inventario.inventario.KardexMovimientoRepository kardexMovimientoRepository;
 
     @Autowired private EmpresaRepository empresaRepository;
     @Autowired private UbicacionRepository ubicacionRepository;
@@ -85,6 +86,15 @@ class OsivFetchGraphTest {
     void sembrar() {
         // Limpieza FK-safe de los agregados que toca esta prueba. RecepcionDetalle
         // referencia a ProgramaDetalle, así que va ANTES que programa_detalle.
+        //
+        // El kardex va PRIMERO: kardex_movimientos apunta a recepcion_detalles y a
+        // transferencias (fk_kardex_recepcion_detalle / fk_kardex_transferencia,
+        // V13). Esta limpieza no lo borraba y pasaba igual solo porque
+        // recepcion_detalle_id quedaba SIEMPRE en NULL -- ese era justamente el
+        // defecto que rompía el enlace "ver guía" del kardex. Al empezar a
+        // llenarlo, los movimientos que deja ConfirmacionConcurrenteTest (corre
+        // antes en el mismo esquema) trababan este deleteAll con la FK.
+        kardexMovimientoRepository.deleteAll();
         transferenciaDetalleRepository.deleteAll();
         transferenciaRepository.deleteAll();
         recepcionDetalleRepository.deleteAll();
