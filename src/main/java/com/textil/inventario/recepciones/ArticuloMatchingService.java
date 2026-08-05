@@ -19,7 +19,9 @@ public class ArticuloMatchingService {
     private final com.textil.inventario.catalogo.CatalogoService catalogoService;
 
     public LineaSugerida matchLinea(ProductoExtraido p) {
-        if (p.tipoTela() == null || p.titulo() == null || p.colorCodigo() == null) {
+        // isBlank y no solo == null: el prompt pide null cuando el dato falta,
+        // pero el modelo puede devolver "" y una cadena vacia no identifica nada.
+        if (esVacio(p.tipoTela()) || esVacio(p.titulo()) || esVacio(p.colorCodigo())) {
             return new LineaSugerida(null, p.tipoTela(), p.titulo(), p.composicion(), p.acabado(), null, p.colorCodigo(), p.colorNombre(),
                     p.programaTenido(), p.rollos(), p.pesoBrutoKg(), false,
                     "Faltan datos en el PDF para identificar el artículo");
@@ -159,6 +161,11 @@ public class ArticuloMatchingService {
         // Empate = el documento no distingue entre dos empresas del catalogo:
         // no se sugiere ninguna y el usuario decide.
         return (mejor != null && !empatado) ? mejor.getId() : null;
+    }
+
+    /** Un campo del OCR sin valor util: ausente o en blanco. */
+    private static boolean esVacio(String valor) {
+        return valor == null || valor.isBlank();
     }
 
     /** Deja solo digitos (los RUC pueden venir como "20549819028" o "20-54981902-8"). */

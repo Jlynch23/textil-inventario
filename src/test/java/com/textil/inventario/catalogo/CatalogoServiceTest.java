@@ -214,4 +214,33 @@ class CatalogoServiceTest {
         assertThat(guardado.getActivo()).as("editar no debe reactivar").isFalse();
         assertThat(guardado.getNombre()).isEqualTo("NUEVO NOMBRE");
     }
+
+    @Test
+    void guardarColor_codigoFastDyeEnBlanco_seGuardaComoNull() {
+        // Guardado como "" hacia que findByCodigoFastDye("") juntara a todos los
+        // colores sin codigo y el matching del OCR eligiera uno arbitrario.
+        when(colorRepository.save(org.mockito.ArgumentMatchers.any()))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        Color c = new Color();
+        c.setNombreOficial("Verde Nuevo");
+        c.setCodigoFastDye("   ");
+        c.setApodo("");
+
+        Color guardado = service.guardarColor(c);
+
+        assertThat(guardado.getCodigoFastDye()).isNull();
+        assertThat(guardado.getApodo()).isNull();
+        assertThat(guardado.getNombreOficial()).isEqualTo("VERDE NUEVO");
+    }
+
+    @Test
+    void resolverColorPorCodigo_codigoAusenteOEnBlanco_noSugiereNingunColor() {
+        assertThat(service.resolverColorPorCodigo(null, "NEGRO")).isEmpty();
+        assertThat(service.resolverColorPorCodigo("", "NEGRO")).isEmpty();
+        assertThat(service.resolverColorPorCodigo("   ", "NEGRO")).isEmpty();
+
+        // Ni siquiera debe consultar el repositorio: no hay nada que buscar.
+        verify(colorRepository, never()).findByCodigoFastDye(org.mockito.ArgumentMatchers.anyString());
+    }
 }

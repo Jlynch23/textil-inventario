@@ -20,9 +20,16 @@ public class CatalogoService {
 
     // Normaliza a mayusculas (recorta espacios) para mantener consistencia
     // en el catalogo y evitar duplicados como "Negro" / "negro" / "NEGRO".
-    // Null-safe: si el campo viene null o vacio, no se toca.
+    //
+    // Los campos opcionales en blanco se guardan como NULL, NO como "": un
+    // codigo FAST DYE vacio persistido como '' hacia que findByCodigoFastDye("")
+    // devolviera TODOS los colores sin codigo y el matching del OCR eligiera uno
+    // arbitrario dandolo por confiable (misma familia que el bug de
+    // numero_factura). Los campos obligatorios no llegan en blanco: los frena el
+    // @NotBlank del form, y si igual llegaran es preferible el fallo ruidoso de
+    // la constraint NOT NULL a un dato basura silencioso.
     private String normalizar(String valor) {
-        return (valor == null || valor.isBlank()) ? valor : valor.trim().toUpperCase();
+        return (valor == null || valor.isBlank()) ? null : valor.trim().toUpperCase();
     }
 
     // EMPRESAS
@@ -214,6 +221,10 @@ public class CatalogoService {
      * asumiendo que la reasignacion mas nueva es la vigente.
      */
     public Optional<Color> resolverColorPorCodigo(String codigo, String nombrePreferido) {
+        // Sin codigo no hay match posible. Sin este guard, un codigo vacio
+        // consultaba findByCodigoFastDye("") y devolvia los colores guardados
+        // con codigo en blanco, eligiendo uno al azar como si fuera correcto.
+        if (codigo == null || codigo.isBlank()) return Optional.empty();
         List<Color> candidatos = colorRepository.findByCodigoFastDye(codigo.trim());
         if (candidatos.isEmpty()) return Optional.empty();
         if (candidatos.size() == 1) return Optional.of(candidatos.get(0));

@@ -211,8 +211,21 @@ public class RecepcionService {
     public RecepcionDetalle agregarDetalle(Long recepcionId, Long articuloId, Long colorId,
                                            String programa, Integer rollosGuia,
                                            java.math.BigDecimal pesoBruto) {
+        Recepcion recepcion = recepcionRepository.findById(recepcionId).orElseThrow();
+        // Solo se agregan lineas mientras la recepcion esta PENDIENTE. Sin este
+        // guard (TransferenciaService.agregarDetalle si lo tiene), una pestaña
+        // abierta desde antes de confirmar podia sumar una linea a una recepcion
+        // ya CONFIRMADA: confirmarRecepcion nunca vuelve a correr, asi que esa
+        // linea jamas afectaba stock ni kardex pero si aparecia en el detalle y
+        // en los reportes -- el papel decia rollos que el inventario no tenia.
+        if (recepcion.getEstado() != Recepcion.EstadoRecepcion.PENDIENTE) {
+            throw new IllegalStateException(
+                    "Solo se pueden agregar líneas mientras la recepción está pendiente (estado actual: "
+                    + recepcion.getEstado() + ").");
+        }
+
         RecepcionDetalle d = new RecepcionDetalle();
-        d.setRecepcion(recepcionRepository.findById(recepcionId).orElseThrow());
+        d.setRecepcion(recepcion);
         Articulo articulo = articuloRepository.findById(articuloId).orElseThrow();
         d.setArticulo(articulo);
         d.setColor(colorRepository.findById(colorId).orElseThrow());
@@ -371,6 +384,11 @@ public class RecepcionService {
             k.setPesoKg(peso);
             k.setUsuario(r.getUsuario());
             k.setObservaciones("Recepción " + r.getNumeroGuia());
+            // Enlace a la linea de recepcion que origino el movimiento: es lo que
+            // usa el kardex para ofrecer el ojito "ver guia" (StockController.
+            // guiaDocPorDetalle). Nunca se seteaba, asi que el campo quedaba
+            // siempre null y ese enlace no aparecia jamas.
+            k.setRecepcionDetalleId(d.getId());
             kardexRepository.save(k);
         }
 

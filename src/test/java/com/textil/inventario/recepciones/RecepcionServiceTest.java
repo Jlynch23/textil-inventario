@@ -366,4 +366,60 @@ class RecepcionServiceTest {
                 service.crearRecepcion(1L, "TG01-00019662", null, java.time.LocalDate.now(), null)
         ).isInstanceOf(IllegalArgumentException.class);
     }
+
+    @Test
+    void confirmarRecepcion_enlazaCadaKardexConSuLineaDeRecepcion() {
+        // El kardex guarda de que linea de recepcion vino cada ingreso: es lo
+        // que habilita el ojito "ver guia". El campo nunca se seteaba, asi que
+        // el enlace no aparecia nunca.
+        Recepcion recepcion = recepcionDePrueba();
+        RecepcionDetalle detalle = new RecepcionDetalle();
+        detalle.setId(100L);
+        detalle.setRecepcion(recepcion);
+        detalle.setArticulo(articuloDePrueba());
+        detalle.setColor(colorDePrueba());
+        detalle.setRollosGuia(14);
+        detalle.setPesoBrutoKg(new BigDecimal("300"));
+
+        when(recepcionRepository.findById(1L)).thenReturn(Optional.of(recepcion));
+        when(ubicacionRepository.findByEsPrincipalTrue()).thenReturn(Optional.of(praderasDePrueba()));
+        when(detalleRepository.findById(100L)).thenReturn(Optional.of(detalle));
+        when(stockActualRepository.findByArticuloIdAndUbicacionIdAndColorId(10L, 1L, 20L)).thenReturn(Optional.empty());
+
+        service.confirmarRecepcion(1L, List.of(100L), List.of(14), List.of(""));
+
+        ArgumentCaptor<com.textil.inventario.inventario.KardexMovimiento> kardexCap =
+                ArgumentCaptor.forClass(com.textil.inventario.inventario.KardexMovimiento.class);
+        verify(kardexRepository).save(kardexCap.capture());
+        assertThat(kardexCap.getValue().getRecepcionDetalleId()).isEqualTo(100L);
+    }
+
+    @Test
+    void agregarDetalle_recepcionYaConfirmada_seRechaza() {
+        // Una pestaña abierta desde antes de confirmar no debe poder sumar una
+        // linea despues: nunca afectaria stock ni kardex, pero si figuraria en
+        // el detalle y en los reportes.
+        Recepcion confirmada = recepcionDePrueba();
+        confirmada.setEstado(Recepcion.EstadoRecepcion.CONFIRMADA);
+        when(recepcionRepository.findById(1L)).thenReturn(Optional.of(confirmada));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                service.agregarDetalle(1L, 10L, 20L, null, 5, new BigDecimal("100"))
+        ).isInstanceOf(IllegalStateException.class);
+
+        verify(detalleRepository, never()).save(any());
+    }
+
+    @Test
+    void agregarDetalle_recepcionPendiente_seAcepta() {
+        Recepcion pendiente = recepcionDePrueba();
+        when(recepcionRepository.findById(1L)).thenReturn(Optional.of(pendiente));
+        when(articuloRepository.findById(10L)).thenReturn(Optional.of(articuloDePrueba()));
+        when(colorRepository.findById(20L)).thenReturn(Optional.of(colorDePrueba()));
+        when(detalleRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        assertThatCode(() ->
+                service.agregarDetalle(1L, 10L, 20L, null, 5, new BigDecimal("100"))
+        ).doesNotThrowAnyException();
+    }
 }

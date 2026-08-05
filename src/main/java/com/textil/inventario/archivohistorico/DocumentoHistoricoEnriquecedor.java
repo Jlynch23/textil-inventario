@@ -47,7 +47,10 @@ public class DocumentoHistoricoEnriquecedor {
      * en la creacion de la Recepcion automatica.
      */
     public Resultado enriquecer(ProductoExtraido p) {
-        if (p.tipoTela() == null || p.titulo() == null || p.colorCodigo() == null) {
+        // isBlank y no solo == null: una cadena vacia del OCR no identifica nada
+        // y antes llegaba a resolverColorPorCodigo("") devolviendo un color al azar.
+        if (esVacio(p.tipoTela()) || esVacio(p.titulo()) || esVacio(p.colorCodigo())
+                || esVacio(p.composicion())) {
             return Resultado.vacio();
         }
 
@@ -132,5 +135,10 @@ public class DocumentoHistoricoEnriquecedor {
         }
 
         return new Resultado(articulo, color, colorCreado, articuloCreado);
+    }
+
+    /** Un campo del OCR sin valor util: ausente o en blanco. */
+    private static boolean esVacio(String valor) {
+        return valor == null || valor.isBlank();
     }
 }
