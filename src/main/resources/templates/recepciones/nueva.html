@@ -15,7 +15,10 @@
             <div class="card mb-4 border-primary">
                 <div class="card-body p-4">
                     <h6 class="fw-bold mb-3"><i class="bi bi-file-earmark-arrow-up me-2"></i>Subir Guía PDF (opcional)</h6>
-                    <p class="text-muted small mb-3">Sube el PDF de la guía de FAST DYE y el sistema autocompletará los datos automáticamente. Podrás revisar y corregir antes de guardar.</p>
+                    <!-- Decia "la guia de FAST DYE": el SYSTEM_PROMPT del OCR ya es
+                         generico (V45, emisor leido del documento) porque en el modelo
+                         multicliente cada cliente trabaja con su propia tintoreria. -->
+                    <p class="text-muted small mb-3">Elige el PDF de la guía y la lectura arranca sola: el sistema autocompleta los datos. Podrás revisar y corregir antes de guardar.</p>
                     <div class="input-group">
                         <input type="file" id="pdfInput" class="form-control" accept="application/pdf">
                         <button type="button" id="btnExtraer" class="btn btn-primary">
@@ -150,19 +153,25 @@
              + (a.acabado && a.acabado.nombre !== 'LISO' ? ' · ' + a.acabado.nombre : '');
     }
 
-    document.getElementById('btnExtraer').addEventListener('click', async () => {
-        const fileInput = document.getElementById('pdfInput');
-        if (!fileInput.files.length) {
+    const btnExtraer = document.getElementById('btnExtraer');
+    const pdfInput = document.getElementById('pdfInput');
+
+    async function extraerDatosDelPdf() {
+        if (!pdfInput.files.length) {
             alert('Selecciona un archivo PDF primero.');
             return;
         }
 
+        // La lectura con IA es una llamada al proveedor (cuesta plata y tiene
+        // cupo de concurrencia): mientras corre, el boton queda bloqueado para
+        // que un segundo click no dispare una segunda lectura de la misma guia.
+        btnExtraer.disabled = true;
         const estadoDiv = document.getElementById('extraccionEstado');
         estadoDiv.innerHTML = '<span class="text-primary"><i class="bi bi-hourglass-split me-1"></i>Leyendo guía con IA, espera un momento...</span>';
 
-        pdfSeleccionado = fileInput.files[0];   // se retiene para archivarlo al crear
+        pdfSeleccionado = pdfInput.files[0];   // se retiene para archivarlo al crear
         const formData = new FormData();
-        formData.append('file', fileInput.files[0]);
+        formData.append('file', pdfInput.files[0]);
 
         try {
             const resp = await fetchConCsrf('/recepciones/extraer-guia', {
@@ -207,7 +216,18 @@
 
         } catch (e) {
             estadoDiv.innerHTML = '<span class="text-danger">Error de conexión: ' + escapeHtml(e.message) + '</span>';
+        } finally {
+            btnExtraer.disabled = false;
         }
+    }
+
+    btnExtraer.addEventListener('click', extraerDatosDelPdf);
+
+    // Elegir el archivo YA dispara la lectura: era el unico paso que quedaba a
+    // mano y no tiene alternativa util (subir el PDF y no leerlo no sirve de
+    // nada). El boton se queda igual, para reintentar si la lectura falla.
+    pdfInput.addEventListener('change', () => {
+        if (pdfInput.files.length) extraerDatosDelPdf();
     });
 
     let idxColorPendiente = null;
