@@ -80,6 +80,53 @@ Nada de nombres hardcodeados en flujos ni pantallas.
 `ordenes_tejido` (+ detalle con tipo tela, título, acabado, polycotton),
 `stock_tela_cruda`, `envios_tinte` (vínculo a `programas`).
 
+### ⚠️ Tres cosas del modelo actual que NO aguantan V2
+
+Esto hay que resolverlo **en el diseño de V2, antes de escribir código**. Migrar
+estas tablas con historial real de tres clientes cargado se paga una sola vez, y
+conviene que sea antes de que ese historial exista.
+
+**1. El kardex tiene una columna por tipo de documento.**
+```java
+private Long recepcionDetalleId;   // FK a recepcion_detalles
+private Long transferenciaId;      // FK a transferencias
+```
+Hoy son dos. V2 suma compra de hilo, orden de tejido y envío a tintorería: serían
+**cinco columnas, cuatro siempre NULL en cada fila**, más cinco FK y cinco índices.
+Cada módulo nuevo obliga a un `ALTER TABLE` sobre la tabla más grande del sistema.
+→ Reemplazar por `(tipo_documento VARCHAR, documento_id BIGINT)`, con la migración
+que traduzca las dos columnas actuales. Se pierde la FK real; a cambio, agregar un
+tipo de movimiento deja de tocar el esquema.
+
+**2. `TipoMovimiento` no sabe expresar una transformación.**
+Hoy: `INGRESO, TRANSFERENCIA_OUT, TRANSFERENCIA_IN, AJUSTE`. Todos mueven **el
+mismo material** de un lado a otro o lo ajustan. V2 es otra cosa: entran 100 kg de
+hilo y salen 80 kg de tela cruda — **un material se consume y aparece otro
+distinto**, y los dos movimientos son las dos caras de un mismo hecho.
+→ Sumar `TRANSFORMACION_IN` / `TRANSFORMACION_OUT` ligados por un id de operación,
+para que el kardex pueda responder "de qué hilo salió este rollo" (que es la
+trazabilidad que pide V5).
+
+**3. El stock exige color y exige rollos.**
+```sql
+color_id BIGINT NOT NULL      -- el hilo crudo NO tiene color: se tiñe después
+rollos   INT    NOT NULL      -- el hilo se compra y se consume en KILOS
+```
+Con el modelo de hoy hay que inventar un color "CRUDO" y guardar `rollos = 0` con
+peso real. Lo primero es el mismo parche silencioso que ya mordió dos veces con
+`''` vs NULL (ver "Blanco = NULL"); lo segundo hace que **todo reporte que sume
+rollos mienta**.
+→ Decidir en el diseño: o `color_id` pasa a NULL-able y se agrega una unidad de
+medida al material, o el hilo y la tela cruda llevan su propia tabla de stock. Lo
+que NO se puede es meterlos a la fuerza en `stock_actual` como está.
+
+**Decisión de fondo que ordena las tres**: si `Articulo` se generaliza a "material"
+(hilo / tela cruda / tela teñida, cada uno con su unidad y sus atributos) o si cada
+etapa lleva su propia entidad. Generalizar cuesta más al principio y hace que kardex,
+stock, reportes y alertas sirvan para los tres sin duplicarse. Separar es más rápido
+de arrancar y termina en tres kardex y tres reportes de stock que hay que mantener
+sincronizados a mano.
+
 ---
 
 ## V3 — Ventas

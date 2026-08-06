@@ -68,7 +68,10 @@ Módulos (paquete → ruta base del controlador):
 | Paquete | Ruta | Qué hace |
 |---|---|---|
 | `catalogo` | `/catalogo` | Tipos de tela, títulos, colores (código FAST DYE), composiciones, acabados, artículos, ubicaciones, empresas. Borrado protegido ante relaciones. |
-| `recepciones` | `/recepciones`, `/programas`, `/documentos`, `/almacen` | Recepción en 4 pasos (documento → conteo físico → validación → confirmación) con OCR. Programas de teñido, entradas/salidas rápidas móviles del almacenero, cola de revisión. |
+| `recepciones` | `/recepciones`, `/documentos` | Recepción en 4 pasos (documento → conteo físico → validación → confirmación). Incluye `RecepcionDocumento` y el visor/descarga de PDFs: el documento es parte del agregado recepción. |
+| `ocr` | — | Lectura de guías/facturas con IA (`AnthropicOcrService`, `SYSTEM_PROMPT`) y sugerencia de artículo/color/empresa (`ArticuloMatchingService`). **Compartido** por `recepciones` y `archivohistorico`; no depende de ninguno de los dos. |
+| `programas` | `/programas` | Programas de teñido: su propio ciclo de vida (líneas pedidas → recepciones que las van cumpliendo → completo). |
+| `almacen` | `/almacen` | Entradas/salidas rápidas móviles del SUPERVISOR y la cola de revisión del ADMIN. |
 | `transferencias` | `/transferencias` | Traslados entre ubicaciones con doble confirmación (salida → llegada) y reparto de una línea a varios destinos. |
 | `inventario` | `/inventario` | Stock actual por ubicación y kardex (historial de movimientos). |
 | `reportes` | `/reportes` | Stock, kardex, recepciones, transferencias, stock bajo — exportables a Excel (POI). |
@@ -77,7 +80,19 @@ Módulos (paquete → ruta base del controlador):
 | `auditoria` | `/log` | Registro de eventos (`AuditLogService`, `LogEvento`). |
 | `dashboard` | `/`, `/dashboard` | Indicadores en tiempo real. |
 | `config` | — | `SecurityConfig`, `AsyncConfig` (OCR async), `GlobalExceptionHandler`, `GlobalModelAttributes`. |
-| `common` | — | `BaseEntity` (id + timestamps, base de las entidades). |
+| `common` | — | `BaseEntity` (id + timestamps), `RespuestaJson` (errores de los endpoints JSON), `FechaDocumento` / `NumeroDocumento` (formatos de guía y factura), `ValidadorPdf` / `ValidadorImagen`. Todo lo que usa más de un módulo y no es de ninguno. |
+
+**Dónde poner una clase nueva**: si la usa UN módulo, va en ese módulo. Si la usan
+dos o más y no tiene dominio propio (formato, validación, utilidades), va en `common`.
+Si la usan dos o más y SÍ tiene dominio propio, va en su propio paquete — así salió
+`ocr`, que estaba enterrado dentro de `recepciones` mientras `archivohistorico` lo
+usaba igual (6 de sus 9 imports a `recepciones` eran clases de OCR).
+
+**Ciclos entre paquetes** (los hay, y conviene no sumar más): `recepciones ↔ programas`,
+`recepciones ↔ inventario`, `seguridad ↔ auditoria`. Ninguno es un ciclo de *entidades*
+— las FK van en una sola dirección (`RecepcionDetalle → ProgramaDetalle`); son consultas
+de una pantalla que necesita leer del otro lado. Al agregar un módulo, fijate que la FK
+apunte para un solo lado y que la lectura cruzada sea eso, una lectura.
 
 ## Roles y seguridad (`config/SecurityConfig.java`)
 
