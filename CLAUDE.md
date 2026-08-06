@@ -299,6 +299,12 @@ histórico y los PDFs de `documentos-dev/`) y **deja los programas y el catálog
 ## Convenciones
 
 - Código, nombres de paquete, comentarios y textos de UI están **en español** — mantener ese idioma.
+- Muchos comentarios citan hallazgos de auditoría por su código (`INV-02`, `P0-1 C3`, `SEC-03`,
+  `M6`, `OCR-01`…). Los informes completos **se borraron del repo el 6-ago** por estar cerrados y
+  no ser referenciados por nada activo; siguen en el historial:
+  `git log --diff-filter=D --name-only -- 'AUDITORIA*.md'` da el commit, y
+  `git show <commit>^:AUDITORIA-CONSOLIDADA-2026-08-01.md` recupera el contenido. En general el
+  comentario del código ya explica el porqué y no hace falta ir al informe.
 - Los **textos de UI** (labels, botones, mensajes al usuario) van en **español neutro/peruano (tuteo)**,
   NO en voseo argentino: "Ingresa"/"Escribe"/"Selecciona", nunca "Ingresá"/"Escribí"/"Seleccioná".
 - **Fragmentos Thymeleaf antes que markup repetido**: `templates/fragments/` tiene piezas
@@ -425,6 +431,13 @@ Lo que entró hoy, por si hay que revisar algo puntual:
 
 **Pendiente operativo (VPS)**: mover `~/textil-inventario-dev/clientes/demo/` al clon de producción
 (ver la sección de los dos clones).
+
+**⚠️ Pendiente de documentación**: `DEPLOY.md` todavía describe el despliegue **single-cliente**
+como si fuera el vigente (`docker compose -f docker-compose.prod.yml up -d`, `./scripts/deploy.sh`).
+Ese stack está decomisionado: no corre ningún `textil_app` / `textil_mysql` / `textil_nginx`, y el
+despliegue real es `actualizar-clientes.sh` sobre el modelo multicliente. Los archivos
+(`docker-compose.prod.yml`, `nginx/nginx.conf`, `scripts/deploy.sh`) se dejaron a propósito hasta
+reescribir esas secciones — borrarlos antes dejaría el manual apuntando a archivos inexistentes.
 
 ### Estado anterior (sesión 24-jul-2026)
 
