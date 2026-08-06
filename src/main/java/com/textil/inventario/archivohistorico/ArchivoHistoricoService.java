@@ -1,9 +1,10 @@
 package com.textil.inventario.archivohistorico;
+import com.textil.inventario.common.ValidadorPdf;
 import com.textil.inventario.catalogo.*;
-import com.textil.inventario.recepciones.AnthropicOcrService;
-import com.textil.inventario.recepciones.ExtraccionFacturaResponse;
-import com.textil.inventario.recepciones.ExtraccionGuiaResponse;
-import com.textil.inventario.recepciones.ProductoExtraido;
+import com.textil.inventario.ocr.AnthropicOcrService;
+import com.textil.inventario.ocr.ExtraccionFacturaResponse;
+import com.textil.inventario.ocr.ExtraccionGuiaResponse;
+import com.textil.inventario.ocr.ProductoExtraido;
 import com.textil.inventario.recepciones.Recepcion;
 import com.textil.inventario.recepciones.RecepcionDetalle;
 import com.textil.inventario.recepciones.RecepcionService;
@@ -137,16 +138,16 @@ public class ArchivoHistoricoService {
             // por entrada del ZIP (50MB) es mayor que el limite del OCR; se aplica
             // el mismo maximo que la ruta interactiva (ValidadorPdf, 20MB).
             java.nio.file.Path rutaPdf = Paths.get(doc.getRutaArchivo());
-            if (Files.size(rutaPdf) > com.textil.inventario.recepciones.ValidadorPdf.MAX_PDF_BYTES) {
+            if (Files.size(rutaPdf) > com.textil.inventario.common.ValidadorPdf.MAX_PDF_BYTES) {
                 throw new IllegalArgumentException(
                         "El PDF supera el tamaño permitido (máx "
-                        + (com.textil.inventario.recepciones.ValidadorPdf.MAX_PDF_BYTES / 1024 / 1024) + " MB).");
+                        + (com.textil.inventario.common.ValidadorPdf.MAX_PDF_BYTES / 1024 / 1024) + " MB).");
             }
             byte[] bytes = Files.readAllBytes(rutaPdf);
             // Auditoria: una entrada del ZIP que no sea PDF no debe mandarse al OCR
             // (falla obscuro); se marca con un mensaje claro. La firma %PDF- es la
             // barrera real (el nombre/extension no garantiza nada).
-            if (!com.textil.inventario.recepciones.ValidadorPdf.esPdf(bytes)) {
+            if (!com.textil.inventario.common.ValidadorPdf.esPdf(bytes)) {
                 throw new IllegalArgumentException("El archivo no es un PDF válido (no empieza con %PDF-).");
             }
             String razonSocialDetectada;

@@ -1,7 +1,7 @@
 package com.textil.inventario.archivohistorico;
 
 import com.textil.inventario.catalogo.*;
-import com.textil.inventario.recepciones.ProductoExtraido;
+import com.textil.inventario.ocr.ProductoExtraido;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

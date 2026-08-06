@@ -1,4 +1,4 @@
-package com.textil.inventario.recepciones;
+package com.textil.inventario.programas;
 import com.textil.inventario.catalogo.Empresa;
 import com.textil.inventario.common.BaseEntity;
 import jakarta.persistence.*;

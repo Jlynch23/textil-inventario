@@ -1,4 +1,4 @@
-package com.textil.inventario.recepciones;
+package com.textil.inventario.common;
 
 import org.springframework.web.multipart.MultipartFile;
 

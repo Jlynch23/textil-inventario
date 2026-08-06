@@ -1,4 +1,4 @@
-package com.textil.inventario.recepciones;
+package com.textil.inventario.almacen;
 
 import com.textil.inventario.catalogo.Color;
 import com.textil.inventario.catalogo.TipoTela;

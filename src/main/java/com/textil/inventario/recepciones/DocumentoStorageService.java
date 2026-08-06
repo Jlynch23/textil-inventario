@@ -1,5 +1,7 @@
 package com.textil.inventario.recepciones;
 
+import com.textil.inventario.common.ValidadorPdf;
+import com.textil.inventario.common.ValidadorImagen;
 import com.textil.inventario.catalogo.Empresa;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;

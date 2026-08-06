@@ -1,11 +1,11 @@
 package com.textil.inventario;
 
 import com.textil.inventario.catalogo.*;
-import com.textil.inventario.recepciones.Programa;
-import com.textil.inventario.recepciones.ProgramaDetalle;
-import com.textil.inventario.recepciones.ProgramaDetalleRepository;
-import com.textil.inventario.recepciones.ProgramaRepository;
-import com.textil.inventario.recepciones.ProgramaService;
+import com.textil.inventario.programas.Programa;
+import com.textil.inventario.programas.ProgramaDetalle;
+import com.textil.inventario.programas.ProgramaDetalleRepository;
+import com.textil.inventario.programas.ProgramaRepository;
+import com.textil.inventario.programas.ProgramaService;
 import com.textil.inventario.recepciones.Recepcion;
 import com.textil.inventario.recepciones.RecepcionDetalle;
 import com.textil.inventario.recepciones.RecepcionDetalleRepository;

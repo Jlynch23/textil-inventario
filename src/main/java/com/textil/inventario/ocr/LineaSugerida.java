@@ -1,4 +1,4 @@
-package com.textil.inventario.recepciones;
+package com.textil.inventario.ocr;
 
 import java.math.BigDecimal;
 

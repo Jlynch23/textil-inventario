@@ -1,4 +1,4 @@
-package com.textil.inventario.recepciones;
+package com.textil.inventario.programas;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;

@@ -1,5 +1,7 @@
-package com.textil.inventario.recepciones;
+package com.textil.inventario.almacen;
 
+import com.textil.inventario.recepciones.RecepcionService;
+import com.textil.inventario.recepciones.DocumentoStorageService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import com.textil.inventario.seguridad.Usuario;
 import com.textil.inventario.seguridad.UsuarioActualService;

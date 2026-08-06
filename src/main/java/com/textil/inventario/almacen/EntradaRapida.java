@@ -1,5 +1,6 @@
-package com.textil.inventario.recepciones;
+package com.textil.inventario.almacen;
 
+import com.textil.inventario.recepciones.Recepcion;
 import com.textil.inventario.seguridad.Usuario;
 import jakarta.persistence.*;
 import lombok.Getter;

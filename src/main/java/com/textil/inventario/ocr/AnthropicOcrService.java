@@ -1,5 +1,6 @@
-package com.textil.inventario.recepciones;
+package com.textil.inventario.ocr;
 
+import com.textil.inventario.common.ValidadorPdf;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;

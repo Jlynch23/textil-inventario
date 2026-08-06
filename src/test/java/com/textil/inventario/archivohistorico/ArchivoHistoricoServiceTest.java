@@ -1,7 +1,7 @@
 package com.textil.inventario.archivohistorico;
 
 import com.textil.inventario.catalogo.*;
-import com.textil.inventario.recepciones.AnthropicOcrService;
+import com.textil.inventario.ocr.AnthropicOcrService;
 import com.textil.inventario.recepciones.RecepcionService;
 import com.textil.inventario.seguridad.UsuarioRepository;
 import org.junit.jupiter.api.Test;

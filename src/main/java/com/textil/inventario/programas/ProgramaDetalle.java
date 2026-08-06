@@ -1,4 +1,4 @@
-package com.textil.inventario.recepciones;
+package com.textil.inventario.programas;
 
 import com.textil.inventario.catalogo.Articulo;
 import com.textil.inventario.catalogo.Color;

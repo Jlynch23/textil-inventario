@@ -1,6 +1,6 @@
 package com.textil.inventario.common;
 
-import com.textil.inventario.recepciones.ProgramaDetalle;
+import com.textil.inventario.programas.ProgramaDetalle;
 import com.textil.inventario.recepciones.Recepcion;
 import com.textil.inventario.transferencias.Transferencia;
 import jakarta.persistence.Version;

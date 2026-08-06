@@ -1,5 +1,12 @@
 package com.textil.inventario.recepciones;
 
+import com.textil.inventario.ocr.AnthropicOcrService;
+import com.textil.inventario.ocr.ArticuloMatchingService;
+import com.textil.inventario.ocr.ExtraccionGuiaResponse;
+import com.textil.inventario.ocr.ExtraccionFacturaResponse;
+import com.textil.inventario.ocr.ExtraccionRecepcionResponse;
+import com.textil.inventario.ocr.ProductoExtraido;
+import com.textil.inventario.ocr.LineaSugerida;
 import com.textil.inventario.common.RespuestaJson;
 import com.textil.inventario.catalogo.ArticuloRepository;
 import com.textil.inventario.catalogo.ColorRepository;

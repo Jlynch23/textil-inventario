@@ -1,4 +1,4 @@
-package com.textil.inventario.recepciones;
+package com.textil.inventario.ocr;
 
 import com.textil.inventario.catalogo.*;
 import org.junit.jupiter.api.Test;

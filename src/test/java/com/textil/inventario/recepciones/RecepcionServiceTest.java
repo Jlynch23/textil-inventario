@@ -1,5 +1,9 @@
 package com.textil.inventario.recepciones;
 
+import com.textil.inventario.programas.Programa;
+import com.textil.inventario.programas.ProgramaDetalle;
+import com.textil.inventario.programas.ProgramaRepository;
+import com.textil.inventario.programas.ProgramaDetalleRepository;
 import com.textil.inventario.auditoria.AuditLogService;
 import com.textil.inventario.catalogo.ArticuloRepository;
 import com.textil.inventario.catalogo.Color;

@@ -1,5 +1,6 @@
 package com.textil.inventario.recepciones;
 
+import com.textil.inventario.programas.ProgramaDetalle;
 import com.textil.inventario.catalogo.Articulo;
 import com.textil.inventario.catalogo.Color;
 import jakarta.persistence.*;

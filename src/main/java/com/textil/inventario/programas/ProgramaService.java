@@ -1,5 +1,9 @@
-package com.textil.inventario.recepciones;
+package com.textil.inventario.programas;
 
+import com.textil.inventario.recepciones.RecepcionDetalle;
+import com.textil.inventario.recepciones.RecepcionDocumento;
+import com.textil.inventario.recepciones.RecepcionDocumentoRepository;
+import com.textil.inventario.recepciones.RecepcionDetalleRepository;
 import com.textil.inventario.catalogo.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

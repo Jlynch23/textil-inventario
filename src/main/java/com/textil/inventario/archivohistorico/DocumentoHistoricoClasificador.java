@@ -1,7 +1,7 @@
 package com.textil.inventario.archivohistorico;
 
 import com.textil.inventario.catalogo.Empresa;
-import com.textil.inventario.recepciones.ArticuloMatchingService;
+import com.textil.inventario.ocr.ArticuloMatchingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
