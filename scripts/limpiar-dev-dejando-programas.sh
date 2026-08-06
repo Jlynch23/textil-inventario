@@ -120,12 +120,31 @@ SQL
 
 # --- 5. PDFs archivados ---------------------------------------------------
 # Las filas que apuntaban a estos archivos ya no existen; quedarian huerfanos.
+#
+# OJO con los permisos: los PDF los escribe la APP desde dentro del contenedor,
+# como uid 999 (appuser), asi que `linuxuser` NO puede borrarlos desde el host
+# -- da "Permission denied" y, con `set -e`, cortaba el script justo antes del
+# resumen final (la base ya estaba limpia, pero uno no se enteraba). Por eso el
+# borrado se hace DENTRO del contenedor como root (-u 0), que si puede.
 DOCS="$RAIZ/documentos-dev"
 if [ -d "$DOCS" ]; then
-    CUANTOS=$(find "$DOCS" -type f | wc -l)
+    CUANTOS=$(find "$DOCS" -type f 2>/dev/null | wc -l)
     if [ "$CUANTOS" -gt 0 ]; then
-        find "$DOCS" -mindepth 1 -delete
-        echo "Borrados $CUANTOS archivo(s) PDF de $DOCS (sus filas ya no existen)."
+        if docker ps --format '{{.Names}}' | grep -qx "textil_app_dev"; then
+            docker exec -u 0 textil_app_dev sh -c 'rm -rf /app/documentos/* /app/documentos/.[!.]* 2>/dev/null' || true
+        else
+            # Sin la app arriba: contenedor desechable montando la misma carpeta.
+            docker run --rm -v "$DOCS:/docs" --entrypoint sh mysql:8.4 \
+                -c 'rm -rf /docs/* /docs/.[!.]* 2>/dev/null' || true
+        fi
+        QUEDAN=$(find "$DOCS" -type f 2>/dev/null | wc -l)
+        if [ "$QUEDAN" -eq 0 ]; then
+            echo "Borrados $CUANTOS archivo(s) PDF de $DOCS (sus filas ya no existen)."
+        else
+            # Aviso, no error: la base -- que es lo que importa -- ya quedo limpia.
+            echo "AVISO: quedaron $QUEDAN archivo(s) sin borrar en $DOCS."
+            echo "       Borralos con: docker exec -u 0 textil_app_dev sh -c 'rm -rf /app/documentos/*'"
+        fi
     fi
 fi
 
