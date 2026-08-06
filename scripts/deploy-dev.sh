@@ -6,8 +6,14 @@
 # main, que deploy.sh maneja con `git reset --hard origin/main`).
 #
 # Requisitos previos (una sola vez, ver STAGING.md):
-#   - El stack de PRODUCCION corriendo (crea la red textil-inventario_default).
+#   - El proxy multicliente corriendo (texcontrol_proxy_nginx), que es quien crea
+#     la red compartida texcontrol_red a la que se une el stack dev. Antes aca
+#     decia "el stack de PRODUCCION" y su red textil-inventario_default: ese era
+#     el modelo single-cliente, decomisionado en la migracion a multicliente.
 #   - .env.dev completo dentro del clon dev (credenciales del entorno dev).
+#
+# OJO: el paso 1 hace `git reset --hard origin/develop` sobre el clon dev, asi
+# que cualquier cambio hecho a mano dentro de $DEV_DIR se pierde.
 #
 # Uso:  ./scripts/deploy-dev.sh
 set -euo pipefail
