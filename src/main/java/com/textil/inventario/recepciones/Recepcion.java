@@ -84,6 +84,20 @@ public class Recepcion extends BaseEntity {
     @PreUpdate
     protected void onUpdate() { updatedAt = LocalDateTime.now(); }
 
+    /**
+     * Numero de guia sin serie ni ceros de relleno ("TG01-00022836" -> "22836"),
+     * para las listas donde lo unico que se hace es comparar guias de un vistazo.
+     * El numero completo sigue en getNumeroGuia() (y se deja en el tooltip).
+     */
+    public String getNumeroGuiaCorto() {
+        return com.textil.inventario.common.NumeroDocumento.corto(numeroGuia);
+    }
+
+    /** Igual que getNumeroGuiaCorto() pero para la factura. */
+    public String getNumeroFacturaCorto() {
+        return com.textil.inventario.common.NumeroDocumento.corto(numeroFactura);
+    }
+
     public enum EstadoRecepcion {
         PENDIENTE, CONFIRMADA, CON_DIFERENCIAS
     }

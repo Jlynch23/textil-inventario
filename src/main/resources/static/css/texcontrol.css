@@ -360,6 +360,16 @@ body.sidebar-collapsed .topbar { margin-left: var(--tx-sidebar-rail); }
   color: var(--tx-ink);
   border: 1px solid var(--tx-border-strong);
 }
+/* Numero de documento en la lista de Documentos Archivados: ahi el correlativo
+   es lo unico que se lee (se compara una guia contra otra), asi que va mas
+   grande que el chip de codigo normal y sin el espaciado entre letras, que a
+   este tamaño ya separa de mas los digitos. */
+.chip-numero {
+  font-size: 1.15rem;
+  letter-spacing: .02em;
+  padding: .25em .6em;
+}
+
 .tx-badge { display: inline-flex; align-items: center; gap: 5px; padding: .3em .7em; border-radius: var(--tx-radius-pill); font-size: var(--tx-fs-xs); font-weight: 600; }
 .tx-badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .9; }
 .tx-badge.is-success { color: var(--tx-success); background: var(--tx-success-bg); }

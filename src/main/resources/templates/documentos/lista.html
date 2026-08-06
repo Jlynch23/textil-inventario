@@ -63,7 +63,7 @@
                             <th>Tipo</th>
                             <th>Empresa</th>
                             <th>Número</th>
-                            <th>Archivo</th>
+                            <th>Fecha Documento</th>
                             <th>Fecha Archivado</th>
                             <th></th>
                         </tr>
@@ -80,10 +80,21 @@
                             </td>
                             <td th:text="${d.recepcion.empresa.nombre}"></td>
                             <td>
-                                <code th:if="${d.tipoDocumento == 'FACTURA'}" th:text="${d.recepcion.numeroFactura}"></code>
-                                <code th:unless="${d.tipoDocumento == 'FACTURA'}" th:text="${d.recepcion.numeroGuia}"></code>
+                                <!-- Solo el correlativo, sin serie ni ceros: en esta pantalla lo unico
+                                     que se hace es comparar guias. El numero completo va en el title. -->
+                                <span th:if="${d.tipoDocumento == 'FACTURA'}" class="chip-codigo chip-numero"
+                                      th:text="${d.recepcion.numeroFacturaCorto} ?: '—'"
+                                      th:title="${d.recepcion.numeroFactura}"></span>
+                                <span th:unless="${d.tipoDocumento == 'FACTURA'}" class="chip-codigo chip-numero"
+                                      th:text="${d.recepcion.numeroGuiaCorto} ?: '—'"
+                                      th:title="${d.recepcion.numeroGuia}"></span>
                             </td>
-                            <td th:text="${d.nombreOriginal}"></td>
+                            <td>
+                                <span th:if="${d.tipoDocumento == 'FACTURA'}"
+                                      th:text="${d.recepcion.fechaFactura != null} ? ${#temporals.format(d.recepcion.fechaFactura, 'dd/MM/yyyy')} : '—'"></span>
+                                <span th:unless="${d.tipoDocumento == 'FACTURA'}"
+                                      th:text="${#temporals.format(d.recepcion.fechaGuia, 'dd/MM/yyyy')}"></span>
+                            </td>
                             <td th:text="${#temporals.format(d.createdAt, 'dd/MM/yyyy HH:mm')}"></td>
                             <td>
                                 <a th:href="@{/documentos/{id}/ver(id=${d.id})}" target="_blank" class="btn btn-sm btn-outline-secondary" title="Ver PDF">
