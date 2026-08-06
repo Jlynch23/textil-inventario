@@ -38,6 +38,55 @@
             </div>
         </div>
     </div>
+    <!-- Tela que llego nombrando este programa pero que NO descuento ninguna de
+         sus lineas. Explica el caso "el programa sigue pendiente pero la guia ya
+         trajo la tela": el stock entro igual, el vinculo no se hizo. -->
+    <div class="card mb-3 border-warning" th:if="${!lineasHuerfanas.isEmpty()}">
+        <div class="card-body">
+            <h6 class="text-warning mb-2">
+                <i class="bi bi-exclamation-triangle"></i>
+                Tela recibida que no descontó de este programa
+            </h6>
+            <p class="text-muted small mb-3">
+                Estas líneas de recepción indican el programa
+                <strong th:text="${programa.numero}"></strong>, pero no coinciden con ninguna
+                línea de arriba, así que su cantidad <strong>no se restó del pendiente</strong>.
+                Lo más común es que sea el mismo color y tela pero con otra
+                <strong>composición</strong> o <strong>acabado</strong>: para el sistema eso ya
+                es otro artículo. Compara con las columnas de la tabla y, si corresponde,
+                agrega esa línea al programa desde «Editar Programa».
+            </p>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                    <thead>
+                        <tr>
+                            <th>Guía</th>
+                            <th>Artículo recibido</th>
+                            <th>Color</th>
+                            <th>Rollos</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="h : ${lineasHuerfanas}">
+                            <td>
+                                <a th:href="@{/recepciones/{id}/detalle(id=${h.recepcionId})}"
+                                   th:text="${h.numeroGuia ?: '(sin guía)'}"></a>
+                            </td>
+                            <td th:text="${h.articulo}"></td>
+                            <td th:text="${h.color}"></td>
+                            <td th:text="${h.rollos}"></td>
+                            <td>
+                                <span th:if="${h.confirmada}" class="badge bg-success">Ya afectó el stock</span>
+                                <span th:unless="${h.confirmada}" class="badge bg-secondary">Sin confirmar</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <div class="card">
         <div class="card-body p-0">
             <div class="p-3 border-bottom fw-bold">Seguimiento por Color</div>
@@ -47,6 +96,13 @@
                         <tr>
                             <th>Tipo de Tela</th>
                             <th>Título</th>
+                            <!-- Composicion y acabado: sin estos dos, dos lineas del mismo
+                                 tipo de tela + titulo + color se ven IDENTICAS aunque sean
+                                 articulos distintos (el unique de articulos es tipo+titulo+
+                                 composicion+acabado). Pasaba con tres lineas "PPT 01008" en
+                                 el mismo programa: imposible saber cual estaba llegando. -->
+                            <th>Composición</th>
+                            <th>Acabado</th>
                             <th>Color</th>
                             <th>Código</th>
                             <th>Solicitado</th>
@@ -59,6 +115,8 @@
                         <tr th:each="d : ${programa.detalles}">
                             <td th:text="${d.articulo.tipoTela.nombre}"></td>
                             <td th:text="${d.articulo.titulo.valor}"></td>
+                            <td th:text="${d.articulo.composicion.nombre}"></td>
+                            <td th:text="${d.articulo.acabado.nombre}"></td>
                             <td th:text="${d.color.nombreMostrar}"></td>
                             <td><span class="chip-codigo" th:text="${d.color.codigoFastDye}"></span></td>
                             <td th:text="${d.cantidadSolicitada}"></td>

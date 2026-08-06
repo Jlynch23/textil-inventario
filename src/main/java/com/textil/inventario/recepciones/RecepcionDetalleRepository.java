@@ -17,4 +17,26 @@ public interface RecepcionDetalleRepository extends JpaRepository<RecepcionDetal
     // ¿Alguna línea de este programa ya fue usada en una recepción? Sirve para
     // proteger el borrado del programa (no romper la trazabilidad del kardex).
     boolean existsByProgramaDetalle_ProgramaId(Long programaId);
+
+    // Líneas de recepción que NOMBRAN un programa pero no quedaron vinculadas a
+    // ninguna de sus líneas (programa_detalle_id NULL). Son el descuento que
+    // "no se hizo": el stock entró igual, pero el programa nunca se entero.
+    //
+    // Pasa por dos caminos, los dos mudos hasta ahora (agregarDetalle):
+    //   1. el numero de programa de la guia no resuelve a ningun Programa;
+    //   2. resuelve, pero el programa no tiene una linea con ESE articulo+color
+    //      (tipico: misma tela/titulo/color pero distinta composicion o acabado,
+    //      que son articulos distintos).
+    //
+    // Se compara con el numero SIN ceros a la izquierda en los dos lados, igual
+    // que buscarProgramaNormalizado, porque la guia suele traer "0472" y el
+    // programa se registra "472".
+    @Query("""
+           SELECT d FROM RecepcionDetalle d
+           WHERE d.programaDetalle IS NULL
+             AND d.programaTenido IS NOT NULL
+             AND TRIM(LEADING '0' FROM TRIM(d.programaTenido)) = TRIM(LEADING '0' FROM :numero)
+           ORDER BY d.id
+           """)
+    List<RecepcionDetalle> huerfanasDelPrograma(@Param("numero") String numero);
 }

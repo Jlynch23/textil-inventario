@@ -1,5 +1,6 @@
 package com.textil.inventario.programas;
 
+import com.textil.inventario.recepciones.Recepcion;
 import com.textil.inventario.recepciones.RecepcionDetalle;
 import com.textil.inventario.recepciones.RecepcionDocumento;
 import com.textil.inventario.recepciones.RecepcionDocumentoRepository;
@@ -318,6 +319,39 @@ public class ProgramaService {
      * de mandar a la pantalla de detalle de la recepcion.
      */
     public record HistorialGuiaView(Long recepcionId, String numeroGuia, Long documentoId) {}
+
+    /**
+     * Una linea de recepcion que dice pertenecer a este programa pero que NO
+     * quedo vinculada a ninguna de sus lineas: entro al stock sin descontar del
+     * programa. Se muestra en Seguimiento para que el faltante deje de ser
+     * invisible y se vea QUE llego y por que no cuadro.
+     */
+    public record LineaHuerfanaView(Long recepcionId, String numeroGuia, String articulo,
+                                    String color, Integer rollos, boolean confirmada) {}
+
+    /**
+     * Recepciones que nombran este programa y no descontaron nada de el.
+     *
+     * El vinculo se hace en RecepcionService.agregarDetalle y puede fallar por
+     * dos caminos que hasta ahora eran mudos: que el numero de programa de la
+     * guia no resuelva, o que el programa no tenga una linea con ese
+     * articulo+color exacto (misma tela y color pero otra composicion o acabado
+     * ya es OTRO articulo). En los dos casos el stock entra igual y el programa
+     * se queda esperando tela que en realidad ya llego.
+     */
+    @Transactional(readOnly = true)
+    public List<LineaHuerfanaView> lineasHuerfanas(String numeroPrograma) {
+        if (numeroPrograma == null || numeroPrograma.isBlank()) return List.of();
+        return recepcionDetalleRepository.huerfanasDelPrograma(numeroPrograma.trim()).stream()
+                .map(d -> new LineaHuerfanaView(
+                        d.getRecepcion().getId(),
+                        d.getRecepcion().getNumeroGuia(),
+                        d.getArticulo().getDescripcion(),
+                        d.getColor().getNombreMostrar(),
+                        d.getRollosRecibidos() != null ? d.getRollosRecibidos() : d.getRollosGuia(),
+                        d.getRecepcion().getEstado() != Recepcion.EstadoRecepcion.PENDIENTE))
+                .toList();
+    }
 
     public List<HistorialGuiaView> historialDeLineaConDocumento(Long programaDetalleId) {
         List<RecepcionDetalle> detalles = recepcionDetalleRepository.findByProgramaDetalleId(programaDetalleId);

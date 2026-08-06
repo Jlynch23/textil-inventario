@@ -97,6 +97,11 @@ public class ProgramaController {
         }
         model.addAttribute("historialPorLinea", historialPorLinea);
 
+        // Tela que llego diciendo ser de este programa y no descuento nada de el.
+        // Sin esto el faltante es invisible: el programa muestra pendiente, el
+        // stock ya tiene la tela, y nada en la pantalla explica la diferencia.
+        model.addAttribute("lineasHuerfanas", programaService.lineasHuerfanas(programa.getNumero()));
+
         return "programas/seguimiento";
     }
 
