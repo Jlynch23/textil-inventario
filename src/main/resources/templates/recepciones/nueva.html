@@ -214,7 +214,7 @@
             const tr = document.createElement('tr');
             if (!linea.matched) tr.className = 'table-warning';
 
-            let selectHtml = '<select class="form-select form-select-sm linea-articulo" data-idx="' + idx + '">';
+            let selectHtml = '<select class="form-select form-select-sm linea-articulo" data-idx="' + idx + '" style="min-width: 17rem;">';
             selectHtml += '<option value="">Seleccionar...</option>';
             articulos.forEach(a => {
                 const selected = (linea.articuloId === a.id) ? 'selected' : '';
@@ -222,9 +222,20 @@
             });
             selectHtml += '</select>';
 
+            // Lo que la guia dice, SIEMPRE visible (antes solo aparecia cuando la
+            // linea no matcheaba). Es lo unico que deja verificar la lectura de la
+            // IA contra el articulo que quedo elegido: el <select> muestra el
+            // articulo del CATALOGO -- y ademas oculta el acabado LISO por
+            // convencion, que es justo el dato que importa cuando el error es
+            // "leyo LISO y la guia decia LISTADO BLANCO". Sin esta linea, un
+            // acabado mal leido se ve igual que uno bien leido.
+            selectHtml += '<br><small class="text-muted">Guía dice: '
+                        + escapeHtml(linea.tipoTela || '-') + ' ' + escapeHtml(linea.titulo || '')
+                        + ' · ' + escapeHtml(linea.composicion || '-')
+                        + ' · <span class="fw-bold">' + escapeHtml(linea.acabado || 'LISO') + '</span></small>';
+
             if (!linea.matched) {
                 selectHtml += '<br><small class="text-danger">' + escapeHtml(linea.motivoNoMatch) + '</small>';
-                selectHtml += '<br><small class="text-muted">Tela detectada: ' + escapeHtml(linea.tipoTela) + ' ' + escapeHtml(linea.titulo) + ' / Composición: ' + escapeHtml(linea.composicion || '-') + ' / Acabado: ' + escapeHtml(linea.acabado || 'LISO') + '</small>';
 
                 const motivoEsColor = linea.motivoNoMatch && linea.motivoNoMatch.indexOf('Color') !== -1 && linea.motivoNoMatch.indexOf('no existe') !== -1;
                 // Si la composicion no se pudo identificar o no existe en el catalogo,
