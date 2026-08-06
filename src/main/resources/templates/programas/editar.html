@@ -45,28 +45,102 @@
                         </div>
 
                         <h6 class="fw-bold mb-3">Artículos del Programa</h6>
-                        <p class="text-muted small">El artículo (tipo de tela, título, composición, color) de una línea ya existente no se puede cambiar aquí, solo su cantidad — si necesitas otro artículo, quítala y agrega una línea nueva.</p>
+                        <p class="text-muted small">Puedes cambiar el artículo (tipo de tela, título, composición, acabado) y el color de una línea mientras no haya recibido tela. Una vez que entró tela contra esa línea queda fija: las recepciones ya vinculadas quedarían acreditadas a un artículo que nunca entró. En ese caso, quítala y agrega una línea nueva.</p>
+
+                        <div class="row g-2 mb-1 d-none d-md-flex">
+                            <div class="col-md-2"><small class="text-muted fw-semibold">Tipo de Tela</small></div>
+                            <div class="col-md-1"><small class="text-muted fw-semibold">Título</small></div>
+                            <div class="col-md-2"><small class="text-muted fw-semibold">Composición</small></div>
+                            <div class="col-md-2"><small class="text-muted fw-semibold">Acabado</small></div>
+                            <div class="col-md-2"><small class="text-muted fw-semibold">Color</small></div>
+                            <div class="col-md-1"><small class="text-muted fw-semibold">Cantidad</small></div>
+                        </div>
 
                         <div id="lineasExistentesContainer">
-                            <div class="row g-2 mb-2 align-items-center linea-existente" th:each="d : ${programa.detalles}">
+                            <!-- Una línea SIN tela recibida es editable entera; una que ya
+                                 recibió va de solo lectura y manda sus ids en hidden, para que
+                                 las listas paralelas del POST sigan alineadas por posición. -->
+                            <div class="row g-2 mb-2 align-items-center linea-existente" th:each="d : ${programa.detalles}"
+                                 th:with="editable=${d.cantidadRecibida == 0}">
                                 <input type="hidden" name="detalleId" th:value="${d.id}">
+
                                 <div class="col-md-2">
-                                    <span class="fw-semibold" th:text="${d.articulo.tipoTela.nombre}"></span>
+                                    <div class="input-group" th:if="${editable}">
+                                        <select class="form-select select-tipo-tela" name="existenteTipoTelaId" required>
+                                            <option th:each="t : ${tiposTela}" th:value="${t.id}" th:text="${t.nombre}"
+                                                    th:selected="${t.id == d.articulo.tipoTela.id}"></option>
+                                        </select>
+                                        <button type="button" class="btn btn-outline-primary btn-tipotela-nuevo" title="Crear tipo de tela nuevo"><i class="bi bi-plus-lg"></i></button>
+                                    </div>
+                                    <th:block th:unless="${editable}">
+                                        <span class="fw-semibold" th:text="${d.articulo.tipoTela.nombre}"></span>
+                                        <input type="hidden" name="existenteTipoTelaId" th:value="${d.articulo.tipoTela.id}">
+                                    </th:block>
                                 </div>
-                                <div class="col-md-2" th:text="${d.articulo.titulo.valor}"></div>
-                                <div class="col-md-2" th:text="${d.articulo.composicion.nombre + ' · ' + d.articulo.acabado.nombre}"></div>
-                                <div class="col-md-2">
-                                    <span th:text="${d.color.nombreMostrar}"></span>
-                                    <span class="badge bg-light text-dark" th:text="${d.color.codigoFastDye}"></span>
+
+                                <div class="col-md-1">
+                                    <div class="input-group" th:if="${editable}">
+                                        <select class="form-select select-titulo" name="existenteTituloId" required>
+                                            <option th:each="ti : ${titulos}" th:value="${ti.id}" th:text="${ti.valor}"
+                                                    th:selected="${ti.id == d.articulo.titulo.id}"></option>
+                                        </select>
+                                        <button type="button" class="btn btn-outline-primary btn-titulo-nuevo" title="Crear título nuevo"><i class="bi bi-plus-lg"></i></button>
+                                    </div>
+                                    <th:block th:unless="${editable}">
+                                        <span th:text="${d.articulo.titulo.valor}"></span>
+                                        <input type="hidden" name="existenteTituloId" th:value="${d.articulo.titulo.id}">
+                                    </th:block>
                                 </div>
+
                                 <div class="col-md-2">
+                                    <div class="input-group" th:if="${editable}">
+                                        <select class="form-select select-composicion" name="existenteComposicionId" required>
+                                            <option th:each="c : ${composiciones}" th:value="${c.id}" th:text="${c.nombre}"
+                                                    th:selected="${c.id == d.articulo.composicion.id}"></option>
+                                        </select>
+                                        <button type="button" class="btn btn-outline-primary btn-composicion-nuevo" title="Crear composición nueva"><i class="bi bi-plus-lg"></i></button>
+                                    </div>
+                                    <th:block th:unless="${editable}">
+                                        <span th:text="${d.articulo.composicion.nombre}"></span>
+                                        <input type="hidden" name="existenteComposicionId" th:value="${d.articulo.composicion.id}">
+                                    </th:block>
+                                </div>
+
+                                <div class="col-md-2">
+                                    <select class="form-select select-acabado" name="existenteAcabadoId" th:if="${editable}" required>
+                                        <option th:each="a : ${acabados}" th:value="${a.id}" th:text="${a.nombre}"
+                                                th:selected="${a.id == d.articulo.acabado.id}"></option>
+                                    </select>
+                                    <th:block th:unless="${editable}">
+                                        <span th:text="${d.articulo.acabado.nombre}"></span>
+                                        <input type="hidden" name="existenteAcabadoId" th:value="${d.articulo.acabado.id}">
+                                    </th:block>
+                                </div>
+
+                                <div class="col-md-2">
+                                    <div class="input-group" th:if="${editable}">
+                                        <select class="form-select select-color" name="existenteColorId" required>
+                                            <option th:each="c : ${colores}" th:value="${c.id}"
+                                                    th:text="${c.nombreMostrar + ' (' + c.codigoFastDye + ')'}"
+                                                    th:selected="${c.id == d.color.id}"></option>
+                                        </select>
+                                        <button type="button" class="btn btn-outline-primary btn-color-nuevo" title="Crear color nuevo"><i class="bi bi-plus-lg"></i></button>
+                                    </div>
+                                    <th:block th:unless="${editable}">
+                                        <span th:text="${d.color.nombreMostrar}"></span>
+                                        <span class="badge bg-light text-dark" th:text="${d.color.codigoFastDye}"></span>
+                                        <input type="hidden" name="existenteColorId" th:value="${d.color.id}">
+                                    </th:block>
+                                </div>
+
+                                <div class="col-md-1">
                                     <input type="number" class="form-control input-cantidad-existente" name="cantidadExistente" th:value="${d.cantidadSolicitada}" min="1" required>
                                 </div>
-                                <div class="col-md-1">
+                                <div class="col-md-2 d-flex align-items-center gap-2">
                                     <small class="text-muted" th:text="'Recib: ' + ${d.cantidadRecibida}"></small>
-                                </div>
-                                <div class="col-md-1">
-                                    <button type="button" class="btn btn-outline-danger btn-sm btn-quitar-existente">✕</button>
+                                    <i class="bi bi-lock-fill text-muted" th:unless="${editable}"
+                                       title="Ya recibió tela: el artículo y el color de esta línea no se pueden cambiar."></i>
+                                    <button type="button" class="btn btn-outline-danger btn-sm btn-quitar-existente ms-auto">✕</button>
                                 </div>
                             </div>
                             <p th:if="${#lists.isEmpty(programa.detalles)}" class="text-muted">Este programa no tiene artículos todavía.</p>
@@ -228,7 +302,7 @@
             });
             document.querySelectorAll('.btn-color-nuevo').forEach(btn => {
                 btn.onclick = () => {
-                    selectColorActual = btn.closest('.linea-nueva').querySelector('.select-color');
+                    selectColorActual = btn.closest('.linea-nueva, .linea-existente').querySelector('.select-color');
                     document.getElementById('modalColorNombre').value = '';
                     document.getElementById('modalColorCodigo').value = '';
                     document.getElementById('modalColorError').textContent = '';
@@ -237,7 +311,7 @@
             });
             document.querySelectorAll('.btn-composicion-nuevo').forEach(btn => {
                 btn.onclick = () => {
-                    selectComposicionActual = btn.closest('.linea-nueva').querySelector('.select-composicion');
+                    selectComposicionActual = btn.closest('.linea-nueva, .linea-existente').querySelector('.select-composicion');
                     document.getElementById('modalComposicionNombre').value = '';
                     document.getElementById('modalComposicionError').textContent = '';
                     new bootstrap.Modal(document.getElementById('modalComposicionPrograma')).show();
@@ -245,7 +319,7 @@
             });
             document.querySelectorAll('.btn-tipotela-nuevo').forEach(btn => {
                 btn.onclick = () => {
-                    selectTipoTelaActual = btn.closest('.linea-nueva').querySelector('.select-tipo-tela');
+                    selectTipoTelaActual = btn.closest('.linea-nueva, .linea-existente').querySelector('.select-tipo-tela');
                     document.getElementById('modalTipoTelaNombre').value = '';
                     document.getElementById('modalTipoTelaError').textContent = '';
                     new bootstrap.Modal(document.getElementById('modalTipoTelaPrograma')).show();
@@ -253,7 +327,7 @@
             });
             document.querySelectorAll('.btn-titulo-nuevo').forEach(btn => {
                 btn.onclick = () => {
-                    selectTituloActual = btn.closest('.linea-nueva').querySelector('.select-titulo');
+                    selectTituloActual = btn.closest('.linea-nueva, .linea-existente').querySelector('.select-titulo');
                     document.getElementById('modalTituloValor').value = '';
                     document.getElementById('modalTituloError').textContent = '';
                     new bootstrap.Modal(document.getElementById('modalTituloPrograma')).show();

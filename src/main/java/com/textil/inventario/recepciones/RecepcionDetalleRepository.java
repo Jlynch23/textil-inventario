@@ -18,6 +18,10 @@ public interface RecepcionDetalleRepository extends JpaRepository<RecepcionDetal
     // proteger el borrado del programa (no romper la trazabilidad del kardex).
     boolean existsByProgramaDetalle_ProgramaId(Long programaId);
 
+    // Igual, pero para UNA línea del programa: protege el cambio de artículo o
+    // color de esa línea (ver ProgramaService.aplicarArticuloYColorExistente).
+    boolean existsByProgramaDetalleId(Long programaDetalleId);
+
     // Líneas de recepción que NOMBRAN un programa pero no quedaron vinculadas a
     // ninguna de sus líneas (programa_detalle_id NULL). Son el descuento que
     // "no se hizo": el stock entró igual, pero el programa nunca se entero.

@@ -142,6 +142,13 @@ public class ProgramaController {
                               @RequestParam Integer totalRollos,
                               @RequestParam(value = "detalleId", required = false) List<Long> detalleIdsExistentes,
                               @RequestParam(value = "cantidadExistente", required = false) List<Integer> cantidadesExistentes,
+                              // Artículo y color de las líneas que ya existían: se pueden cambiar
+                              // mientras la línea no haya recibido tela (ver ProgramaService).
+                              @RequestParam(value = "existenteTipoTelaId", required = false) List<Long> existentesTipoTelaIds,
+                              @RequestParam(value = "existenteTituloId", required = false) List<Long> existentesTituloIds,
+                              @RequestParam(value = "existenteComposicionId", required = false) List<Long> existentesComposicionIds,
+                              @RequestParam(value = "existenteAcabadoId", required = false) List<Long> existentesAcabadoIds,
+                              @RequestParam(value = "existenteColorId", required = false) List<Long> existentesColorIds,
                               @RequestParam(value = "eliminarDetalleId", required = false) List<Long> detalleIdsAEliminar,
                               @RequestParam(value = "nuevoTipoTelaId", required = false) List<Long> nuevosTipoTelaIds,
                               @RequestParam(value = "nuevoTituloId", required = false) List<Long> nuevosTituloIds,
@@ -153,6 +160,9 @@ public class ProgramaController {
         try {
             programaService.actualizarPrograma(id, numero, empresaId, fecha, observaciones, totalRollos,
                     listaOVacia(detalleIdsExistentes), listaOVacia(cantidadesExistentes),
+                    listaOVacia(existentesTipoTelaIds), listaOVacia(existentesTituloIds),
+                    listaOVacia(existentesComposicionIds), listaOVacia(existentesAcabadoIds),
+                    listaOVacia(existentesColorIds),
                     listaOVacia(detalleIdsAEliminar),
                     listaOVacia(nuevosTipoTelaIds), listaOVacia(nuevosTituloIds),
                     listaOVacia(nuevosComposicionIds), listaOVacia(nuevosAcabadoIds),

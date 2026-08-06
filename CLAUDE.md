@@ -220,12 +220,13 @@ Una guía tiene **dos** empresas y el sistema ya no confunde ninguna:
 
 ## Tests
 
-`src/test/java/...`, JUnit 5 + Spring Boot Test — **152 tests** (`./mvnw -B test`). El test vive en
+`src/test/java/...`, JUnit 5 + Spring Boot Test — **157 tests** (`./mvnw -B test`). El test vive en
 el paquete de lo que prueba (al mover una clase de paquete, mové su test).
 
 - **Servicios**: `RecepcionServiceTest` (incluye los guards de confirmación: líneas repetidas,
   líneas faltantes en el POST, factura de una sola empresa, y la constancia de las líneas
-  excluidas al registrar), `TransferenciaServiceTest`,
+  excluidas al registrar), `ProgramaServiceTest` (cambiar el artículo/color de una línea
+  ya existente, y el guard que lo impide si esa línea ya recibió tela), `TransferenciaServiceTest`,
   `CatalogoServiceTest`, `ArchivoHistoricoServiceTest`, `DocumentoHistoricoClasificadorTest`,
   `DocumentoStorageServiceTest`, `StockPorColorTest`.
 - **OCR**: `ArticuloMatchingServiceTest` — matching de artículo/color/empresa **y** la verificación
@@ -406,13 +407,21 @@ Estado actual (ago-2026): **en vivo** en `texcontrol.pe` (dominio + HTTPS wildca
 
 ### Estado de trabajo (dónde quedamos — sesión 6-ago-2026)
 
-**⚠️ `develop` tiene ~15 commits SIN PROMOVER a `main`.** Todo probado por CI (152 tests verdes,
+**⚠️ `develop` tiene ~15 commits SIN PROMOVER a `main`.** Todo probado por CI (157 tests verdes,
 incluido el job contra MySQL real) y desplegado en `dev.texcontrol.pe`, pero **falta la prueba
 manual de punta a punta**: confirmar una recepción y cargar guías de a una sobre los programas.
 Recién después promover. No hay urgencia: **no hay clientes corriendo**, así que `main` no despliega
 a nadie — lo que importa es que esté sano para el próximo cliente que se dé de alta.
 
 Lo que entró hoy, por si hay que revisar algo puntual:
+- **Programas — el artículo y el color de una línea ya existente ahora SE PUEDEN cambiar**
+  (`programas/editar.html`). Antes solo se editaba la cantidad: un error de tipeo en un
+  desplegable obligaba a quitar la línea, cargarla de nuevo y recalcular el total de rollos a
+  mano. **Pero solo mientras la línea no haya recibido tela**: si ya tiene recepciones
+  vinculadas (`cantidadRecibida > 0` o `existsByProgramaDetalleId`), cambiar lo que pide las
+  dejaría acreditadas a un artículo que nunca entró por esa puerta — ahí la línea va de solo
+  lectura, con candado, y hay que quitarla y agregar una nueva. El cambio queda auditado
+  (`EDITAR_LINEA_PROGRAMA`, con el antes → después).
 - **Recepciones — una línea de la guía no se puede perder en silencio**: en *Productos Detectados*
   (`recepciones/nueva.html`), la línea sin artículo o color se caía del POST con un `return` mudo
   y la recepción se creaba con MENOS líneas que el papel (el guard del backend nunca llegaba a

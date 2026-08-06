@@ -213,6 +213,9 @@ public class ProgramaService {
     public void actualizarPrograma(Long programaId, String numero, Long empresaId, LocalDate fecha, String observaciones,
                                     Integer totalRollos,
                                     List<Long> detalleIdsExistentes, List<Integer> cantidadesExistentes,
+                                    List<Long> existentesTipoTelaIds, List<Long> existentesTituloIds,
+                                    List<Long> existentesComposicionIds, List<Long> existentesAcabadoIds,
+                                    List<Long> existentesColorIds,
                                     List<Long> detalleIdsAEliminar,
                                     List<Long> nuevosTipoTelaIds, List<Long> nuevosTituloIds,
                                     List<Long> nuevosComposicionIds, List<Long> nuevosAcabadoIds,
@@ -254,6 +257,20 @@ public class ProgramaService {
             throw new IllegalArgumentException(
                     "Los datos de las líneas llegaron incompletos. Recarga la página e intenta de nuevo.");
         }
+        // ¿El POST trae los desplegables de artículo/color de las líneas que ya
+        // existían? Si no vienen (formulario viejo, o una línea ya recibida que
+        // se manda de solo lectura), la línea conserva lo que tenía y solo se
+        // toca su cantidad, que es como funcionaba antes.
+        boolean editaArticuloExistentes = !existentesTipoTelaIds.isEmpty();
+        if (editaArticuloExistentes
+                && (existentesTipoTelaIds.size() != detalleIdsExistentes.size()
+                    || existentesTituloIds.size() != detalleIdsExistentes.size()
+                    || existentesComposicionIds.size() != detalleIdsExistentes.size()
+                    || existentesAcabadoIds.size() != detalleIdsExistentes.size()
+                    || existentesColorIds.size() != detalleIdsExistentes.size())) {
+            throw new IllegalArgumentException(
+                    "Los datos de las líneas llegaron incompletos. Recarga la página e intenta de nuevo.");
+        }
         for (int i = 0; i < detalleIdsExistentes.size(); i++) {
             ProgramaDetalle pd = programaDetalleRepository.findById(detalleIdsExistentes.get(i)).orElseThrow();
             // Guard de pertenencia (mismo criterio que confirmarRecepcion): las
@@ -273,6 +290,12 @@ public class ProgramaService {
                         + pd.getCantidadRecibida() + ") en una línea.");
             }
             pd.setCantidadSolicitada(cant);
+            if (editaArticuloExistentes) {
+                aplicarArticuloYColorExistente(pd,
+                        existentesTipoTelaIds.get(i), existentesTituloIds.get(i),
+                        existentesComposicionIds.get(i), existentesAcabadoIds.get(i),
+                        existentesColorIds.get(i));
+            }
             programaDetalleRepository.save(pd);
         }
 
@@ -310,6 +333,57 @@ public class ProgramaService {
             pd.setCantidadRecibida(0);
             programaDetalleRepository.save(pd);
         }
+    }
+
+    /**
+     * Cambia el articulo (tipo de tela, titulo, composicion, acabado) y/o el
+     * color de una linea que YA existe en el programa, si el usuario eligio
+     * otros en la pantalla de edicion. Si eligio los mismos, no hace nada.
+     *
+     * Antes esto no se podia: habia que quitar la linea y cargarla de nuevo,
+     * que ademas obligaba a recalcular el total de rollos a mano por un error
+     * de tipeo en un desplegable.
+     *
+     * SOLO se permite mientras la linea no haya recibido tela. Si ya tiene
+     * recepciones vinculadas, cambiar lo que la linea pide reescribe la
+     * historia: esas recepciones quedarian acreditadas a un articulo que nunca
+     * entro por esa puerta, que es exactamente la trazabilidad que el programa
+     * existe para sostener. Se mira cantidadRecibida Y la existencia de lineas
+     * de recepcion vinculadas: una vinculacion manual puede dejar el contador
+     * en un estado que por si solo no alcanza como guarda.
+     */
+    private void aplicarArticuloYColorExistente(ProgramaDetalle pd, Long tipoTelaId, Long tituloId,
+                                                Long composicionId, Long acabadoId, Long colorId) {
+        if (tipoTelaId == null || tituloId == null || composicionId == null
+                || acabadoId == null || colorId == null) {
+            throw new IllegalArgumentException(
+                    "Una línea del programa quedó sin tipo de tela, título, composición, acabado o color. "
+                    + "Complétala o quítala antes de guardar.");
+        }
+        Articulo articulo = resolverOCrearArticulo(tipoTelaId, tituloId, composicionId, acabadoId);
+        Color color = colorRepository.findById(colorId).orElseThrow();
+
+        boolean mismoArticulo = pd.getArticulo().getId().equals(articulo.getId());
+        boolean mismoColor = pd.getColor().getId().equals(color.getId());
+        if (mismoArticulo && mismoColor) return;
+
+        if (pd.getCantidadRecibida() > 0 || recepcionDetalleRepository.existsByProgramaDetalleId(pd.getId())) {
+            throw new IllegalArgumentException(
+                    "La línea «" + describir(pd) + "» ya tiene tela recibida, así que no se puede cambiar su "
+                    + "artículo ni su color: las recepciones ya vinculadas quedarían acreditadas a un artículo "
+                    + "que nunca entró. Si de verdad cambió, quita esa línea y agrega una nueva.");
+        }
+
+        String antes = describir(pd);
+        pd.setArticulo(articulo);
+        pd.setColor(color);
+        auditLogService.registrar("EDITAR_LINEA_PROGRAMA", "ProgramaDetalle", pd.getId(),
+                "Cambio una linea del programa " + pd.getPrograma().getNumero()
+                + ": " + antes + " -> " + describir(pd));
+    }
+
+    private String describir(ProgramaDetalle pd) {
+        return pd.getArticulo().getDescripcion() + " · " + pd.getColor().getNombreMostrar();
     }
 
     /**
