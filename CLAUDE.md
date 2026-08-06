@@ -40,6 +40,17 @@ docker compose up -d
 `DB_USERNAME` (def. `textil_user`), `DOCUMENTOS_PATH` (def. `./documentos`),
 `MAX_UPLOAD_SIZE` (def. `25MB`), `NOMBRE_EMPRESA`, y en prod `MYSQL_ROOT_PASSWORD` / `BIND_IP`.
 
+Opcionales, todas con default (si no se setean, la app arranca igual):
+- `STOCK_BAJO_UMBRAL` (def. `10`) — cuántos rollos, sumando TODAS las ubicaciones por
+  artículo+color, marcan un ítem como "stock bajo" en el **Dashboard** y en el **reporte**.
+  Es umbral de *visualización* y lo leen los dos desde `inventario.stock-bajo.umbral`.
+- `ALERTA_STOCK_ENABLED` (def. `false`), `ALERTA_STOCK_UMBRAL` (def. `5`),
+  `ALERTA_STOCK_UBICACION` — la **alerta** de stock bajo. Es otra cosa: mira UNA ubicación y
+  salta en el cruce hacia abajo. Que el Dashboard liste un ítem y no haya llegado aviso es lo
+  esperado, no una falla.
+- `MAIL_HOST` / `MAIL_PORT` / `MAIL_USERNAME` / `MAIL_PASSWORD` — SMTP de esa alerta. Sin
+  credenciales el canal queda apagado y solo se loguea el aviso no enviado.
+
 ### Login por defecto (multi-tenant por instancia)
 Cada copia se alquila como **instancia propia** (BD + despliegue por cliente; el nombre del
 negocio se personaliza con `NOMBRE_EMPRESA`). Cuentas semilla (estado tras V35):
@@ -78,6 +89,7 @@ Módulos (paquete → ruta base del controlador):
 | `archivohistorico` | `/archivo-historico` | Importación masiva de guías/facturas antiguas vía ZIP, leídas por IA en 2º plano; enriquece el catálogo. **Ojo**: con `crearRecepcionAutomatica` activo SÍ afecta stock — crea la recepción y la **confirma** (`crearYConfirmarRecepcionAutomatica`), o sea mueve stock y escribe kardex. Sin ese flag, solo catálogo. |
 | `seguridad` | `/usuarios` | Usuarios y roles, integración con Spring Security. |
 | `auditoria` | `/log` | Registro de eventos (`AuditLogService`, `LogEvento`). |
+| `alertas` | — | Aviso de **stock bajo**. `AlertaStockPublisher` detecta el **cruce hacia abajo** (venía ≥ umbral y quedó por debajo) en UNA ubicación; `AlertaStockListener` lo despacha `AFTER_COMMIT` y `@Async` (nunca dentro de la transacción que mueve el stock). Canal activo: **correo** (`NotificadorEmailSmtp`, `@Primary`); `NotificadorSmsTwilio` implementa la misma interfaz pero no está cableado. Agregar WhatsApp = otra implementación de `NotificadorStockBajo`, sin tocar el resto. |
 | `dashboard` | `/`, `/dashboard` | Indicadores en tiempo real. |
 | `config` | — | `SecurityConfig`, `AsyncConfig` (OCR async), `GlobalExceptionHandler`, `GlobalModelAttributes`. |
 | `common` | — | `BaseEntity` (id + timestamps), `RespuestaJson` (errores de los endpoints JSON), `FechaDocumento` / `NumeroDocumento` (formatos de guía y factura), `ValidadorPdf` / `ValidadorImagen`. Todo lo que usa más de un módulo y no es de ninguno. |
@@ -124,13 +136,40 @@ orden de las reglas de URL — los métodos de entrada a escritura (controladore
 revisar el orden en `SecurityConfig`: se evalúan en secuencia y las excepciones GER­ENTE/reservadas
 deben ir antes de la regla amplia.
 
-## OCR con IA (`recepciones/AnthropicOcrService.java`)
+## OCR con IA (`ocr/AnthropicOcrService.java`)
 
 Llama directamente a la API de Anthropic vía `RestClient` (connect 30s / read 90s — hay comentario
 SEC-03 explicando por qué el timeout importa: corre en `@Async`, sin él un proveedor caído agota el
 pool de hilos). El `SYSTEM_PROMPT` contiene reglas de normalización muy específicas del dominio
 (tipoTela, título, composición MELANGE/MLG, acabado) para las guías de **FAST DYE**. Si se ajusta el
 parsing de guías, ese prompt es la fuente de verdad.
+
+### El prompt no es una garantía: hay que VERIFICAR lo que la IA devuelve
+
+Mordió de verdad (6-ago, guía TG01-00020379 del programa 472). La descripción decía
+`Tela RIB 2X1 24/1 ALG LIST BLANCO Color 732631 NEGRO 2` y la lectura devolvió acabado **LISO**.
+El prompt **ya describía bien** esa regla (`LIST X` → `LISTADO X`) y hasta usaba esa misma guía como
+ejemplo; falló igual. Consecuencias: 18 rollos entraron al stock como LISO NEGRO en vez de LISTADO
+BLANCO NEGRO, y como el artículo resultante era otro, la línea no vinculó con su línea del programa,
+que quedó pendiente para siempre.
+
+Lo que lo hacía **invisible**: el defecto de `ArticuloMatchingService` cuando no se lee acabado es
+también `LISO`, así que un acabado mal leído y un LISO real eran indistinguibles.
+
+Por eso el OCR pide además `descripcionOriginal` (el texto del ítem **literal**, sin interpretar) y
+`ArticuloMatchingService.desajusteDeAcabado()` lo contrasta: si el texto dice LIST/LISTADO o
+ACANALADO y se leyó otra cosa (o al revés), la línea vuelve **sin resolver** con el motivo, para que
+una persona elija. Solo mira la parte **anterior a `Color`** — lo que sigue es el nombre del color,
+texto libre donde un "AZUL LISTÓN" daría falso positivo.
+
+> **Regla general**: la IA extrae y sugiere; **no confirma inventario sin una verificación
+> determinista**. Al agregar un campo que la IA lea y que decida a qué artículo entra la tela,
+> pensá cómo comprobarlo contra el texto original — no alcanza con pedirlo mejor en el prompt.
+
+También por eso la pantalla de recepción muestra **siempre** `Guía dice: <tela> <título> ·
+<composición> · <ACABADO>` debajo de cada artículo: el `<select>` muestra el artículo del catálogo
+(y oculta el acabado LISO por convención), así que sin esa línea no hay forma de contrastar a ojo lo
+que se leyó contra lo que quedó elegido.
 
 ## Base de datos / migraciones
 
@@ -146,6 +185,17 @@ consultas `IsNull` y los `findBy`. Ya mordió dos veces — `numero_factura = ''
 invisible en **Facturar**, y `codigo_fast_dye = ''` hacía que el OCR eligiera un color al azar
 entre todos los que tenían el código vacío. Los servicios normalizan blanco → NULL y **V46** reparó
 las filas viejas. Al agregar un campo opcional, mantener el criterio.
+
+### Fechas del papel: `dd/MM/yyyy`, NO ISO (`common/FechaDocumento`)
+Las guías y facturas peruanas traen la fecha **día/mes/año** (`06/03/2026` = 6 de marzo). El
+navegador y la BD la quieren en **ISO** (`2026-03-06`). Convertir en el lugar equivocado invierte
+día y mes **sin error visible**: `06/03` se guardaba como 3 de junio. Solo se nota cuando el día
+es ≤ 12; con `13/03` en adelante revienta o queda vacío, que es como se descubrió.
+
+Mordió **dos veces el mismo día** (6-ago): primero en la fecha de la guía, y el mismo defecto
+estaba clonado en la de la factura. Toda conversión pasa por `common/FechaDocumento`
+(`parse` entiende los dos formatos, `aIso` devuelve lo que espera un `<input type="date">`).
+**No parsear fechas de documentos a mano en un servicio o en JS.** Ver `FechaDocumentoTest`.
 
 ### Empresas de la guía: destinatario por RUC, emisor leído del documento (V45)
 Una guía tiene **dos** empresas y el sistema ya no confunde ninguna:
@@ -170,10 +220,19 @@ Una guía tiene **dos** empresas y el sistema ya no confunde ninguna:
 
 ## Tests
 
-`src/test/java/...`, JUnit 5 + Spring Boot Test. Lógica de servicio:
-`RecepcionServiceTest`, `ArticuloMatchingServiceTest`, `TransferenciaServiceTest`,
-`CatalogoServiceTest`, `ArchivoHistoricoServiceTest`, `DocumentoHistoricoClasificadorTest`,
-`GeneradorUsernameTest`, `ValidadorPdfTest`, `VersionOptimistaTest`.
+`src/test/java/...`, JUnit 5 + Spring Boot Test — **149 tests** (`./mvnw -B test`). El test vive en
+el paquete de lo que prueba (al mover una clase de paquete, mové su test).
+
+- **Servicios**: `RecepcionServiceTest` (incluye los guards de confirmación: líneas repetidas,
+  líneas faltantes en el POST, factura de una sola empresa), `TransferenciaServiceTest`,
+  `CatalogoServiceTest`, `ArchivoHistoricoServiceTest`, `DocumentoHistoricoClasificadorTest`,
+  `DocumentoStorageServiceTest`, `StockPorColorTest`.
+- **OCR**: `ArticuloMatchingServiceTest` — matching de artículo/color/empresa **y** la verificación
+  del acabado contra el texto literal de la guía (`desajusteDeAcabado`).
+- **`common`**: `FechaDocumentoTest` (día/mes vs ISO), `NumeroDocumentoTest`, `ValidadorPdfTest`,
+  `ValidadorImagenTest`, `VersionOptimistaTest`.
+- **Catálogo / seguridad**: `ArticuloDescripcionTest`, `GeneradorUsernameTest`, `CelularUsuarioTest`.
+- **Anti-regresión**: `AppendOnlyTest` (el kardex no se edita).
 
 CI (`.github/workflows/ci.yml`), en cada push/PR a `develop` y `main`, corre **dos jobs**:
 - `build-and-test`: `./mvnw -B clean compile` + `./mvnw -B test` (tests con Mockito, sin BD).
@@ -226,6 +285,14 @@ despliegue de producción es el bucle multicliente de arriba (el `deploy-dev.sh`
 > secreta" en el Roadmap), con UNA sola base de datos en la nube. Así el trabajo vive en el servidor
 > y no hay que copiar bases entre máquinas.
 
+**Dejar dev en foja cero para probar un flujo**: `scripts/limpiar-dev-dejando-programas.sh` borra
+todo el movimiento (recepciones, stock, kardex, transferencias, entradas/salidas rápidas, archivo
+histórico y los PDFs de `documentos-dev/`) y **deja los programas y el catálogo**, con
+`cantidad_recibida` vuelta a 0 — para cargar las guías de a una y ver bajar el pendiente. Solo toca
+`textil_mysql_dev` (el contenedor está fijo en el código, no llega a ningún cliente), pide escribir
+`LIMPIAR`, y hace `mysqldump` a `backups-dev/` antes de borrar. **Correlo desde el clon de dev**
+(`~/textil-inventario-dev`), que es el que tiene el `.env.dev`.
+
 > **Futuro (más adelante, no ahora)**: se sumará una tercera rama **"limpia"** = la plantilla base que
 > se copia cada vez que se vende una instancia nueva. Se define cuando toque; hasta entonces, solo dos ramas.
 
@@ -234,6 +301,11 @@ despliegue de producción es el bucle multicliente de arriba (el `deploy-dev.sh`
 - Código, nombres de paquete, comentarios y textos de UI están **en español** — mantener ese idioma.
 - Los **textos de UI** (labels, botones, mensajes al usuario) van en **español neutro/peruano (tuteo)**,
   NO en voseo argentino: "Ingresa"/"Escribe"/"Selecciona", nunca "Ingresá"/"Escribí"/"Seleccioná".
+- **Fragmentos Thymeleaf antes que markup repetido**: `templates/fragments/` tiene piezas
+  compartidas — `guias.html` (`:: ojoGuia(docId)` / `:: ojoFactura(docId)`, el ojito que abre el
+  PDF; no renderiza nada si el id es null) y `modales-catalogo.html` (altas rápidas). Escribir el
+  ojito a mano hace que el mismo botón se vea distinto según la pantalla, que es lo que pasó en
+  Programas. Si necesitás uno igual en otro lado, **llamá al fragmento**.
 - **NO usar `placeholder` (marca de agua) en los campos de formulario** — preferencia explícita del
   cliente. Nada de texto de ejemplo gris dentro de los `<input>`; alcanza con el `<label>` (y un
   `<small>` de ayuda debajo si de verdad hace falta), pero el campo va vacío.
@@ -279,8 +351,14 @@ despliegue de producción es el bucle multicliente de arriba (el `deploy-dev.sh`
   `lib-cliente.sh` la carga sola) — ya no hace falta anteponerla en cada comando.
   `--aplicar` además la copia a los clientes ya creados y reinicia sus apps.
 - **Ambiente DEMO** (`demo.texcontrol.pe`, público, para prospectos): `nuevo-demo.sh`
-  (alta + seed + endurecer) y `resetear-demo.sh` (foja cero manual). Ver `DEMO.md`.
+  (alta + seed + endurecer), `resetear-demo.sh` (foja cero manual), `foto-demo.sh` (guarda el
+  estado exacto —BD + documentos— con un nombre y permite VOLVER a él: sirve para ensuciar el
+  demo en una presentación y restaurarlo después) y `sembrar-demo-desde-dev.sh`. Ver `DEMO.md`.
   Cuesta ~0.8–1 GB de RAM como cualquier cliente — cuenta para el techo del VPS.
+- **Otros scripts útiles**: `estado-vps.sh` (foto de CPU/RAM/disco y consumo por contenedor, para
+  ver cuánto queda del techo de ~4 GB), y `backup-db.sh` / `restore-db.sh` (backup y restore
+  sueltos, del modelo single-cliente; para el modelo multicliente el que se usa es
+  `backup-cliente.sh`).
 - **Actualizar el código de TODOS los clientes** (comparten imagen): en el VPS, con
   el clon en **`main`**, `git pull` → `docker build -t texcontrol-app:latest .` →
   reiniciar cada app: `for e in clientes/*/.env; do s=$(basename $(dirname $e)); \
@@ -291,6 +369,16 @@ despliegue de producción es el bucle multicliente de arriba (el `deploy-dev.sh`
   bloque `dev.` (Basic Auth) vive en `multicliente/nginx/00-texcontrol.conf`.
 
 ## Roadmap / pendientes
+
+> **La hoja de ruta vive en `ROADMAP.md`, no acá.** Existe además un **«Roadmap Oficial de Producto
+> y Tecnología 2026-2027 v1.0»** (PDF, 5-ago, 22 pág., con auditoría del repo, gates G0–G5, métricas
+> y riesgos). Su secuencia se adopta; `ROADMAP.md` guarda el mapa de numeración (el PDF usa
+> V0.1–V1.0, el repo V1–V5) y **cuatro correcciones de ejecución**: (0) el cuello de botella no es
+> programar sino tener un cliente operando — los gates G3/G4 piden ciclos productivos y muestra
+> física reales, y hoy hay cero clientes; (1) WhatsApp sale del camino crítico de V0.1 porque la
+> verificación en Meta es un trámite externo; (2) el kardex generalizado va ANTES de la primera
+> tabla de hilo; (3) V0.2 en tres sub-gates; (4) costo estimado antes que costo real.
+> **Si el PDF y `ROADMAP.md` difieren, gana `ROADMAP.md`** (se actualiza con cada commit).
 
 Estado actual (ago-2026): **en vivo** en `texcontrol.pe` (dominio + HTTPS wildcard; `login.texcontrol.pe`
 = lanzador, `<empresa>.texcontrol.pe` = la app). **Modelo MULTICLIENTE en vivo**: proxy
@@ -308,7 +396,37 @@ Estado actual (ago-2026): **en vivo** en `texcontrol.pe` (dominio + HTTPS wildca
 > **Verificá antes de creer esta lista**: `./scripts/listar-clientes.sh` (o `docker ps`) es la
 > fuente de verdad. Este archivo se desactualiza cada vez que se da de alta o de baja a alguien.
 
-### Estado de trabajo (dónde quedamos — sesión 24-jul-2026)
+### Estado de trabajo (dónde quedamos — sesión 6-ago-2026)
+
+**⚠️ `develop` tiene ~17 commits SIN PROMOVER a `main`.** Todo probado por CI (149 tests verdes,
+incluido el job contra MySQL real) y desplegado en `dev.texcontrol.pe`, pero **falta la prueba
+manual de punta a punta**: confirmar una recepción y cargar guías de a una sobre los programas.
+Recién después promover. No hay urgencia: **no hay clientes corriendo**, así que `main` no despliega
+a nadie — lo que importa es que esté sano para el próximo cliente que se dé de alta.
+
+Lo que entró hoy, por si hay que revisar algo puntual:
+- **OCR**: la fecha de la **guía** se leía con día y mes cambiados, y el **mismo defecto** estaba
+  clonado en la de la **factura** → todo pasa por `common/FechaDocumento`. Y la verificación del
+  acabado contra el texto literal (ver "El prompt no es una garantía").
+- **Recepciones**: se podía confirmar con el POST **incompleto** — las líneas que faltaban no movían
+  stock pero la recepción quedaba CONFIRMADA, dejándolas sin arreglo posible. `asignarFactura` no
+  exigía misma empresa (su gemela `guardarDocumentoFactura` sí), y el front se **tragaba** el fallo
+  del PDF (`fetch` no lanza ante un 400).
+- **Inventario**: "stock bajo" estaba definido dos veces y el del Dashboard no se podía cambiar sin
+  recompilar → `STOCK_BAJO_UMBRAL`.
+- **Archivo histórico**: la vinculación factura↔guía seguía escaneando la tabla entera, una vez por
+  factura; V40 había creado el índice justo para eso y solo se había migrado la mitad.
+- **Programas**: composición y acabado en Seguimiento, aviso de **tela recibida que no descontó**
+  (con el porqué), y botón **Vincular** manual (idempotente, solo ADMIN, auditado, no toca stock).
+- **Estructura**: `recepciones` (2943 líneas) se partió en `ocr` / `programas` / `almacen` y los
+  validadores a `common`. Cero cambio de lógica.
+- **Docs**: `ROADMAP.md` con las correcciones al PDF oficial; este archivo con clientes reales,
+  los dos clones del VPS y el `.gitignore` de credenciales.
+
+**Pendiente operativo (VPS)**: mover `~/textil-inventario-dev/clientes/demo/` al clon de producción
+(ver la sección de los dos clones).
+
+### Estado anterior (sesión 24-jul-2026)
 
 **✅ Sprint de hardening COMPLETO (ago-2026, en `develop` → promovido a `main`)**: cerrada la auditoría
 red-team + Sprint 2-5. Concurrencia (`@Version` + lock optimista en confirmaciones), tabla `correlativo`
@@ -359,9 +477,12 @@ entradas al vuelo desde los flujos (como ya hace "Crear color"). Hecho: "Crear a
 - El form de Programa solo ofrece colores existentes → en dev vacío un programa queda con pocas líneas
   (esperado). Se resuelve con el crear-color-al-vuelo de arriba, o poblando el catálogo.
 
-**Para probar flujos con datos reales en dev** (en vez del catálogo vacío): copiar prod → dev con
-`mysqldump` de `textil_mysql` restaurado en `textil_mysql_dev` (aislado, `--ignore-table=...flyway_schema_history`,
-no toca prod). Pendiente dejarlo como `scripts/sembrar-dev-desde-prod.sh`.
+> ~~Para probar flujos con datos reales en dev: copiar prod → dev con `mysqldump` de
+> `textil_mysql`~~. **Obsoleto (6-ago)**: `textil_mysql` era el stack single-cliente, ya
+> decomisionado, y hoy **no hay ningún cliente de pago del cual copiar**. Dev ya tiene datos
+> propios; para dejarlo en foja cero conservando programas y catálogo está
+> `scripts/limpiar-dev-dejando-programas.sh`, y para sembrar el demo desde dev,
+> `scripts/sembrar-demo-desde-dev.sh` (la dirección quedó al revés de lo que decía esta nota).
 
 **✅ Multi-cliente real EN VIVO (ago-2026)**: migrado del single-cliente al modelo `multicliente/`
 (proxy `texcontrol_proxy_nginx` + `app_<slug>`+`db_<slug>` aislado por cliente, ruteados por subdominio).
