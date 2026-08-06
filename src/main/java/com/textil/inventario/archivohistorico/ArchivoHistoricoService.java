@@ -266,6 +266,13 @@ public class ArchivoHistoricoService {
                 "» ya fue importado antes (documento #" + original.getId() + "). No se creó nada nuevo.";
         doc.setObservacion(doc.getObservacion() == null ? nota : doc.getObservacion() + "\n" + nota);
         doc.setProcesadoAt(LocalDateTime.now());
+        // El numero normalizado tambien para los DUPLICADO. Este metodo corta
+        // procesarUno con un `return` dentro del try, asi que se salteaba el
+        // setNumeroNormalizado del final y estas filas quedaban con la columna en
+        // NULL. Mientras la vinculacion factura<->guia escaneaba la tabla y
+        // normalizaba en memoria daba igual; ahora que busca por la columna
+        // indexada, una fila sin normalizar es una fila invisible.
+        doc.setNumeroNormalizado(calcularNumeroNormalizado(doc));
         documentoHistoricoRepository.save(doc);
         return true;
     }
@@ -409,16 +416,25 @@ public class ArchivoHistoricoService {
      */
     private List<Long> vincularFacturaConGuiasExistentes(DocumentoHistorico factura, List<String> guiasReferenciadas) {
         Set<Long> recepcionesVinculadas = new java.util.LinkedHashSet<>();
-        List<DocumentoHistorico> todasLasGuias = documentoHistoricoRepository
-                .findByTipoDocumento(DocumentoHistorico.TipoDocumentoHistorico.GUIA);
 
         for (String numeroGuiaReferenciado : guiasReferenciadas) {
             if (numeroGuiaReferenciado == null || numeroGuiaReferenciado.isBlank()) continue;
             String normalizado = normalizarNumeroGuia(numeroGuiaReferenciado);
 
-            for (DocumentoHistorico guia : todasLasGuias) {
-                if (guia.getNumeroGuia() == null) continue;
-                if (!normalizarNumeroGuia(guia.getNumeroGuia()).equals(normalizado)) continue;
+            // M6, la mitad que faltaba: esto cargaba TODAS las guias de la tabla
+            // (findByTipoDocumento) y normalizaba cada una en memoria para
+            // compararla -- y corre UNA VEZ POR FACTURA del ZIP, que es
+            // exactamente el caso de uso del modulo (importacion masiva). Con N
+            // guias y M facturas eran N*M normalizaciones y M consultas que
+            // traian N filas cada una.
+            //
+            // V40 agrego numero_normalizado + indice para esto: su encabezado
+            // nombra "buscarYaImportado / vinculacion factura<->guia" como los
+            // dos casos a arreglar, pero solo se migro el primero. La columna ya
+            // guarda esta misma normalizacion, asi que el escaneo era evitable.
+            for (DocumentoHistorico guia : documentoHistoricoRepository
+                    .findByTipoDocumentoAndNumeroNormalizado(
+                            DocumentoHistorico.TipoDocumentoHistorico.GUIA, normalizado)) {
 
                 if (guia.getNumeroFactura() == null || guia.getNumeroFactura().isBlank()) {
                     guia.setNumeroFactura(factura.getNumeroFactura());
@@ -459,14 +475,16 @@ public class ArchivoHistoricoService {
      */
     private Optional<String> buscarFacturaQueYaReferenciaEstaGuia(String numeroGuia) {
         String normalizado = normalizarNumeroGuia(numeroGuia);
+        // Los descartes (sin guias referenciadas / sin numero de factura) los hace
+        // ahora la consulta, no un `continue` despues de traer la fila entera.
         List<DocumentoHistorico> facturas = documentoHistoricoRepository
-                .findByTipoDocumento(DocumentoHistorico.TipoDocumentoHistorico.FACTURA);
+                .findByTipoDocumentoAndGuiasReferenciadasIsNotNullAndNumeroFacturaIsNotNull(
+                        DocumentoHistorico.TipoDocumentoHistorico.FACTURA);
 
         for (DocumentoHistorico factura : facturas) {
-            if (factura.getGuiasReferenciadas() == null) continue;
             for (String ref : factura.getGuiasReferenciadas().split(",")) {
                 if (normalizarNumeroGuia(ref).equals(normalizado)
-                        && factura.getNumeroFactura() != null && !factura.getNumeroFactura().isBlank()) {
+                        && !factura.getNumeroFactura().isBlank()) {
                     return Optional.of(factura.getNumeroFactura());
                 }
             }

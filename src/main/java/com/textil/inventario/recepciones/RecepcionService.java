@@ -55,6 +55,24 @@ public class RecepcionService {
         if (numeroFactura == null || numeroFactura.isBlank()) {
             throw new IllegalArgumentException("El número de factura es obligatorio.");
         }
+        // Una factura pertenece a UNA empresa. guardarDocumentoFactura ya exigia
+        // esto para archivar el PDF, pero aca no se validaba, y las dos son las
+        // dos mitades del mismo boton de Facturar: al elegir guias de empresas
+        // distintas se asignaba igual el numero (las recepciones desaparecian de
+        // "sin factura" con una factura que no les corresponde) y recien despues
+        // fallaba el archivado del PDF. La validacion va en la mitad que ESCRIBE.
+        if (recepcionIds == null || recepcionIds.isEmpty()) {
+            throw new IllegalArgumentException("Selecciona al menos una guía para asignarle la factura.");
+        }
+        List<Recepcion> recepciones = recepcionRepository.findAllById(recepcionIds);
+        if (recepciones.size() != recepcionIds.size()) {
+            throw new IllegalArgumentException("Alguna de las recepciones seleccionadas ya no existe. Recarga la página.");
+        }
+        Long empresaIdBase = recepciones.get(0).getEmpresa().getId();
+        if (!recepciones.stream().allMatch(x -> x.getEmpresa().getId().equals(empresaIdBase))) {
+            throw new IllegalArgumentException(
+                    "Todas las guías seleccionadas deben ser de la misma empresa para asignarles una factura.");
+        }
         for (Long id : recepcionIds) {
             Recepcion r = recepcionRepository.findById(id).orElseThrow();
             r.setNumeroFactura(normalizar(numeroFactura));
@@ -297,6 +315,27 @@ public class RecepcionService {
         // (complementa el guard M1 de pertenencia).
         if (new java.util.HashSet<>(detalleIds).size() != detalleIds.size()) {
             throw new IllegalArgumentException("Llegaron líneas de detalle repetidas. Recarga la página e intenta de nuevo.");
+        }
+
+        // Descarte silencioso (misma familia que d18163d): el POST tiene que traer
+        // TODAS las lineas de la recepcion. Si alguna quedaba afuera -- el caso
+        // real es una pestaña abierta en Confirmar desde ANTES de que se agregara
+        // otra linea desde otra pestaña, porque agregar esta permitido mientras
+        // siga PENDIENTE -- el bucle simplemente no la tocaba: no movia su stock
+        // ni escribia su kardex, pero la recepcion pasaba igual a CONFIRMADA.
+        //
+        // Esa linea quedaba con rollos_recibidos NULL: visible en el detalle y en
+        // los reportes, ausente del inventario, y ya imposible de arreglar --
+        // agregarDetalle y este metodo exigen PENDIENTE, y la recepcion ya no lo
+        // esta. Es el mismo "el papel dice rollos que el inventario no tiene" que
+        // evita el guard de agregarDetalle, entrando por la otra puerta.
+        List<Long> idsDeLaRecepcion = detalleRepository.findByRecepcionId(recepcionId)
+                .stream().map(RecepcionDetalle::getId).toList();
+        if (!new java.util.HashSet<>(detalleIds).containsAll(idsDeLaRecepcion)) {
+            throw new IllegalArgumentException(
+                    "Faltan líneas por contar: la recepción tiene " + idsDeLaRecepcion.size()
+                    + " línea(s) y llegaron " + detalleIds.size()
+                    + ". Recarga la página para verlas todas antes de confirmar.");
         }
 
         // La tela recibida entra al almacen PRINCIPAL. En una instancia nueva

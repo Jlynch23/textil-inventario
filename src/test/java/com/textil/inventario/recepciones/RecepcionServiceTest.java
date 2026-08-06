@@ -426,4 +426,104 @@ class RecepcionServiceTest {
                 service.agregarDetalle(1L, 10L, 20L, null, 5, new BigDecimal("100"))
         ).doesNotThrowAnyException();
     }
+
+    // --- El POST de confirmar tiene que traer TODAS las lineas -------------
+    // Caso real: una pestaña abierta en Confirmar desde ANTES de que se agregara
+    // otra linea desde otra pestaña (agregar esta permitido mientras siga
+    // PENDIENTE). El POST viejo solo trae 2 de las 3 lineas. Antes, la tercera no
+    // movia stock ni kardex pero la recepcion pasaba igual a CONFIRMADA, y esa
+    // linea quedaba sin arreglo posible: visible en el detalle y en los reportes,
+    // ausente del inventario.
+
+    private RecepcionDetalle detalleDePrueba(Long id, Recepcion r) {
+        RecepcionDetalle d = new RecepcionDetalle();
+        d.setId(id);
+        d.setRecepcion(r);
+        d.setArticulo(articuloDePrueba());
+        d.setColor(colorDePrueba());
+        d.setRollosGuia(5);
+        return d;
+    }
+
+    @Test
+    void confirmarRecepcion_faltaUnaLineaEnElPost_seRechazaYNoMueveStock() {
+        Recepcion pendiente = recepcionDePrueba();
+        when(recepcionRepository.findById(1L)).thenReturn(Optional.of(pendiente));
+        // Sin stub de ubicacion a proposito: el guard corta ANTES de buscarla.
+        when(detalleRepository.findByRecepcionId(1L)).thenReturn(List.of(
+                detalleDePrueba(100L, pendiente),
+                detalleDePrueba(101L, pendiente),
+                detalleDePrueba(102L, pendiente)));   // <- la 102 no viaja en el POST
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                service.confirmarRecepcion(1L, List.of(100L, 101L), List.of(5, 5), List.of("", ""))
+        ).isInstanceOf(IllegalArgumentException.class)
+         .hasMessageContaining("Faltan líneas por contar");
+
+        verify(stockActualRepository, never()).save(any());
+        verify(kardexRepository, never()).save(any());
+        assertThat(pendiente.getEstado()).isEqualTo(Recepcion.EstadoRecepcion.PENDIENTE);
+    }
+
+    @Test
+    void confirmarRecepcion_conTodasLasLineas_pasaElGuard() {
+        Recepcion pendiente = recepcionDePrueba();
+        when(recepcionRepository.findById(1L)).thenReturn(Optional.of(pendiente));
+        when(ubicacionRepository.findByEsPrincipalTrue()).thenReturn(Optional.of(praderasDePrueba()));
+        when(detalleRepository.findByRecepcionId(1L)).thenReturn(List.of(detalleDePrueba(100L, pendiente)));
+        when(detalleRepository.findById(100L)).thenReturn(Optional.of(detalleDePrueba(100L, pendiente)));
+        when(stockActualRepository.findByArticuloIdAndUbicacionIdAndColorId(any(), any(), any()))
+                .thenReturn(Optional.empty());
+
+        assertThatCode(() ->
+                service.confirmarRecepcion(1L, List.of(100L), List.of(5), List.of(""))
+        ).doesNotThrowAnyException();
+
+        verify(stockActualRepository).save(any());
+        verify(kardexRepository).save(any());
+    }
+
+    // --- Una factura pertenece a UNA empresa -------------------------------
+    // guardarDocumentoFactura ya lo exigia para archivar el PDF; asignarFactura,
+    // que es la mitad que ESCRIBE el numero, no lo validaba. Con guias de dos
+    // empresas el numero se asignaba igual (y las recepciones salian de "sin
+    // factura") y recien despues fallaba el archivado del PDF.
+
+    private Recepcion recepcionDeEmpresa(Long id, Long empresaId) {
+        Recepcion r = new Recepcion();
+        r.setId(id);
+        com.textil.inventario.catalogo.Empresa e = new com.textil.inventario.catalogo.Empresa();
+        e.setId(empresaId);
+        r.setEmpresa(e);
+        return r;
+    }
+
+    @Test
+    void asignarFactura_guiasDeEmpresasDistintas_seRechaza() {
+        when(recepcionRepository.findAllById(List.of(1L, 2L))).thenReturn(List.of(
+                recepcionDeEmpresa(1L, 10L),
+                recepcionDeEmpresa(2L, 99L)));    // <- otra empresa
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                service.asignarFactura("F001-123", java.time.LocalDate.now(), List.of(1L, 2L))
+        ).isInstanceOf(IllegalArgumentException.class)
+         .hasMessageContaining("misma empresa");
+
+        verify(recepcionRepository, never()).save(any());
+    }
+
+    @Test
+    void asignarFactura_mismaEmpresa_asignaANormalizado() {
+        when(recepcionRepository.findAllById(List.of(1L, 2L))).thenReturn(List.of(
+                recepcionDeEmpresa(1L, 10L),
+                recepcionDeEmpresa(2L, 10L)));
+        when(recepcionRepository.findById(1L)).thenReturn(Optional.of(recepcionDeEmpresa(1L, 10L)));
+        when(recepcionRepository.findById(2L)).thenReturn(Optional.of(recepcionDeEmpresa(2L, 10L)));
+
+        service.asignarFactura(" f001-123 ", java.time.LocalDate.now(), List.of(1L, 2L));
+
+        ArgumentCaptor<Recepcion> captor = ArgumentCaptor.forClass(Recepcion.class);
+        verify(recepcionRepository, times(2)).save(captor.capture());
+        assertThat(captor.getAllValues()).allMatch(r -> "F001-123".equals(r.getNumeroFactura()));
+    }
 }

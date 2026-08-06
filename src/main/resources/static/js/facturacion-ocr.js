@@ -111,10 +111,28 @@
                     const fd = new FormData();
                     fd.append('file', fileInput.files[0]);
                     recepcionIds.forEach(id => fd.append('recepcionIds', id));
+                    // El numero de factura YA quedo asignado (llamada de arriba).
+                    // Si el archivado del PDF falla hay que decirlo: antes esto
+                    // solo hacia console.error y seguia al redirect, asi que el
+                    // usuario veia exito con la factura asignada y SIN documento.
+                    // Peor todavia: fetch NO lanza ante un 400, solo ante un fallo
+                    // de red, asi que el catch ni siquiera se disparaba -- un
+                    // rechazo del servidor se perdia por completo.
+                    let fallo = null;
                     try {
-                        await fetchConCsrf('/recepciones/guardar-documento-factura', { method: 'POST', body: fd });
+                        const rDoc = await fetchConCsrf('/recepciones/guardar-documento-factura', { method: 'POST', body: fd });
+                        if (!rDoc.ok) {
+                            const d = await rDoc.json().catch(() => ({}));
+                            fallo = d.error || ('el servidor respondió ' + rDoc.status);
+                        }
                     } catch (err) {
-                        console.error('No se pudo archivar copia de la factura:', err);
+                        fallo = err.message;
+                    }
+                    if (fallo) {
+                        errorDiv.textContent = 'La factura ' + numeroFactura + ' se asignó correctamente, '
+                            + 'pero no se pudo archivar el PDF: ' + fallo
+                            + '. Vuelve a subirlo desde el detalle de la recepción.';
+                        return;   // sin redirect: que el aviso se lea
                     }
                 }
 

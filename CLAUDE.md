@@ -75,7 +75,7 @@ Módulos (paquete → ruta base del controlador):
 | `transferencias` | `/transferencias` | Traslados entre ubicaciones con doble confirmación (salida → llegada) y reparto de una línea a varios destinos. |
 | `inventario` | `/inventario` | Stock actual por ubicación y kardex (historial de movimientos). |
 | `reportes` | `/reportes` | Stock, kardex, recepciones, transferencias, stock bajo — exportables a Excel (POI). |
-| `archivohistorico` | `/archivo-historico` | Importación masiva de guías/facturas antiguas vía ZIP, leídas por IA en 2º plano; enriquece catálogo sin afectar stock. |
+| `archivohistorico` | `/archivo-historico` | Importación masiva de guías/facturas antiguas vía ZIP, leídas por IA en 2º plano; enriquece el catálogo. **Ojo**: con `crearRecepcionAutomatica` activo SÍ afecta stock — crea la recepción y la **confirma** (`crearYConfirmarRecepcionAutomatica`), o sea mueve stock y escribe kardex. Sin ese flag, solo catálogo. |
 | `seguridad` | `/usuarios` | Usuarios y roles, integración con Spring Security. |
 | `auditoria` | `/log` | Registro de eventos (`AuditLogService`, `LogEvento`). |
 | `dashboard` | `/`, `/dashboard` | Indicadores en tiempo real. |

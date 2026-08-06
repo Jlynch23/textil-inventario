@@ -40,13 +40,26 @@ public interface DocumentoHistoricoRepository extends JpaRepository<DocumentoHis
             DocumentoHistorico.EstadoProceso estadoProceso,
             Long id);
 
-    // Vinculacion FACTURA <-> GUIAS: la comparacion exacta por numeroGuia no
-    // sirve porque la factura suele mencionar el numero SIN ceros a la
-    // izquierda (ej. "TG01-21376") mientras la guia lo guarda CON ceros
-    // (ej. "TG01-00021376", tal como lo lee la IA de la guia misma). Por eso
-    // se trae todo el tipo y la comparacion normalizada se hace en Java
-    // (ver ArchivoHistoricoService.normalizarNumeroGuia).
-    List<DocumentoHistorico> findByTipoDocumento(DocumentoHistorico.TipoDocumentoHistorico tipoDocumento);
+    // Vinculacion FACTURA <-> GUIAS. La comparacion exacta por numeroGuia no
+    // sirve porque la factura suele mencionar el numero SIN ceros a la izquierda
+    // ("TG01-21376") mientras la guia lo guarda CON ceros ("TG01-00021376", tal
+    // como lo lee la IA de la guia misma) -- por eso se compara la forma
+    // normalizada, que es justamente lo que V40 dejo persistido e indexado en
+    // numero_normalizado. Devuelve lista y no Optional porque un mismo numero
+    // puede tener mas de una fila (los reimportados quedan como DUPLICADO).
+    List<DocumentoHistorico> findByTipoDocumentoAndNumeroNormalizado(
+            DocumentoHistorico.TipoDocumentoHistorico tipoDocumento,
+            String numeroNormalizado);
+
+    // "¿Que factura menciona esta guia?" — mira DENTRO de guias_referenciadas,
+    // que es texto separado por comas con los numeros SIN normalizar, asi que el
+    // indice de numero_normalizado no aplica y la comparacion sigue en Java.
+    // Lo que si se puede es no traer las filas que no pueden coincidir: una
+    // factura sin numero o que no referencia ninguna guia nunca es respuesta.
+    // (Un fix completo pide una tabla de referencias factura->guia en vez de un
+    // campo de texto; queda para cuando se toque el modelo.)
+    List<DocumentoHistorico> findByTipoDocumentoAndGuiasReferenciadasIsNotNullAndNumeroFacturaIsNotNull(
+            DocumentoHistorico.TipoDocumentoHistorico tipoDocumento);
 
     // Documentos que quedaron sin empresa asignada (deteccion fallida en su
     // momento). Se usan para re-intentar la deteccion sin re-leer el PDF.
