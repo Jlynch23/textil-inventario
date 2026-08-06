@@ -277,7 +277,7 @@ privada porque el ambiente es público). Detalle completo en `DEMO.md`.
 Regla: nunca pushear features a medio hacer a `main`; probar en `develop` (staging `dev.texcontrol.pe`),
 y recién cuando anda, promover a `main` y reconstruir los clientes (el demo, al correr `main`, se
 actualiza reconstruyendo su stack igual que un cliente). CI (`.github/workflows/ci.yml`) corre
-en push/PR a **ambas**. Nota: `scripts/deploy.sh`/`deploy-dev.sh` eran del modelo single-cliente; hoy el
+en push/PR a **ambas**. Nota: el despliegue de producción es el bucle multicliente; el
 despliegue de producción es el bucle multicliente de arriba (el `deploy-dev.sh` sí sigue vigente para staging).
 
 > **Pruebas en la nube, no en local**: el objetivo es dejar de levantar MySQL+app en cada PC
@@ -316,7 +316,7 @@ histórico y los PDFs de `documentos-dev/`) y **deja los programas y el catálog
   cliente. Nada de texto de ejemplo gris dentro de los `<input>`; alcanza con el `<label>` (y un
   `<small>` de ayuda debajo si de verdad hace falta), pero el campo va vacío.
 - Credenciales **nunca** hardcodeadas: siempre variables de entorno (ver `application.yml`).
-- Despliegue en VPS documentado en `DEPLOY.md` (Docker: MySQL + app + Nginx, `docker-compose.prod.yml`).
+- Despliegue en VPS documentado en `DEPLOY.md` (Docker: proxy nginx compartido + un `app_<slug>`+`db_<slug>` por cliente).
   **Acceso admin: SSH por clave** (`ssh texcontrol` → `linuxuser@64.176.3.149`); password deshabilitado
   y `fail2ban` activo. **Tailscale fue REMOVIDO** (jul-2026): la web es pública por dominio y el SSH va
   directo por IP. Ojo: Docker tenía un override de systemd que lo ataba a `tailscaled` — ya se quitó, si
@@ -343,15 +343,18 @@ histórico y los PDFs de `documentos-dev/`) y **deja los programas y el catálog
   `clientes/` quedó vacío. El único inquilino corriendo es el **demo**. Techo ~3
   clientes en 4 GB.
   **OJO**: el proxy NO debe llamarse `textil_nginx` — es `texcontrol_proxy_nginx`.
-  El viejo stack single-cliente (`docker-compose.prod.yml` = `textil_app` +
-  `textil_mysql` + `textil_nginx`) **fue decomisionado** en la migración; sus
-  archivos siguen en el repo por historia pero YA NO se usan.
+  El viejo stack single-cliente (`textil_app` + `textil_mysql` + `textil_nginx`) **fue
+  decomisionado** en la migración y sus archivos se **eliminaron del repo** el 6-ago
+  (`docker-compose.prod.yml`, `nginx/nginx.conf`, `scripts/deploy.sh`, `backup-db.sh`,
+  `restore-db.sh`, `migrar-cliente.sh`). Están en el historial de git si hicieran falta.
 - **Alta / gestión de clientes** (scripts en `scripts/*-cliente.sh`, detalle en
   DEPLOY.md 6.6): `nuevo-cliente.sh <slug> "<Nombre>"` (crea BD aislada, levanta el
   stack, genera el bloque nginx, recarga el proxy y ENDURECE — rota `jlynch` a una
   clave única e imprime UNA vez, borra cuentas de prueba). Otros: `listar-clientes.sh`,
   `backup-cliente.sh --todos` (cron diario 2am via `instalar-cron-backups.sh`),
-  `eliminar-cliente.sh`, `endurecer-cliente.sh` (re-rota `jlynch`), `migrar-cliente.sh`.
+  `eliminar-cliente.sh`, `endurecer-cliente.sh` (re-rota `jlynch`), `restaurar-cliente.sh`
+  (contraparte de backup, sobreescribe la base y guarda antes el estado actual) y
+  `verificar-backup.sh` (restaura en una base desechable y valida que el backup sirva).
   **OCR**: `ANTHROPIC_API_KEY` (del proveedor, la MISMA para todos) se guarda UNA vez en
   el VPS con `configurar-proveedor.sh` (queda en `~/.texcontrol/proveedor.env`, 600;
   `lib-cliente.sh` la carga sola) — ya no hace falta anteponerla en cada comando.
@@ -362,9 +365,7 @@ histórico y los PDFs de `documentos-dev/`) y **deja los programas y el catálog
   demo en una presentación y restaurarlo después) y `sembrar-demo-desde-dev.sh`. Ver `DEMO.md`.
   Cuesta ~0.8–1 GB de RAM como cualquier cliente — cuenta para el techo del VPS.
 - **Otros scripts útiles**: `estado-vps.sh` (foto de CPU/RAM/disco y consumo por contenedor, para
-  ver cuánto queda del techo de ~4 GB), y `backup-db.sh` / `restore-db.sh` (backup y restore
-  sueltos, del modelo single-cliente; para el modelo multicliente el que se usa es
-  `backup-cliente.sh`).
+  ver cuánto queda del techo de ~4 GB).
 - **Actualizar el código de TODOS los clientes** (comparten imagen): en el VPS, con
   el clon en **`main`**, `git pull` → `docker build -t texcontrol-app:latest .` →
   reiniciar cada app: `for e in clientes/*/.env; do s=$(basename $(dirname $e)); \
@@ -432,12 +433,14 @@ Lo que entró hoy, por si hay que revisar algo puntual:
 **Pendiente operativo (VPS)**: mover `~/textil-inventario-dev/clientes/demo/` al clon de producción
 (ver la sección de los dos clones).
 
-**⚠️ Pendiente de documentación**: `DEPLOY.md` todavía describe el despliegue **single-cliente**
-como si fuera el vigente (`docker compose -f docker-compose.prod.yml up -d`, `./scripts/deploy.sh`).
-Ese stack está decomisionado: no corre ningún `textil_app` / `textil_mysql` / `textil_nginx`, y el
-despliegue real es `actualizar-clientes.sh` sobre el modelo multicliente. Los archivos
-(`docker-compose.prod.yml`, `nginx/nginx.conf`, `scripts/deploy.sh`) se dejaron a propósito hasta
-reescribir esas secciones — borrarlos antes dejaría el manual apuntando a archivos inexistentes.
+**✅ Limpieza del stack decomisionado (6-ago)**: se eliminaron los archivos del modelo
+single-cliente (`docker-compose.prod.yml`, `nginx/nginx.conf`, `scripts/deploy.sh`, `backup-db.sh`,
+`restore-db.sh`, `migrar-cliente.sh`) y se reescribieron las secciones 2–7 de `DEPLOY.md`, que
+todavía describían ese despliegue como el vigente. Se sumaron las dos piezas que faltaban del
+modelo multicliente: **`restaurar-cliente.sh`** (no existía contraparte de `backup-cliente.sh`: se
+podía respaldar pero no recuperar) y **`verificar-backup.sh`** reescrito — el anterior exigía ≥30
+tablas cuando el esquema real tiene 26, así que habría fallado siempre, y nadie lo notó porque
+apuntaba al contenedor decomisionado.
 
 ### Estado anterior (sesión 24-jul-2026)
 
@@ -456,14 +459,13 @@ corre `develop` con su propia BD aislada (setup y uso en `STAGING.md`). El Basic
 (el archivo untracked `nginx/dev.htpasswd`; se resetea con `htpasswd -B nginx/dev.htpasswd jlynch` + `docker
 exec textil_nginx nginx -s reload`). **Flujo de trabajo nuevo**: pushear a `develop` → en el VPS
 `cd ~/textil-inventario && ./scripts/deploy-dev.sh` → probar en `dev.texcontrol.pe` → cuando anda, promover
-`develop → main` + `./scripts/deploy.sh`. Se acabó levantar MySQL/app en local.
+`develop → main` + actualizar los clientes. Se acabó levantar MySQL/app en local.
 
 **SSH desde casa**: el alias `ssh texcontrol` de la PC de casa apuntaba a la vieja IP de Tailscale (ya
 removido) → daba timeout. Corregido a la IP pública `64.176.3.149` en `~/.ssh/config` (clave
 `~/.ssh/texcontrol_vps`, ya autorizada). Recordatorio: ese alias vive en cada PC, no dentro del VPS.
 
-**Promovido a `main` el 24-jul** (ya en `origin/main`; falta correr `./scripts/deploy.sh` en el VPS para que
-producción lo tome):
+**Promovido a `main` el 24-jul** (ya en `origin/main`; en su momento faltaba desplegarlo en el VPS):
 - **Limpieza**: se eliminó `texcontrol-logo-completo.png` (2.1 MB, sin uso) y se quitaron los consejos
   Tailscale obsoletos de la doc (`.env.example`, `DEPLOY.md`, ambos compose): hoy prod es pública por dominio
   con `BIND_IP=0.0.0.0`.

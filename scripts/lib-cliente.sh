@@ -1,6 +1,6 @@
 #!/bin/bash
 # Librería común del modelo multi-cliente. NO se ejecuta sola: la cargan con
-# `source` los scripts nuevo-cliente.sh / migrar-cliente.sh / eliminar-cliente.sh
+# `source` los scripts nuevo-cliente.sh / eliminar-cliente.sh
 # / backup-cliente.sh / listar-clientes.sh, para no duplicar constantes ni lógica.
 
 # --- Constantes compartidas ------------------------------------------------

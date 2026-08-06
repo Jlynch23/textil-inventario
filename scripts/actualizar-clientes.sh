@@ -6,7 +6,7 @@
 # NO toca los datos: cada MySQL y su volumen quedan intactos. Si el cambio trae
 # una migracion Flyway nueva, cada app la aplica sola en SU propia BD al arrancar.
 #
-# Reemplaza al viejo scripts/deploy.sh (que era del modelo single-cliente).
+# Reemplaza al viejo scripts/deploy.sh del modelo single-cliente (eliminado ago-2026).
 #
 # Uso (en el VPS, con el clon en `main`):
 #   ./scripts/actualizar-clientes.sh              # git pull + reconstruye + reinicia TODOS

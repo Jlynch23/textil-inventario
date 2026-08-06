@@ -32,7 +32,7 @@ backup_uno() {
     # M16 (auditoria): se lee SOLO MYSQL_ROOT_PASSWORD de forma LITERAL (grep|cut),
     # NO con `source`. Con `source`, un NOMBRE_EMPRESA con "&" o espacios (ej.
     # "Laura & Clemente") abortaba bajo `set -euo pipefail` y el backup por cron
-    # fallaba EN SILENCIO. Mismo patron que scripts/deploy.sh.
+    # fallaba EN SILENCIO. Mismo patron en todos los scripts que leen un .env.
     local MYSQL_ROOT_PASSWORD
     MYSQL_ROOT_PASSWORD="$(grep -E '^MYSQL_ROOT_PASSWORD=' "$env_cliente" | cut -d= -f2-)"
 
@@ -44,7 +44,7 @@ backup_uno() {
 
     echo "[$slug] Dump de la base de datos..."
     # Password por MYSQL_PWD (no por -p"...") para que no quede visible en la
-    # lista de procesos mientras corre mysqldump (misma regla que backup-db.sh).
+    # lista de procesos mientras corre mysqldump.
     docker exec -e MYSQL_PWD="$MYSQL_ROOT_PASSWORD" "db_$slug" mysqldump -u root \
         --single-transaction --routines --triggers textil_inventario | gzip > "$sql"
 

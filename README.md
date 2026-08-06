@@ -181,17 +181,17 @@ ANTHROPIC_API_KEY=    # para el OCR de guías/facturas
 DOCUMENTOS_PATH=./documentos
 MAX_UPLOAD_SIZE=25MB
 NOMBRE_EMPRESA=       # nombre para el manifest de la PWA (app instalable). El subtítulo bajo el logo TEXCONTROL sale de las empresas activas del catálogo, NO de esta variable. Dejar vacío en una copia nueva.
-BIND_IP=              # solo produccion (docker-compose.prod.yml): IP a la que se publica nginx -- ver DEPLOY.md
+BIND_IP=              # solo produccion (multicliente/docker-compose.proxy.yml): IP a la que se publica nginx -- ver DEPLOY.md
 ```
 
 ## 💾 Backup y restauración de la base de datos
 
 ```bash
 # Backup manual (genera un .sql.gz con timestamp en ~/backups/textil-inventario/)
-./scripts/backup-db.sh
+./scripts/backup-cliente.sh <slug>      # o --todos
 
 # Restaurar desde un backup (SOBREESCRIBE la base de datos actual)
-./scripts/restore-db.sh ~/backups/textil-inventario/textil_inventario_2026-07-17_155514.sql.gz
+./scripts/restaurar-cliente.sh <slug>   # --listar <slug> muestra los backups disponibles
 ```
 
 Para automatizar backups diarios, agregar a `crontab -e` (ajustando la ruta del proyecto y la contraseña):

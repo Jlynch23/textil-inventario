@@ -26,78 +26,120 @@ sudo usermod -aG docker $USER
 # cerrar sesión y volver a entrar para que el grupo tome efecto
 ```
 
-**Exposición de red.** Hoy producción es **pública por dominio** (`texcontrol.pe`) con HTTPS, así que en el firewall de la instancia van abiertos **80 y 443** (ver sección 6) y en el `.env` va `BIND_IP=0.0.0.0` — nginx escucha en todas las interfaces y termina el TLS. El puerto lo controla `BIND_IP` en `docker-compose.prod.yml`: si algún día quisieras exponer la app solo por una interfaz o VPN interna, fijá ahí esa IP en vez de `0.0.0.0`. Si `BIND_IP` no se define, cae por defecto en `0.0.0.0`.
+**Exposición de red.** Hoy producción es **pública por dominio** (`texcontrol.pe`) con HTTPS, así que en el firewall de la instancia van abiertos **80 y 443** (ver sección 6) y en el `.env` va `BIND_IP=0.0.0.0` — nginx escucha en todas las interfaces y termina el TLS. El puerto lo controla `BIND_IP` en `multicliente/docker-compose.proxy.yml`: si algún día quisieras exponer la app solo por una interfaz o VPN interna, fijá ahí esa IP en vez de `0.0.0.0`. Si `BIND_IP` no se define, cae por defecto en `0.0.0.0`.
 
 Los puertos 3307 (MySQL) y 8081 (Adminer) **no hace falta abrirlos** — `docker-compose.yml` ya los deja bindeados solo a `127.0.0.1`, así que ni siquiera están expuestos fuera del servidor. El puerto 22 (SSH) sí necesita estar abierto para poder conectarte; restringirlo a tu IP/rango de confianza (en vez de "Anywhere") es una mejora recomendada pero no forma parte de este documento.
 
 ## 2. Primera vez
 
+> **El despliegue es MULTICLIENTE**: un stack aislado por empresa (`app_<slug>` + `db_<slug>`,
+> con su propia base y su propia carpeta de documentos) detrás de un proxy nginx compartido que
+> rutea por subdominio. El modelo viejo de un solo cliente (`docker-compose.prod.yml` +
+> `scripts/deploy.sh`) fue **decomisionado** y sus archivos ya no están en el repo.
+> El detalle vive en `multicliente/README.md`.
+
 ```bash
 git clone https://github.com/Jlynch23/textil-inventario.git
 cd textil-inventario
+git checkout main          # producción corre main, siempre
 ```
 
-Creá el archivo `.env` (Docker Compose lo lee automáticamente si está en la misma carpeta — **no** hace falta exportar las variables a mano):
+**a) La clave del OCR, una sola vez para todos los clientes.** Es la del proveedor y se guarda en
+el VPS (`~/.texcontrol/proveedor.env`, permisos 600); los scripts la toman solos:
 
 ```bash
-cp .env.example .env
-nano .env
+./scripts/configurar-proveedor.sh
 ```
 
-Completá con valores reales:
+**b) Levantar el proxy compartido** (nginx + red `texcontrol_red`, sirve a todos los clientes):
 
 ```bash
-DB_USERNAME=textil_user
-DB_PASSWORD=<elegí una contraseña fuerte>
-MYSQL_ROOT_PASSWORD=<otra contraseña fuerte, DISTINTA de DB_PASSWORD>
-ANTHROPIC_API_KEY=<tu API key de Anthropic, si vas a usar el OCR>
-DOCUMENTOS_PATH=./documentos
-MAX_UPLOAD_SIZE=25MB
-NOMBRE_EMPRESA=<nombre del negocio que va bajo el logo TEXCONTROL>
-BIND_IP=0.0.0.0   # web publica por dominio (Cloudflare DNS-only). Tailscale ya no se usa.
-REMEMBER_ME_KEY=<openssl rand -hex 32 -- firma la cookie "recordar sesion" movil>
+docker compose -p texcontrol_proxy -f multicliente/docker-compose.proxy.yml up -d
 ```
 
-Levantá todo (la primera vez construye la imagen de la app, tarda unos minutos):
+**c) Dar de alta el primer cliente.** El script hace todo: crea la base aislada, genera el `.env`
+con claves únicas, levanta el stack, escribe el bloque de nginx, recarga el proxy y **endurece**
+(rota la clave de `jlynch` y la imprime UNA vez, borra las cuentas de prueba):
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+./scripts/nuevo-cliente.sh laura "Textil Laura"
 ```
 
-Verificá que los 4 contenedores estén corriendo:
+Queda servido en `https://laura.texcontrol.pe` — el wildcard de DNS y el certificado ya lo cubren,
+no hay que tocar nada más (sección 6). **Anotá la clave de `jlynch` que imprime: no se vuelve a
+mostrar.**
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.prod.yml ps
+./scripts/listar-clientes.sh     # qué clientes hay y cómo están
 ```
-
-Entrá a `http://<IP-del-servidor>/` — debería aparecer el login. El usuario admin es el que sembró Flyway en `V2__seed_data.sql` (o el que hayas creado desde `/usuarios`).
 
 ## 3. Actualizar (redeploy)
 
-Cada vez que haya cambios nuevos en `main`:
+Todos los clientes comparten la misma imagen, así que se reconstruye una vez y se reinician todos:
 
 ```bash
-./scripts/deploy.sh
+cd ~/textil-inventario        # el clon de PRODUCCIÓN, en main
+./scripts/actualizar-clientes.sh              # git pull + build + reiniciar TODOS
+./scripts/actualizar-clientes.sh laura        # solo ese cliente (probar de a uno)
+./scripts/actualizar-clientes.sh --no-pull    # usar el código ya presente
 ```
 
-Esto trae el código nuevo, levanta MySQL primero y sincroniza el password de `textil_user` con el `DB_PASSWORD` actual del `.env` (por si quedó desincronizado por cualquier motivo), reconstruye la imagen de la app y reinicia los contenedores — los datos de MySQL no se tocan. **No edites archivos a mano en el servidor** (salvo el `.env`, que no está versionado): `deploy.sh` hace `git reset --hard origin/main`, así que cualquier cambio local a un archivo del repo se pierde en el próximo redeploy.
+**Los datos no se tocan**: cada MySQL y su volumen quedan intactos. Si el cambio trae una migración
+Flyway nueva, cada app la aplica sola en SU base al arrancar.
+
+> ⚠️ El script reconstruye la imagen **desde el clon donde se lo corra**. En el VPS hay dos
+> (`~/textil-inventario` en `main` y `~/textil-inventario-dev` en `develop`); correlo siempre desde
+> el de producción o le meterás código de `develop` a los clientes. Avisa si la rama no es `main`,
+> pero es un aviso, no un freno.
 
 ## 4. Logs y diagnóstico
 
 ```bash
-# Logs de la app en vivo
-docker compose -f docker-compose.yml -f docker-compose.prod.yml logs -f app
-
-# Logs de nginx
-docker compose -f docker-compose.yml -f docker-compose.prod.yml logs -f nginx
-
-# Estado de salud de MySQL
-docker compose ps mysql
+docker logs -f app_<slug>              # la app de un cliente
+docker logs -f db_<slug>               # su MySQL
+docker logs -f texcontrol_proxy_nginx  # el proxy compartido
+docker ps                              # todo lo que corre
+./scripts/estado-vps.sh                # CPU, RAM, disco y consumo por contenedor
 ```
+
+Al arrancar, buscá `Started InventarioApplication` en el log de la app. Si en cambio aparece un
+`SchemaManagementException`, es que el esquema no calza con las entidades (`ddl-auto: validate`).
 
 ## 5. Backups
 
-Los backups de base de datos ya están cubiertos por `scripts/backup-db.sh` (ver README). Sumá la carpeta `./documentos/` (los PDFs de guías/facturas) a lo que sea que uses para respaldar el servidor — es una carpeta real en disco, no un volumen Docker aislado, así que un `rsync` o `tar` normal la cubre.
+```bash
+./scripts/backup-cliente.sh laura       # un cliente
+./scripts/backup-cliente.sh --todos     # todos (es lo que corre el cron)
+./scripts/instalar-cron-backups.sh      # deja el cron diario a las 2am
+```
+
+Deja en `~/backups/<slug>/` dos archivos por corrida: el dump de la base (`.sql.gz`) y los
+documentos (`.tar.gz`), con retención de 30 días.
+
+**Un backup no sirve hasta que se probó restaurarlo**:
+
+```bash
+./scripts/verificar-backup.sh laura     # restaura en una base desechable y valida
+./scripts/verificar-backup.sh --todos
+```
+
+Restaura sobre una base aislada dentro del mismo MySQL del cliente (nunca toca la real) y comprueba
+que estén las tablas críticas, el historial de Flyway, los usuarios y que las tildes/eñes
+sobrevivan.
+
+**Restaurar de verdad** (sobreescribe la base del cliente; guarda antes un dump del estado actual y
+para la app durante la operación):
+
+```bash
+./scripts/restaurar-cliente.sh --listar laura   # qué backups hay
+./scripts/restaurar-cliente.sh laura            # el más reciente
+./scripts/restaurar-cliente.sh laura ~/backups/laura/laura_db_2026-08-06_020000.sql.gz
+```
+
+> ⚠️ `backup-cliente.sh --todos` sale con código **0** e imprime "No hay clientes que respaldar"
+> cuando `clientes/` está vacío. Sin clientes es correcto, pero en el log del cron un `clientes/`
+> vaciado por error se ve **igual** que un día normal. Al dar de alta un cliente, confirmá que
+> aparezca su línea en `~/backups/backup.log`.
 
 ## 6. Dominio + HTTPS (Cloudflare + Let's Encrypt wildcard)
 
@@ -138,15 +180,15 @@ pública (no solo en Tailscale).
    El certificado queda en `/etc/letsencrypt/live/texcontrol.pe/`.
 
 ### 6.4 Desplegar la config con HTTPS
-**Recién con el certificado emitido**, promover `develop → main` (trae el
-`nginx.conf` con TLS, el mapeo del 443 y `forward-headers-strategy`) y desplegar:
+**Recién con el certificado emitido**, promover `develop → main` y recrear el proxy, que es
+quien termina el TLS:
 ```bash
-./scripts/deploy.sh
+docker compose -p texcontrol_proxy -f multicliente/docker-compose.proxy.yml up -d
 ```
-El `nginx.conf` ya monta `/etc/letsencrypt` y apunta a
+`multicliente/nginx/00-texcontrol.conf` ya monta `/etc/letsencrypt` y apunta a
 `/etc/letsencrypt/live/texcontrol.pe/`. Probar en `https://texcontrol.pe`.
-> ⚠️ No promover el `nginx.conf` con TLS a `main` **antes** de emitir el
-> certificado, o nginx no arranca (no encuentra el `.pem`).
+> ⚠️ No promover la config con TLS a `main` **antes** de emitir el certificado, o nginx no
+> arranca (no encuentra el `.pem`).
 
 ### 6.5 Renovación automática
 certbot deja un timer que renueva solo. Para que nginx tome el cert renovado,
@@ -154,7 +196,7 @@ agregar un hook que lo reinicie tras la renovación:
 ```bash
 sudo tee /etc/letsencrypt/renewal-hooks/deploy/restart-nginx.sh > /dev/null <<'EOF'
 #!/bin/sh
-cd /home/linuxuser/textil-inventario && docker compose -f docker-compose.yml -f docker-compose.prod.yml restart nginx
+docker restart texcontrol_proxy_nginx
 EOF
 sudo chmod +x /etc/letsencrypt/renewal-hooks/deploy/restart-nginx.sh
 ```
@@ -244,31 +286,29 @@ for e in clientes/*/.env; do s=$(basename $(dirname $e)); \
 ./scripts/listar-clientes.sh
 ```
 
-**Migrar la Laura actual (modelo viejo) a este esquema** — automatizado en el
-orden correcto (restaura el dump ANTES de arrancar la app, para que Flyway no
-choque) y **sin tocar la instalación vieja**:
-```bash
-./scripts/backup-db.sh          # 1) respaldar la BD vieja (deja el .sql.gz)
-./scripts/migrar-cliente.sh laura "Laura & Clemente" \
-    ~/backups/textil-inventario/textil_inventario_XXXX.sql.gz ./documentos
-# 2) verificar https://laura.texcontrol.pe (login, stock, kardex)
-# 3) recién ahí apagar la vieja:
-#    docker compose -f docker-compose.yml -f docker-compose.prod.yml down
-```
-
-> Nota: este modelo (`multicliente/`) convive con el modelo actual de un solo
-> cliente (`docker-compose.prod.yml`) sin pisarlo. La producción actual sigue
-> igual hasta que se haga la migración de arriba de forma deliberada.
+> **La migración desde el modelo viejo YA SE HIZO** (ago-2026): `textillaura` y `textilcamargo`
+> se pasaron al esquema multicliente y el stack de un solo cliente quedó decomisionado. Por eso
+> `migrar-cliente.sh` —que hacía ese pase una única vez— se eliminó junto con
+> `docker-compose.prod.yml`, `nginx/nginx.conf`, `scripts/deploy.sh`, `backup-db.sh` y
+> `restore-db.sh`: ya no queda ninguna instalación vieja que migrar y mantenerlos solo confundía.
+> Si alguna vez hicieran falta, siguen en el historial de git.
 
 ## 7. Rollback
 
 Si un redeploy rompe algo:
 
 ```bash
-git log --oneline -10          # ubicar el commit bueno anterior
+git log --oneline -10                          # ubicar el commit bueno anterior
 git checkout <sha-del-commit-bueno>
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+./scripts/actualizar-clientes.sh --no-pull     # reconstruye y reinicia con ESE código
 ```
+`--no-pull` es lo que hace la diferencia: sin él, el script vuelve a traer `main` y deshace el
+checkout. Los datos no se tocan.
+
+> **Ojo con las migraciones**: volver a un commit anterior NO revierte las migraciones Flyway ya
+> aplicadas. Si el commit malo traía una migración, el esquema queda adelantado respecto del código
+> y la app puede no arrancar (`ddl-auto: validate`). En ese caso hay que restaurar el backup:
+> `./scripts/restaurar-cliente.sh <slug>`.
 
 ## 8. Acceso admin y hardening del SSH (estado real, jul-2026)
 

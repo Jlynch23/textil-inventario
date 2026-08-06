@@ -11,7 +11,7 @@ enlace en ninguna pagina; se entra escribiendo la URL y pasando **Basic Auth**.
   (`*.texcontrol.pe`) y de HTTPS (cert wildcard), así que **no** hay que tocar
   DNS ni emitir certificado.
 - El **nginx de produccion** (`textil_nginx`) rutea `dev.texcontrol.pe` →
-  contenedor `textil_app_dev`, protegido con **Basic Auth** (`nginx/nginx.conf`).
+  contenedor `textil_app_dev`, protegido con **Basic Auth** (`multicliente/nginx/00-texcontrol.conf`).
 - El stack dev (`docker-compose.dev.yml`) = `textil_app_dev` (build desde
   `develop`) + `textil_mysql_dev` (BD y volumen propios). El MySQL dev vive en
   una red privada `dev_interna` (nunca compartida) → **datos aislados**.
@@ -37,7 +37,7 @@ Todo en el VPS (`ssh texcontrol`). Requiere el stack de **produccion corriendo**
 2. **Publicar el ruteo dev en produccion** — promover `develop → main` y
    redeployar (trae el bloque `dev` de `nginx.conf` y el mount del htpasswd):
    ```bash
-   ./scripts/deploy.sh
+   ./scripts/actualizar-clientes.sh
    # verificar que nginx tomo la config nueva:
    docker exec textil_nginx nginx -t && docker exec textil_nginx nginx -s reload
    ```
@@ -64,7 +64,7 @@ Todo en el VPS (`ssh texcontrol`). Requiere el stack de **produccion corriendo**
   cd ~/textil-inventario && ./scripts/deploy-dev.sh
   ```
 - Probás en `dev.texcontrol.pe`. Cuando anda, promovés `develop → main` y
-  `./scripts/deploy.sh` para llevarlo a produccion.
+  `./scripts/actualizar-clientes.sh` (desde el clon de produccion, en `main`) para llevarlo a produccion.
 
 ## Notas
 

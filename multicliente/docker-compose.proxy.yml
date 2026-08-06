@@ -15,7 +15,7 @@ services:
   nginx:
     image: nginx:1.27-alpine
     # Nombre PROPIO del proxy multicliente. NO reutilizar "textil_nginx": ese es
-    # el container_name del nginx single-cliente (docker-compose.prod.yml). Si
+    # el container_name del nginx single-cliente, ya decomisionado. Si
     # ambos usan el mismo nombre, al desplegar la app chocan ("container name
     # already in use") y el deploy se rompe. Deben poder coexistir.
     container_name: texcontrol_proxy_nginx
@@ -23,7 +23,7 @@ services:
     ports:
       # Igual que en produccion actual: BIND_IP restringe a una interfaz.
       # 0.0.0.0 para acceso por dominio publico (lo actual); o una IP de
-      # interfaz/VPN interna si quisieras limitarlo. Ver docker-compose.prod.yml
+      # interfaz/VPN interna si quisieras limitarlo. Ver DEPLOY.md
       # y .env.example.
       - "${BIND_IP:-0.0.0.0}:80:80"
       - "${BIND_IP:-0.0.0.0}:443:443"
