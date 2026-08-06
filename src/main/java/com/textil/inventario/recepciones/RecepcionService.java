@@ -442,7 +442,8 @@ public class RecepcionService {
     public Recepcion crearRecepcionConLineas(Long empresaId, String numeroGuia, String numeroFactura, LocalDate fechaGuia,
                                               String observaciones,
                                               String emisorNombre, String emisorRuc,
-                                              List<CrearRecepcionConLineasRequest.LineaRequest> lineas) {
+                                              List<CrearRecepcionConLineasRequest.LineaRequest> lineas,
+                                              List<CrearRecepcionConLineasRequest.LineaExcluidaRequest> lineasExcluidas) {
         Recepcion r = crearRecepcion(empresaId, numeroGuia, numeroFactura, fechaGuia, observaciones);
         // Emisor (tintoreria) tal como vino en la guia (V45): queda registrado
         // para trazabilidad. En blanco -> NULL, mismo criterio que guia/factura.
@@ -450,6 +451,11 @@ public class RecepcionService {
         String emisorRucNorm = emisorRuc == null ? null : emisorRuc.replaceAll("\\D", "");
         r.setEmisorNombre(emisorNombreNorm == null || emisorNombreNorm.isBlank() ? null : emisorNombreNorm);
         r.setEmisorRuc(emisorRucNorm == null || emisorRucNorm.isBlank() ? null : emisorRucNorm);
+        // Lineas que el usuario marco "No incluir": no generan detalle, pero
+        // quedan escritas en la recepcion. El papel dice N lineas y el sistema
+        // registra menos: sin esta nota, la diferencia no se puede explicar
+        // meses despues (y el proveedor si va a reclamar por esa tela).
+        anotarLineasExcluidas(r, lineasExcluidas);
         recepcionRepository.save(r);
         // Una linea sin articulo o sin color no se puede registrar. Antes se
         // descartaba en silencio: la recepcion quedaba con MENOS lineas que la
@@ -469,6 +475,66 @@ public class RecepcionService {
                     linea.rollosGuia(), linea.pesoBrutoKg());
         }
         return r;
+    }
+
+    // Tope por campo al armar la nota de exclusiones: los textos vienen del OCR
+    // (contenido del PDF, no confiable) y terminan en observaciones y en el log.
+    private static final int MAX_LARGO_TEXTO_EXCLUIDA = 120;
+
+    /**
+     * Deja escrito en la recepcion que ciertas lineas de la guia NO se
+     * registraron a proposito, y lo asienta en el log de auditoria.
+     *
+     * No es cosmetico: la recepcion queda con menos lineas que el papel, y esa
+     * diferencia tiene que poder explicarse (tela que vino en la guia pero no
+     * llego fisicamente, tela de otra empresa, etc.). El descarte silencioso es
+     * el mismo defecto que ya mordio al confirmar con el POST incompleto.
+     */
+    private void anotarLineasExcluidas(Recepcion r,
+                                       List<CrearRecepcionConLineasRequest.LineaExcluidaRequest> excluidas) {
+        if (excluidas == null || excluidas.isEmpty()) return;
+
+        StringBuilder nota = new StringBuilder("--- Líneas de la guía NO incluidas al registrar ---");
+        int i = 1;
+        for (CrearRecepcionConLineasRequest.LineaExcluidaRequest e : excluidas) {
+            nota.append("\n").append(i++).append(") ").append(describirExcluida(e));
+        }
+
+        String previas = r.getObservaciones();
+        r.setObservaciones((previas == null || previas.isBlank())
+                ? nota.toString()
+                : previas + "\n\n" + nota);
+
+        auditLogService.registrar("EXCLUIR_LINEAS", "Recepcion", r.getId(),
+                "No se incluyeron " + excluidas.size() + " línea(s) de la guía "
+                + (r.getNumeroGuia() == null ? "(sin guía)" : r.getNumeroGuia()) + ": " + nota);
+    }
+
+    private String describirExcluida(CrearRecepcionConLineasRequest.LineaExcluidaRequest e) {
+        StringBuilder sb = new StringBuilder(recortar(e.descripcion(), "(sin descripción)"));
+        if (e.colorNombre() != null && !e.colorNombre().isBlank()) {
+            sb.append(" · ").append(recortar(e.colorNombre(), ""));
+            if (e.colorCodigo() != null && !e.colorCodigo().isBlank()) {
+                sb.append(" (").append(recortar(e.colorCodigo(), "")).append(")");
+            }
+        }
+        if (e.programaTenido() != null && !e.programaTenido().isBlank()) {
+            sb.append(" · prog. ").append(recortar(e.programaTenido(), ""));
+        }
+        if (e.rollos() != null) sb.append(" · ").append(e.rollos()).append(" rollos");
+        if (e.pesoBrutoKg() != null) sb.append(" · ").append(e.pesoBrutoKg()).append(" kg");
+        if (e.motivo() != null && !e.motivo().isBlank()) {
+            sb.append(" · motivo: ").append(recortar(e.motivo(), ""));
+        }
+        return sb.toString();
+    }
+
+    private String recortar(String valor, String siVacio) {
+        if (valor == null || valor.isBlank()) return siVacio;
+        String limpio = valor.trim().replaceAll("\\s+", " ");
+        return limpio.length() <= MAX_LARGO_TEXTO_EXCLUIDA
+                ? limpio
+                : limpio.substring(0, MAX_LARGO_TEXTO_EXCLUIDA) + "…";
     }
 
     @Transactional

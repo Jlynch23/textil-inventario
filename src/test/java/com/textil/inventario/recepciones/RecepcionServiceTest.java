@@ -526,4 +526,79 @@ class RecepcionServiceTest {
         verify(recepcionRepository, times(2)).save(captor.capture());
         assertThat(captor.getAllValues()).allMatch(r -> "F001-123".equals(r.getNumeroFactura()));
     }
+
+    // --- Lineas de la guia que NO se registran -----------------------------
+    // Una linea sin articulo/color se descartaba en silencio en el navegador
+    // (nunca llegaba al backend): la recepcion quedaba con menos lineas que el
+    // papel y no habia forma de saber cual falto ni por que. Ahora el que carga
+    // tiene que marcarla "No incluir" a proposito, y esa decision queda escrita.
+
+    private void mockearCreacionDeRecepcion() {
+        when(empresaRepository.findById(1L))
+                .thenReturn(Optional.of(new com.textil.inventario.catalogo.Empresa()));
+        when(usuarioActualService.obtenerUsuarioActual())
+                .thenReturn(new com.textil.inventario.seguridad.Usuario());
+        when(recepcionRepository.saveAndFlush(any(Recepcion.class)))
+                .thenAnswer(inv -> {
+                    Recepcion r = inv.getArgument(0);
+                    r.setId(77L);
+                    return r;
+                });
+    }
+
+    @Test
+    void crearRecepcionConLineas_conExcluidas_lasDejaEscritasEnObservacionesYEnElLog() {
+        mockearCreacionDeRecepcion();
+
+        var excluida = new CrearRecepcionConLineasRequest.LineaExcluidaRequest(
+                "FRANELA 20/1+10/1 · ALGODON · LISO", "ACERO 2", "233689", "571",
+                13, new BigDecimal("286.62"), "Tipo de tela 'FRANELA' no existe en el catálogo");
+
+        service.crearRecepcionConLineas(1L, "TG01-00020379", null, java.time.LocalDate.now(),
+                "Llegó de noche", null, null, List.of(), List.of(excluida));
+
+        ArgumentCaptor<Recepcion> cap = ArgumentCaptor.forClass(Recepcion.class);
+        verify(recepcionRepository).save(cap.capture());
+        String observaciones = cap.getValue().getObservaciones();
+        assertThat(observaciones)
+                .contains("Llegó de noche")                  // no pisa lo que ya habia
+                .contains("NO incluidas")
+                .contains("FRANELA 20/1+10/1")
+                .contains("ACERO 2").contains("233689")
+                .contains("571").contains("13 rollos").contains("286.62 kg")
+                .contains("FRANELA' no existe");
+
+        verify(auditLogService).registrar(eq("EXCLUIR_LINEAS"), eq("Recepcion"), eq(77L), contains("FRANELA"));
+    }
+
+    @Test
+    void crearRecepcionConLineas_sinExcluidas_noEnsuciaLasObservaciones() {
+        mockearCreacionDeRecepcion();
+
+        service.crearRecepcionConLineas(1L, "TG01-00020380", null, java.time.LocalDate.now(),
+                "Todo conforme", null, null, List.of(), null);
+
+        ArgumentCaptor<Recepcion> cap = ArgumentCaptor.forClass(Recepcion.class);
+        verify(recepcionRepository).save(cap.capture());
+        assertThat(cap.getValue().getObservaciones()).isEqualTo("Todo conforme");
+        verify(auditLogService, never()).registrar(eq("EXCLUIR_LINEAS"), any(), any(), any());
+    }
+
+    @Test
+    void crearRecepcionConLineas_lineaSinArticulo_seRechaza() {
+        // Guard del backend: el front ya no manda lineas a medio resolver, pero
+        // si llegaran (POST armado a mano), no se aceptan en silencio.
+        mockearCreacionDeRecepcion();
+
+        var incompleta = new CrearRecepcionConLineasRequest.LineaRequest(
+                null, 5L, "571", 13, new BigDecimal("286.62"));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                service.crearRecepcionConLineas(1L, "TG01-00020381", null, java.time.LocalDate.now(),
+                        null, null, null, List.of(incompleta), List.of())
+        ).isInstanceOf(IllegalArgumentException.class)
+         .hasMessageContaining("no tiene artículo o color");
+
+        verify(detalleRepository, never()).save(any());
+    }
 }

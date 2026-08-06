@@ -31,6 +31,13 @@
                     <p class="fw-bold mb-0" th:text="${recepcion.fechaGuia != null ? #temporals.format(recepcion.fechaGuia, 'dd/MM/yyyy') : '-'}"></p>
                 </div>
             </div>
+
+            <!-- Al contar los rollos contra el papel, esto explica por qué la
+                 tabla de abajo puede tener menos líneas que la guía. -->
+            <div class="mt-3" th:if="${!#strings.isEmpty(recepcion.observaciones)}">
+                <small class="text-muted">Observaciones</small>
+                <p class="mb-0 small" style="white-space: pre-line;" th:text="${recepcion.observaciones}"></p>
+            </div>
         </div>
     </div>
 

@@ -60,7 +60,12 @@
 
                         <!-- LINEAS DE PRODUCTOS (se llenan al extraer PDF) -->
                         <div id="lineasContainer" style="display:none;">
-                            <h6 class="fw-bold mb-3">Productos Detectados</h6>
+                            <h6 class="fw-bold mb-1">Productos Detectados</h6>
+                            <p class="text-muted small mb-3">
+                                Todas las líneas de la guía tienen que quedar resueltas. Si una tela no entra
+                                a esta recepción, marca <span class="fw-semibold">No incluir</span>: queda
+                                anotada en las observaciones en vez de desaparecer sin dejar rastro.
+                            </p>
                             <div class="table-responsive mb-3">
                                 <table class="table table-sm">
                                     <thead>
@@ -71,6 +76,7 @@
                                             <th>Programa</th>
                                             <th>Rollos</th>
                                             <th>Peso Bruto</th>
+                                            <th>No incluir</th>
                                         </tr>
                                     </thead>
                                     <tbody id="lineasBody"></tbody>
@@ -212,7 +218,9 @@
 
         lineasExtraidas.forEach((linea, idx) => {
             const tr = document.createElement('tr');
-            if (!linea.matched) tr.className = 'table-warning';
+            const excluida = linea.excluida === true;
+            if (excluida) tr.className = 'table-secondary opacity-50';
+            else if (!linea.matched) tr.className = 'table-warning';
 
             let selectHtml = '<select class="form-select form-select-sm linea-articulo" data-idx="' + idx + '" style="min-width: 17rem;">';
             selectHtml += '<option value="">Seleccionar...</option>';
@@ -234,7 +242,12 @@
                         + ' · ' + escapeHtml(linea.composicion || '-')
                         + ' · <span class="fw-bold">' + escapeHtml(linea.acabado || 'LISO') + '</span></small>';
 
-            if (!linea.matched) {
+            if (excluida) {
+                // Marcada "No incluir": no se ofrecen los botones de resolver
+                // (crear articulo/color) porque esta linea no va a registrarse.
+                selectHtml += '<br><small class="text-secondary fw-semibold">'
+                            + '<i class="bi bi-slash-circle me-1"></i>No se registrará. Queda anotada en las observaciones.</small>';
+            } else if (!linea.matched) {
                 selectHtml += '<br><small class="text-danger">' + escapeHtml(linea.motivoNoMatch) + '</small>';
 
                 const motivoEsColor = linea.motivoNoMatch && linea.motivoNoMatch.indexOf('Color') !== -1 && linea.motivoNoMatch.indexOf('no existe') !== -1;
@@ -262,11 +275,17 @@
                 // El boton de crear color solo tiene sentido si el color NO se
                 // resolvio (colorId vacio); si la linea no matchea por otra razon
                 // (ej. falta el articulo), ofrecerlo solo genera duplicados.
-                if (!linea.matched && !linea.colorId) {
+                if (!linea.matched && !linea.colorId && !excluida) {
                     colorCell += '<br><button type="button" class="btn btn-sm btn-outline-primary mt-1 btn-crear-color" data-idx="' + idx + '">' +
                                  '<i class="bi bi-plus-circle me-1"></i>Crear color</button>';
                 }
             }
+
+            const excluirCell = '<div class="form-check">'
+                + '<input class="form-check-input linea-excluir" type="checkbox" data-idx="' + idx + '"'
+                + ' id="excluirLinea' + idx + '"' + (excluida ? ' checked' : '') + '>'
+                + '<label class="form-check-label small text-muted" for="excluirLinea' + idx + '">No incluir</label>'
+                + '</div>';
 
             tr.innerHTML = `
                 <td>${selectHtml}</td>
@@ -275,7 +294,18 @@
                 <td><input type="text" class="form-control form-control-sm linea-programa" data-idx="${idx}" value="${escapeHtml(linea.programaTenido || '')}"></td>
                 <td><input type="number" class="form-control form-control-sm linea-rollos" data-idx="${idx}" value="${escapeHtml(linea.rollosGuia || '')}"></td>
                 <td><input type="number" step="0.01" class="form-control form-control-sm linea-peso" data-idx="${idx}" value="${escapeHtml(linea.pesoBrutoKg || '')}"></td>
+                <td>${excluirCell}</td>
             `;
+
+            // Una linea excluida queda de solo lectura: sus valores igual viajan
+            // al backend para la nota, pero editarlos no tendria efecto y se
+            // presta a confusion.
+            if (excluida) {
+                tr.querySelectorAll('select, input, button').forEach(el => {
+                    if (!el.classList.contains('linea-excluir')) el.disabled = true;
+                });
+            }
+
             tbody.appendChild(tr);
         });
 
@@ -292,13 +322,59 @@
             });
         });
 
+        document.querySelectorAll('.linea-excluir').forEach(chk => {
+            chk.addEventListener('change', () => {
+                sincronizarLineasDesdeDom();
+                const linea = lineasExtraidas[parseInt(chk.dataset.idx)];
+                if (linea) linea.excluida = chk.checked;
+                renderLineas();
+            });
+        });
+
         engancharBotonesArticulo();
+    }
+
+    // Vuelca a lineasExtraidas lo que hay escrito en pantalla. renderLineas()
+    // redibuja TODA la tabla desde el arreglo, asi que sin esto cualquier
+    // re-dibujo (crear color, crear articulo, marcar "No incluir") borraba en
+    // silencio las ediciones manuales de las OTRAS filas: el artículo elegido a
+    // mano volvía a "Seleccionar...", y rollos/peso corregidos volvían a lo que
+    // había leído la IA.
+    function sincronizarLineasDesdeDom() {
+        document.querySelectorAll('.linea-articulo').forEach(sel => {
+            const idx = parseInt(sel.dataset.idx);
+            const linea = lineasExtraidas[idx];
+            if (!linea) return;
+            linea.articuloId = sel.value ? parseInt(sel.value) : null;
+            const programa = document.querySelector('.linea-programa[data-idx="' + idx + '"]');
+            const rollos = document.querySelector('.linea-rollos[data-idx="' + idx + '"]');
+            const peso = document.querySelector('.linea-peso[data-idx="' + idx + '"]');
+            if (programa) linea.programaTenido = programa.value;
+            if (rollos) linea.rollosGuia = aNumero(rollos.value, parseInt);
+            if (peso) linea.pesoBrutoKg = aNumero(peso.value, parseFloat);
+        });
+    }
+
+    function aNumero(valor, parseador) {
+        if (valor === null || valor === undefined || String(valor).trim() === '') return null;
+        const n = parseador(valor);
+        return Number.isNaN(n) ? null : n;
+    }
+
+    // Lo que la guia dice de esta linea, en una sola linea de texto. Es lo que
+    // se guarda como constancia cuando la linea se excluye (no hay ids de
+    // catalogo que guardar: el caso tipico es justamente que no existen).
+    function descripcionGuia(linea) {
+        return ((linea.tipoTela || '-') + ' ' + (linea.titulo || '')).trim()
+             + ' · ' + (linea.composicion || '-')
+             + ' · ' + (linea.acabado || 'LISO');
     }
 
     function engancharBotonesArticulo() {
         document.querySelectorAll('.btn-crear-articulo').forEach(btn => {
             btn.addEventListener('click', async () => {
             const idx = parseInt(btn.dataset.idx);
+            sincronizarLineasDesdeDom();
             const linea = lineasExtraidas[idx];
             btn.disabled = true;
             btn.textContent = 'Creando...';
@@ -396,6 +472,7 @@
                 acabado: { nombre: '' }
             });
 
+            sincronizarLineasDesdeDom();
             const linea = lineasExtraidas[idxColorPendiente];
             const resultado = await fetchConCsrf('/recepciones/rematch-linea', {
                 method: 'POST',
@@ -464,32 +541,61 @@
             return;
         }
 
+        sincronizarLineasDesdeDom();
+
+        // Una linea de la guia tiene UNO de dos destinos posibles, nunca
+        // ninguno: se registra (articulo + color resueltos) o se excluye a
+        // proposito. Antes, la que no tuviera articulo o color se caia acá con
+        // un `return` mudo: la recepcion se creaba con MENOS lineas que el papel
+        // y nadie se enteraba. El guard del backend nunca llegaba a dispararse
+        // porque esa linea sencillamente no se le enviaba.
         const lineas = [];
-        document.querySelectorAll('.linea-articulo').forEach(sel => {
-            const idx = sel.dataset.idx;
-            const articuloId = sel.value;
-            if (!articuloId) return;
-            const colorId = lineasExtraidas[idx] ? lineasExtraidas[idx].colorId : null;
-            if (!colorId) return;
-            const programa = document.querySelector('.linea-programa[data-idx="' + idx + '"]').value;
-            const rollos = document.querySelector('.linea-rollos[data-idx="' + idx + '"]').value;
-            const peso = document.querySelector('.linea-peso[data-idx="' + idx + '"]').value;
+        const lineasExcluidas = [];
+        const sinResolver = [];
+        lineasExtraidas.forEach((linea, idx) => {
+            if (linea.excluida === true) {
+                lineasExcluidas.push({
+                    descripcion: descripcionGuia(linea),
+                    colorNombre: linea.colorNombre || null,
+                    colorCodigo: linea.colorCodigo || null,
+                    programaTenido: linea.programaTenido || null,
+                    rollos: aNumero(linea.rollosGuia, parseInt),
+                    pesoBrutoKg: aNumero(linea.pesoBrutoKg, parseFloat),
+                    motivo: linea.motivoNoMatch || null
+                });
+                return;
+            }
+            if (!linea.articuloId || !linea.colorId) {
+                sinResolver.push('• Línea ' + (idx + 1) + ': ' + descripcionGuia(linea)
+                                 + (linea.colorNombre ? ' — ' + linea.colorNombre : ''));
+                return;
+            }
             lineas.push({
-                articuloId: parseInt(articuloId),
-                colorId: parseInt(colorId),
-                programaTenido: programa,
-                rollosGuia: parseInt(rollos),
-                pesoBrutoKg: peso ? parseFloat(peso) : null
+                articuloId: parseInt(linea.articuloId),
+                colorId: parseInt(linea.colorId),
+                programaTenido: linea.programaTenido,
+                rollosGuia: aNumero(linea.rollosGuia, parseInt),
+                pesoBrutoKg: aNumero(linea.pesoBrutoKg, parseFloat)
             });
         });
 
-        if (lineasExtraidas.length > 0 && lineas.length > 0) {
+        if (sinResolver.length > 0) {
+            alert('No se puede continuar: hay ' + sinResolver.length +
+                  ' línea(s) de la guía sin artículo o color identificado.\n\n' +
+                  sinResolver.join('\n') +
+                  '\n\nResuélvelas (elige del desplegable, o usa "Crear artículo" / "Crear color"), ' +
+                  'o marca "No incluir" si esa tela no entra a esta recepción.');
+            return;
+        }
+
+        if (lineasExtraidas.length > 0 && (lineas.length > 0 || lineasExcluidas.length > 0)) {
             const numeroFactura = document.getElementById('numeroFactura').value;
             const resp = await fetchConCsrf('/recepciones/crear-con-lineas', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ empresaId: parseInt(empresaId), numeroGuia, numeroFactura, fechaGuia, observaciones,
-                                       emisorNombre: emisorDetectado.nombre, emisorRuc: emisorDetectado.ruc, lineas })
+                                       emisorNombre: emisorDetectado.nombre, emisorRuc: emisorDetectado.ruc,
+                                       lineas, lineasExcluidas })
             });
             // R-J2: el backend puede responder HTML de error (500/403) en vez de
             // JSON; sin este guard, resp.json() lanzaba y la creacion fallaba en

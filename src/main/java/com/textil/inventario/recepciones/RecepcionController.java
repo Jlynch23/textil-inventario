@@ -283,7 +283,8 @@ public class RecepcionController {
         return RespuestaJson.responder("crearConLineas", () -> {
                 Recepcion r = recepcionService.crearRecepcionConLineas(
                         request.empresaId(), request.numeroGuia(), request.numeroFactura(), request.fechaGuia(),
-                        request.observaciones(), request.emisorNombre(), request.emisorRuc(), request.lineas());
+                        request.observaciones(), request.emisorNombre(), request.emisorRuc(), request.lineas(),
+                        request.lineasExcluidas());
                 return Map.of("id", r.getId(), "redirectUrl", "/recepciones/" + r.getId() + "/detalle");
         });
     }

@@ -50,6 +50,14 @@
                     </p>
                 </div>
             </div>
+
+            <!-- Observaciones: acá se lee, entre otras cosas, la constancia de
+                 las líneas de la guía que NO se registraron. Sin mostrarlas, la
+                 nota quedaba escrita en la base y nadie la veía nunca. -->
+            <div class="mt-3" th:if="${!#strings.isEmpty(recepcion.observaciones)}">
+                <small class="text-muted">Observaciones</small>
+                <p class="mb-0 small" style="white-space: pre-line;" th:text="${recepcion.observaciones}"></p>
+            </div>
         </div>
     </div>
 

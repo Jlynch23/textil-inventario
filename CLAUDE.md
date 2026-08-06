@@ -220,11 +220,12 @@ Una guía tiene **dos** empresas y el sistema ya no confunde ninguna:
 
 ## Tests
 
-`src/test/java/...`, JUnit 5 + Spring Boot Test — **149 tests** (`./mvnw -B test`). El test vive en
+`src/test/java/...`, JUnit 5 + Spring Boot Test — **152 tests** (`./mvnw -B test`). El test vive en
 el paquete de lo que prueba (al mover una clase de paquete, mové su test).
 
 - **Servicios**: `RecepcionServiceTest` (incluye los guards de confirmación: líneas repetidas,
-  líneas faltantes en el POST, factura de una sola empresa), `TransferenciaServiceTest`,
+  líneas faltantes en el POST, factura de una sola empresa, y la constancia de las líneas
+  excluidas al registrar), `TransferenciaServiceTest`,
   `CatalogoServiceTest`, `ArchivoHistoricoServiceTest`, `DocumentoHistoricoClasificadorTest`,
   `DocumentoStorageServiceTest`, `StockPorColorTest`.
 - **OCR**: `ArticuloMatchingServiceTest` — matching de artículo/color/empresa **y** la verificación
@@ -405,13 +406,21 @@ Estado actual (ago-2026): **en vivo** en `texcontrol.pe` (dominio + HTTPS wildca
 
 ### Estado de trabajo (dónde quedamos — sesión 6-ago-2026)
 
-**⚠️ `develop` tiene ~17 commits SIN PROMOVER a `main`.** Todo probado por CI (149 tests verdes,
+**⚠️ `develop` tiene ~15 commits SIN PROMOVER a `main`.** Todo probado por CI (152 tests verdes,
 incluido el job contra MySQL real) y desplegado en `dev.texcontrol.pe`, pero **falta la prueba
 manual de punta a punta**: confirmar una recepción y cargar guías de a una sobre los programas.
 Recién después promover. No hay urgencia: **no hay clientes corriendo**, así que `main` no despliega
 a nadie — lo que importa es que esté sano para el próximo cliente que se dé de alta.
 
 Lo que entró hoy, por si hay que revisar algo puntual:
+- **Recepciones — una línea de la guía no se puede perder en silencio**: en *Productos Detectados*
+  (`recepciones/nueva.html`), la línea sin artículo o color se caía del POST con un `return` mudo
+  y la recepción se creaba con MENOS líneas que el papel (el guard del backend nunca llegaba a
+  dispararse porque esa línea sencillamente no se enviaba). Ahora cada línea tiene UNO de dos
+  destinos: se registra, o se marca **"No incluir"** a propósito — y esa exclusión queda escrita en
+  las observaciones de la recepción (visibles en Detalle y Confirmar) y en el log de auditoría
+  (`EXCLUIR_LINEAS`). De paso, `sincronizarLineasDesdeDom()` arregla otro descarte silencioso: cada
+  re-dibujo de la tabla (crear color/artículo) borraba las ediciones manuales de las demás filas.
 - **OCR**: la fecha de la **guía** se leía con día y mes cambiados, y el **mismo defecto** estaba
   clonado en la de la **factura** → todo pasa por `common/FechaDocumento`. Y la verificación del
   acabado contra el texto literal (ver "El prompt no es una garantía").

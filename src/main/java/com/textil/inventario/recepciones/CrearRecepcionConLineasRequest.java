@@ -15,7 +15,13 @@ public record CrearRecepcionConLineasRequest(
         // simplemente queda sin emisor registrado.
         String emisorNombre,
         String emisorRuc,
-        List<LineaRequest> lineas
+        List<LineaRequest> lineas,
+        // Lineas que SI venian en la guia y el usuario decidio NO registrar
+        // (marcandolas "No incluir" en la pantalla de carga). No crean detalle
+        // ni tocan stock: quedan anotadas en las observaciones y en el log de
+        // auditoria. Antes una linea sin resolver se descartaba en silencio y la
+        // recepcion quedaba con menos lineas que el papel, sin rastro del porque.
+        List<LineaExcluidaRequest> lineasExcluidas
 ) {
     public record LineaRequest(
             Long articuloId,
@@ -23,5 +29,21 @@ public record CrearRecepcionConLineasRequest(
             String programaTenido,
             Integer rollosGuia,
             BigDecimal pesoBrutoKg
+    ) {}
+
+    /**
+     * Una linea excluida se guarda como TEXTO, no como referencias al catalogo:
+     * el caso tipico es justamente el de una linea que NO se pudo resolver
+     * (articulo o color inexistente), asi que no hay ids que guardar. Lo que
+     * importa es dejar escrito que en la guia venia y por que no entro.
+     */
+    public record LineaExcluidaRequest(
+            String descripcion,
+            String colorNombre,
+            String colorCodigo,
+            String programaTenido,
+            Integer rollos,
+            BigDecimal pesoBrutoKg,
+            String motivo
     ) {}
 }
