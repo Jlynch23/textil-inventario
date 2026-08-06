@@ -326,8 +326,17 @@ public class ProgramaService {
      * programa. Se muestra en Seguimiento para que el faltante deje de ser
      * invisible y se vea QUE llego y por que no cuadro.
      */
-    public record LineaHuerfanaView(Long recepcionId, String numeroGuia, String articulo,
-                                    String color, Integer rollos, boolean confirmada) {}
+    /**
+     * Las cuatro partes del articulo van SEPARADAS, no como getDescripcion():
+     * ese texto omite el acabado LISO a proposito (es el valor por defecto y en
+     * las pantallas normales solo agrega ruido), y aca el acabado es justamente
+     * el dato que explica por que la linea no vinculo. Separadas ademas se
+     * comparan columna contra columna con la tabla de abajo, que es lo que uno
+     * hace mirando esta pantalla.
+     */
+    public record LineaHuerfanaView(Long recepcionId, String numeroGuia, Long documentoId,
+                                    String tipoTela, String titulo, String composicion, String acabado,
+                                    String color, String codigoColor, Integer rollos, boolean confirmada) {}
 
     /**
      * Recepciones que nombran este programa y no descontaron nada de el.
@@ -346,23 +355,39 @@ public class ProgramaService {
                 .map(d -> new LineaHuerfanaView(
                         d.getRecepcion().getId(),
                         d.getRecepcion().getNumeroGuia(),
-                        d.getArticulo().getDescripcion(),
+                        idDocumentoGuia(d.getRecepcion().getId()),
+                        d.getArticulo().getTipoTela().getNombre(),
+                        d.getArticulo().getTitulo().getValor(),
+                        d.getArticulo().getComposicion().getNombre(),
+                        d.getArticulo().getAcabado().getNombre(),
                         d.getColor().getNombreMostrar(),
+                        d.getColor().getCodigoFastDye(),
                         d.getRollosRecibidos() != null ? d.getRollosRecibidos() : d.getRollosGuia(),
                         d.getRecepcion().getEstado() != Recepcion.EstadoRecepcion.PENDIENTE))
                 .toList();
     }
 
+    /**
+     * Id del PDF de la GUIA de una recepcion, o null si no se archivo ninguno.
+     * Lo usan el historial de cada linea y el aviso de lineas huerfanas: los dos
+     * alimentan el mismo ojito (fragments/guias :: ojoGuia).
+     */
+    private Long idDocumentoGuia(Long recepcionId) {
+        return recepcionDocumentoRepository.findByRecepcionId(recepcionId).stream()
+                .filter(d -> "GUIA".equals(d.getTipoDocumento()))
+                .map(RecepcionDocumento::getId)
+                .findFirst()
+                .orElse(null);
+    }
+
     public List<HistorialGuiaView> historialDeLineaConDocumento(Long programaDetalleId) {
         List<RecepcionDetalle> detalles = recepcionDetalleRepository.findByProgramaDetalleId(programaDetalleId);
-        return detalles.stream().map(rd -> {
-            Long docId = recepcionDocumentoRepository.findByRecepcionId(rd.getRecepcion().getId()).stream()
-                    .filter(d -> "GUIA".equals(d.getTipoDocumento()))
-                    .map(RecepcionDocumento::getId)
-                    .findFirst()
-                    .orElse(null);
-            return new HistorialGuiaView(rd.getRecepcion().getId(), rd.getRecepcion().getNumeroGuia(), docId);
-        }).toList();
+        return detalles.stream()
+                .map(rd -> new HistorialGuiaView(
+                        rd.getRecepcion().getId(),
+                        rd.getRecepcion().getNumeroGuia(),
+                        idDocumentoGuia(rd.getRecepcion().getId())))
+                .toList();
     }
 
     /**

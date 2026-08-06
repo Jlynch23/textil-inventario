@@ -58,24 +58,37 @@
             </p>
             <div class="table-responsive">
                 <table class="table table-sm mb-0">
+                    <!-- Mismas columnas y mismo orden que Seguimiento por Color, para
+                         poder comparar de arriba a abajo cual es la que no coincide. -->
                     <thead>
                         <tr>
-                            <th>Guía</th>
-                            <th>Artículo recibido</th>
+                            <th>Tipo de Tela</th>
+                            <th>Título</th>
+                            <th>Composición</th>
+                            <th>Acabado</th>
                             <th>Color</th>
+                            <th>Código</th>
                             <th>Rollos</th>
+                            <th>Guía</th>
                             <th>Estado</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr th:each="h : ${lineasHuerfanas}">
-                            <td>
-                                <a th:href="@{/recepciones/{id}/detalle(id=${h.recepcionId})}"
-                                   th:text="${h.numeroGuia ?: '(sin guía)'}"></a>
-                            </td>
-                            <td th:text="${h.articulo}"></td>
+                            <td th:text="${h.tipoTela}"></td>
+                            <td th:text="${h.titulo}"></td>
+                            <td th:text="${h.composicion}"></td>
+                            <td class="fw-bold text-warning" th:text="${h.acabado}"></td>
                             <td th:text="${h.color}"></td>
+                            <td><span class="chip-codigo" th:text="${h.codigoColor}"></span></td>
                             <td th:text="${h.rollos}"></td>
+                            <td>
+                                <div class="d-inline-flex align-items-center gap-1">
+                                    <a th:href="@{/recepciones/{id}/detalle(id=${h.recepcionId})}"
+                                       th:text="${h.numeroGuia ?: '(sin guía)'}"></a>
+                                    <span th:replace="~{fragments/guias :: ojoGuia(${h.documentoId})}"></span>
+                                </div>
+                            </td>
                             <td>
                                 <span th:if="${h.confirmada}" class="badge bg-success">Ya afectó el stock</span>
                                 <span th:unless="${h.confirmada}" class="badge bg-secondary">Sin confirmar</span>
@@ -129,14 +142,14 @@
                                     <!-- Guia(s) de la(s) entrega(s): aparecen en CUALQUIER linea que ya
                                          recibio algo (completa o parcial). Ojito para abrir el PDF si la
                                          guia tiene documento archivado; si no, solo el numero. -->
+                                    <!-- El ojito sale de fragments/guias :: ojoGuia, no de markup
+                                         propio: acá estaba escrito a mano con otro estilo, así que
+                                         el mismo botón se veía distinto según la pantalla. El
+                                         fragmento ya resuelve solo el caso "sin PDF" (no renderiza
+                                         nada), por eso el número va aparte y siempre se muestra. -->
                                     <span th:each="hg : ${historialPorLinea.get(d.id)}" class="d-inline-flex align-items-center gap-1">
-                                        <a th:if="${hg.documentoId != null}"
-                                           th:href="@{/documentos/{docId}/ver(docId=${hg.documentoId})}"
-                                           target="_blank" title="Ver guía"
-                                           class="text-decoration-none">
-                                            <i class="bi bi-eye"></i> <small th:text="${hg.numeroGuia}"></small>
-                                        </a>
-                                        <small th:unless="${hg.documentoId != null}" class="text-muted" th:text="${hg.numeroGuia}"></small>
+                                        <small class="text-muted" th:text="${hg.numeroGuia}"></small>
+                                        <span th:replace="~{fragments/guias :: ojoGuia(${hg.documentoId})}"></span>
                                     </span>
                                 </div>
                             </td>
