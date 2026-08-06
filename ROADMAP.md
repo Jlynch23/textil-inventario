@@ -5,6 +5,129 @@ Definido por el dueño (ago-2026), sobre la base del diseño original V1→V5
 (hilado → tejido → teñido) va ANTES que las ventas. La BD se diseñó para que
 cada versión sea **aditiva** (tablas nuevas, sin reescribir stock ni kardex).
 
+### Relación con el «Roadmap Oficial v1.0» (PDF, 5-ago-2026)
+
+Existe un documento formal de 22 páginas con auditoría, gates, métricas y
+calendario. **Numera distinto**, así que antes que nada, el mapa:
+
+| Este archivo | PDF oficial | Contenido |
+|---|---|---|
+| V1 | **V0.1** | Núcleo actual (+ WhatsApp, según el PDF) |
+| V2 | **V0.2** | Hilo, tejeduría, teñido |
+| V3 | **V0.3** | Clientes, ventas, rollos abiertos |
+| V4 | **V0.4** | Créditos y cobranzas |
+| V5 | **V0.5–V0.7** | Automatización, QR, planeamiento/IA |
+| — | **V1.0** | Liberación comercial |
+
+La auditoría del PDF **se verificó contra el código y da**: SBOM+Trivy no
+bloqueantes, 46 migraciones, los cuatro tipos de kardex, el peso promedio por
+rollo en `TransferenciaService`, ausencia de adaptador Meta, `VENDEDOR` sin
+permisos. Su sección 4.1 llegó por su cuenta a los mismos dos problemas de
+modelo que están más abajo en «Tres cosas que NO aguantan V2» — dos lecturas
+independientes, el mismo diagnóstico.
+
+**La secuencia del PDF es correcta y se adopta.** Lo que sigue son cuatro
+correcciones de *ejecución*, no de dirección.
+
+---
+
+## ⚠️ Correcciones al roadmap oficial v1.0
+
+### 0. El cuello de botella no es programar: es tener un cliente operando
+
+Esto condiciona todo lo demás y el PDF no lo dice. Mirá qué exigen sus propios
+gates:
+
+- **G3** (cierre V0.2): *«3 ciclos reales E2E y conciliaciones firmadas»*
+- **G4** (cierre V0.3): *«cierre diario, muestra física»*
+- Métrica: *«exactitud física vs. sistema ≥99% en muestra controlada»*
+
+Los tres necesitan **un cliente real operando**. Al 6-ago-2026 hay **cero**
+(`textillaura` y `textilcamargo` se dieron de baja el 5-ago; corre solo el demo).
+
+V0.2 se puede **construir** sin cliente. **No se puede cerrar**: su gate pide tres
+ciclos productivos reales conciliados, y un ciclo textil no dura una semana.
+Arrancar V0.2 en octubre sin cliente da, en febrero, el código listo y el gate
+igual de abierto.
+
+Lo mismo con el riesgo R2 y la política de pesaje: *«el software no puede inventar
+el peso que la operación no captura»*. Vender por kilo exacto (V0.3) necesita
+balanzas y disciplina en el almacén **del cliente**. No se resuelve programando.
+
+> **Consecuencia práctica**: dar de alta un cliente que opere de verdad es tarea
+> del camino crítico, a la par del desarrollo — no algo que se acomoda después.
+
+### 1. WhatsApp sale del camino crítico de V0.1
+
+El PDF lo pone como **P0 bloqueante** para cerrar V0.1 (WA-01…WA-05). No conviene:
+la verificación de negocio en Meta es un trámite **externo**, tarda semanas y puede
+fallar — el propio PDF lo marca como riesgo R1, de impacto alto.
+
+El correo ya funciona (`NotificadorEmailSmtp` es `@Primary`, canal activo). Meter
+una dependencia externa que no controlamos como bloqueo para certificar el núcleo
+es agregarle riesgo ajeno al gate propio.
+
+→ **Certificar V0.1 con correo.** WhatsApp entra como V1.x cuando Meta apruebe, con
+el mismo estándar (outbox persistente, idempotency key, webhooks de estado): el
+requisito no se baja, se desacopla del gate.
+
+### 2. El kardex generalizado va PRIMERO, antes de cualquier tabla de V0.2
+
+El PDF identifica el problema (4.1, «Kardex limitado») pero **no lo agenda**. Es lo
+primero que hay que hacer, no un pendiente transversal.
+
+Si se construyen las ~26 tablas de V0.2 sobre el kardex actual, se termina con
+cinco columnas de documento —cuatro siempre NULL— y migrando la tabla más grande
+del sistema **con datos reales encima**. El detalle está abajo, en «Tres cosas que
+NO aguantan V2».
+
+→ **Orden obligatorio**: `(tipo_documento, documento_id)` + `TRANSFORMACION_IN/OUT`
++ la decisión sobre `color_id`/unidad de medida **antes** de la primera tabla de hilo.
+
+### 3. V0.2 se parte en tres gates, no uno
+
+Hilo + tejeduría + teñido + costos bajo un solo gate es demasiado: si los costos se
+atrasan —y son la parte más riesgosa, riesgo R7 del PDF— se traba todo lo demás,
+que ya podría estar dando valor.
+
+| Sub-gate | Contenido | Por qué corta ahí |
+|---|---|---|
+| **V0.2a** | Proveedores desacoplados + kardex generalizado + lotes de hilo | Es la base: sin esto lo demás se construye torcido |
+| **V0.2b** | Tejeduría, tela cruda, gramaje, mermas | Cierra la primera transformación completa |
+| **V0.2c** | Teñido genérico, partidas, reprocesos, costos | Enchufa con los programas y recepciones que V1 ya tiene |
+
+Cada uno cerrable por separado, con su propia conciliación.
+
+### 4. Costo estimado primero, costo real después
+
+La sección 7.5 del PDF pide costo real completo dentro de V0.2: versionado de
+costos, multi-moneda, tipo de cambio y prorrateo de gastos indirectos. Eso es una
+especialidad en sí misma y es lo que más puede atrasar V0.2c.
+
+→ Arrancar con **costo estimado** (hilo + tarifa de servicio, sin prorrateos) y
+dejar el costo real versionado para un gate propio. La regla que sí es innegociable
+desde el día uno es la del PDF: *«cada corrección crea una nueva versión de costo
+sin alterar el valor histórico usado por ventas anteriores»* — el modelo tiene que
+nacer preparado para versionar aunque al principio guarde una sola versión.
+
+### Sobre las fechas
+
+El PDF asume *«un desarrollador principal con asistencia de IA»* y da 5 meses a
+V0.2. Las secciones 7.3 y 7.4 listan **~26 tablas nuevas**; el sistema entero hoy
+tiene **29 entidades**. O sea: V0.2 casi duplica el modelo de dominio completo en
+cinco meses.
+
+Además, la sección 12.1 lista **ocho decisiones funcionales sin cerrar** (gramajes,
+tratamiento del blanco, recetas de polycotton, mermas toleradas, política de
+pesaje…). Diseñar un dominio que todavía no está definido es donde la IA menos
+acelera: no es escribir código, es decidir reglas de negocio con el dueño del proceso.
+
+→ Estimación realista: **V0.2 en 8–10 meses**, no 5. Y **V1.0 hacia mediados de
+2028**, no Q4 2027. La secuencia no cambia; el calendario sí.
+
+> Ninguna de estas cuatro correcciones baja el estándar del PDF. Reordenan qué va
+> antes y separan lo que no depende de nosotros de lo que sí.
+
 ---
 
 ## ✅ V1 — Control de Inventario (EN PRODUCCIÓN)
@@ -30,6 +153,10 @@ Todo lo desarrollado hasta hoy:
   verificada): despachador genérico de eventos — stock bajo, movimiento por
   validar (con foto del almacenero), tela en tránsito. Requiere trámite de
   verificación del negocio en Meta (arrancar en paralelo, demora días/semanas).
+  **Queda en V1.x a propósito, no como bloqueante del cierre de V0.1** — ver
+  corrección 1. El estándar del PDF se mantiene: outbox persistente con
+  idempotency key, webhooks de estado (enviado/entregado/leído/fallido) y dedupe
+  durable, no en memoria.
 - **Correo en el alta/edición de usuarios** (como el celular de V44) y alertas
   dirigidas a los ADMIN/GERENTE de cada instancia en vez de lista fija en config.
 - Marketing en `texcontrol.pe` (hoy la raíz redirige al lanzador).
@@ -41,6 +168,10 @@ Todo lo desarrollado hasta hoy:
 
 **Objetivo**: controlar la cadena productiva completa ANTES de la venta —
 del hilo comprado a la tela teñida que ya recibe V1.
+
+> **Se ejecuta en tres sub-gates** (V0.2a base + V0.2b tejeduría + V0.2c teñido y
+> costos), no de una sola vez — ver corrección 3. Y el kardex generalizado va
+> ANTES de la primera tabla de acá — ver corrección 2.
 
 ### Alcance
 
@@ -164,6 +295,12 @@ sincronizados a mano.
 
 ## Referencias
 
+- **Roadmap Oficial de Producto y Tecnología 2026-2027, v1.0** (PDF, 5-ago-2026,
+  22 pág.): auditoría del repo, matriz de capacidades, gates G0–G5, métricas
+  objetivo, riesgos R1–R8 y backlog priorizado. Es la referencia formal; este
+  archivo es la versión que vive junto al código, con las cuatro correcciones de
+  ejecución de arriba. **Si los dos difieren, gana este** (se actualiza con cada
+  commit; el PDF es una foto del 5-ago).
 - Diseño original (Drive, jun-2026): documentos 01 (arquitectura y modelo de
   datos), 02 (especificación funcional), 03 (roadmap V1→V5 original,
   escalabilidad, estrategia QR e IA).
