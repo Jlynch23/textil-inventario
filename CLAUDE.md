@@ -260,9 +260,10 @@ despliegue de producción es el bucle multicliente de arriba (el `deploy-dev.sh`
 - **Modelo actual = MULTICLIENTE (EN VIVO desde ago-2026)**: un stack aislado por
   empresa (`app_<slug>` + `db_<slug>`, BD propia, red privada `interna`) tras el
   proxy compartido **`texcontrol_proxy_nginx`** (red `texcontrol_red`), que rutea
-  `<slug>.texcontrol.pe` → `app_<slug>`. Clientes en vivo: **`textillaura`**
-  (`textillaura.texcontrol.pe`) y **`textilcamargo`** (`textilcamargo.texcontrol.pe`),
-  cada uno con su BD aislada y su clave de `jlynch` propia. Techo ~3 clientes en 4 GB.
+  `<slug>.texcontrol.pe` → `app_<slug>`. **Hoy (6-ago-2026) NO hay clientes de pago
+  dados de alta**: `textillaura` y `textilcamargo` se dieron de baja el 5-ago y
+  `clientes/` quedó vacío. El único inquilino corriendo es el **demo**. Techo ~3
+  clientes en 4 GB.
   **OJO**: el proxy NO debe llamarse `textil_nginx` — es `texcontrol_proxy_nginx`.
   El viejo stack single-cliente (`docker-compose.prod.yml` = `textil_app` +
   `textil_mysql` + `textil_nginx`) **fue decomisionado** en la migración; sus
@@ -298,10 +299,14 @@ Estado actual (ago-2026): **en vivo** en `texcontrol.pe` (dominio + HTTPS wildca
 `fail2ban`, y Docker ya NO depende de Tailscale.
 
 **Clientes** (una instancia por cliente, cada uno con su BD propia y su clave de `jlynch`):
-- **`textillaura`** (`textillaura.texcontrol.pe`) — **Textil Laura + Textil Clemente** juntos. EN VIVO.
-- **`textilcamargo`** (`textilcamargo.texcontrol.pe`) — **Textil Camargo**. EN VIVO (listo para entregar).
-- Futuro (aún no dado de alta): **Textil Emilio**. Ojo al techo de RAM (~3 clientes en 4 GB): al sumar
+- **Ninguno dado de alta al 6-ago-2026.** `textillaura` (Textil Laura + Textil Clemente) y
+  `textilcamargo` (Textil Camargo) estuvieron en vivo y **se borraron el 5-ago**; no quedan
+  contenedores ni volúmenes suyos. Se vuelven a levantar con `nuevo-cliente.sh <slug> "<Nombre>"`.
+- Futuro: **Textil Emilio**. Ojo al techo de RAM (~3 clientes en 4 GB): al sumar
   el 3.º pagando, subir la RAM del VPS.
+
+> **Verificá antes de creer esta lista**: `./scripts/listar-clientes.sh` (o `docker ps`) es la
+> fuente de verdad. Este archivo se desactualiza cada vez que se da de alta o de baja a alguien.
 
 ### Estado de trabajo (dónde quedamos — sesión 24-jul-2026)
 
@@ -360,9 +365,21 @@ no toca prod). Pendiente dejarlo como `scripts/sembrar-dev-desde-prod.sh`.
 
 **✅ Multi-cliente real EN VIVO (ago-2026)**: migrado del single-cliente al modelo `multicliente/`
 (proxy `texcontrol_proxy_nginx` + `app_<slug>`+`db_<slug>` aislado por cliente, ruteados por subdominio).
-`textillaura` y `textilcamargo` dados de alta y endurecidos; backups diarios (cron 2am); `jlynch` con
-clave única por copia; cuentas de prueba eliminadas; `dev.texcontrol.pe` reconectado al proxy nuevo.
+`textillaura` y `textilcamargo` se dieron de alta, se endurecieron y **se borraron el 5-ago**; el
+mecanismo quedó probado de punta a punta. Backups diarios (cron 2am), `jlynch` con clave única por
+copia, cuentas de prueba eliminadas, `dev.texcontrol.pe` reconectado al proxy nuevo.
 Es la pieza que habilita el modelo de negocio — **ya está**.
+
+> **Ojo con el cron de backups**: `backup-cliente.sh --todos` itera `clientes/*/.env` y, si no hay
+> ninguno, imprime "No hay clientes que respaldar" y sale con código **0**. Sin clientes eso es
+> correcto, pero significa que un `clientes/` vacío por error se ve igual que "todo bien" en el log.
+> Al dar de alta un cliente, confirmá que su backup aparezca en `~/backups/backup.log`.
+
+**El demo quedó huérfano de los scripts (6-ago)**: `app_demo` y `db_demo` corren, pero su
+`clientes/demo/.env` no está, así que `actualizar-clientes.sh`, `backup-cliente.sh` y
+`endurecer-cliente.sh` no lo alcanzan. Las credenciales siguen dentro de los contenedores
+(`docker inspect app_demo --format '{{range .Config.Env}}{{println .}}{{end}}'`) y con eso se
+puede rearmar el `.env`; la otra opción es recrearlo con `nuevo-demo.sh` cuando haga falta.
 
 Falta, por orden de prioridad:
 
