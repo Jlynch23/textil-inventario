@@ -34,7 +34,7 @@ class ArticuloMatchingServiceTest {
 
     private ProductoExtraido productoCompleto() {
         return new ProductoExtraido("RIB 2X1", "30/1", "ALGODON", "ACANALADO",
-                "631085", "COCOA LOLA", "627", 18, new BigDecimal("400.15"));
+                "631085", "COCOA LOLA", "627", 18, new BigDecimal("400.15"), null);
     }
 
     private TipoTela tipoTela() {
@@ -81,7 +81,7 @@ class ArticuloMatchingServiceTest {
     @Test
     void matchLinea_datosBasicosFaltantes_noMatchea() {
         ProductoExtraido p = new ProductoExtraido(null, "30/1", "ALGODON", "ACANALADO",
-                "631085", "COCOA LOLA", "627", 18, new BigDecimal("400.15"));
+                "631085", "COCOA LOLA", "627", 18, new BigDecimal("400.15"), null);
 
         LineaSugerida resultado = service.matchLinea(p);
 
@@ -115,7 +115,7 @@ class ArticuloMatchingServiceTest {
     @Test
     void matchLinea_composicionEnBlanco_noMatchea() {
         ProductoExtraido p = new ProductoExtraido("RIB 2X1", "30/1", "  ", "ACANALADO",
-                "631085", "COCOA LOLA", "627", 18, new BigDecimal("400.15"));
+                "631085", "COCOA LOLA", "627", 18, new BigDecimal("400.15"), null);
         when(tipoTelaRepository.findByNombreIgnoreCase("RIB 2X1")).thenReturn(Optional.of(tipoTela()));
         when(tituloRepository.findByValorIgnoreCase("30/1")).thenReturn(Optional.of(titulo()));
 
@@ -154,7 +154,7 @@ class ArticuloMatchingServiceTest {
     @Test
     void matchLinea_acabadoEnBlanco_usaLisoPorDefecto() {
         ProductoExtraido p = new ProductoExtraido("RIB 2X1", "30/1", "ALGODON", null,
-                "631085", "COCOA LOLA", "627", 18, new BigDecimal("400.15"));
+                "631085", "COCOA LOLA", "627", 18, new BigDecimal("400.15"), null);
         when(tipoTelaRepository.findByNombreIgnoreCase("RIB 2X1")).thenReturn(Optional.of(tipoTela()));
         when(tituloRepository.findByValorIgnoreCase("30/1")).thenReturn(Optional.of(titulo()));
         when(composicionRepository.findByNombreIgnoreCase("ALGODON")).thenReturn(Optional.of(composicion()));
@@ -320,5 +320,72 @@ class ArticuloMatchingServiceTest {
         Long resultado = service.matchEmpresa("ALGO CON SAC ADENTRO", List.of(empresa));
 
         assertThat(resultado).isNull();
+    }
+
+    // --- Verificacion del acabado contra el texto literal de la guia ---------
+    // Caso real: guia TG01-00020379 del programa 472. La descripcion decia
+    // "ALG LIST BLANCO" y la lectura devolvio LISO. Como LISO es tambien el
+    // valor por defecto cuando no se lee acabado, el error era invisible:
+    // entraron 18 rollos como LISO NEGRO en vez de LISTADO BLANCO NEGRO.
+
+    private ProductoExtraido conDescripcion(String acabadoLeido, String descripcion) {
+        return new ProductoExtraido("RIB 2X1", "24/1", "ALGODON", acabadoLeido,
+                "732631", "NEGRO 2", "472", 18, new BigDecimal("412.15"), descripcion);
+    }
+
+    @Test
+    void desajusteAcabado_guiaDiceListadoYSeLeyoLiso_loDetecta() {
+        String motivo = service.desajusteDeAcabado(
+                conDescripcion("LISO", "Servicio Tenido: Tela RIB 2X1 24/1 ALG LIST BLANCO Color 732631 NEGRO 2 / Rollos: 18"),
+                "LISO");
+
+        assertThat(motivo).isNotNull().contains("LISTADO");
+    }
+
+    @Test
+    void desajusteAcabado_guiaDiceListadoYSeLeyoListado_noHayDesajuste() {
+        String motivo = service.desajusteDeAcabado(
+                conDescripcion("LISTADO BLANCO", "Servicio Tenido: Tela RIB 2X1 24/1 ALG LIST BLANCO Color 732631 NEGRO 2 / Rollos: 18"),
+                "LISTADO BLANCO");
+
+        assertThat(motivo).isNull();
+    }
+
+    @Test
+    void desajusteAcabado_guiaSinListadoYSeLeyoLiso_noHayDesajuste() {
+        String motivo = service.desajusteDeAcabado(
+                conDescripcion("LISO", "Servicio Tenido: Tela RIB 2X1 24/1 ALGODON Color 732631 NEGRO 2 / Rollos: 18"),
+                "LISO");
+
+        assertThat(motivo).isNull();
+    }
+
+    @Test
+    void desajusteAcabado_guiaDiceAcanaladoYSeLeyoLiso_loDetecta() {
+        String motivo = service.desajusteDeAcabado(
+                conDescripcion("LISO", "Servicio Tenido: Tela RIB 2X1 30/1 ALG ACANALADO Color 732631 NEGRO 2 / Rollos: 18"),
+                "LISO");
+
+        assertThat(motivo).isNotNull().contains("ACANALADO");
+    }
+
+    @Test
+    void desajusteAcabado_soloMiraAntesDelColor_unNombreDeColorNoDaFalsoPositivo() {
+        // "LISTON" en el NOMBRE del color no debe disparar la alarma: el acabado
+        // vive antes de "Color", lo de despues es texto libre.
+        String motivo = service.desajusteDeAcabado(
+                conDescripcion("LISO", "Servicio Tenido: Tela RIB 2X1 24/1 ALGODON Color 732631 AZUL LISTON / Rollos: 18"),
+                "LISO");
+
+        assertThat(motivo).isNull();
+    }
+
+    @Test
+    void desajusteAcabado_sinDescripcionOriginal_noBloquea() {
+        // Flujos que no piden la descripcion literal (archivo historico viejo):
+        // no hay con que contrastar, no se inventa un error.
+        String motivo = service.desajusteDeAcabado(conDescripcion("LISO", null), "LISO");
+
+        assertThat(motivo).isNull();
     }
 }

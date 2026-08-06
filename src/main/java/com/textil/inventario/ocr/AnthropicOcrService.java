@@ -103,7 +103,8 @@ public class AnthropicOcrService {
               "colorNombre": "string",
               "programaTenido": "string",
               "rollos": numero entero,
-              "pesoBrutoKg": numero decimal o null
+              "pesoBrutoKg": numero decimal o null,
+              "descripcionOriginal": "string, el texto COMPLETO de la celda Descripcion de este item, copiado LITERALMENTE del PDF, sin corregir, resumir ni normalizar nada. Se usa para verificar la lectura: copialo tal cual, incluidas abreviaturas como ALG o LIST"
             }
           ],
           "advertencia": "string opcional; si algun dato no se pudo leer con confianza, explica cual; si todo se leyo bien, usa null"

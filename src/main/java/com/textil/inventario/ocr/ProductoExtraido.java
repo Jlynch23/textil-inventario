@@ -11,5 +11,13 @@ public record ProductoExtraido(
         String colorNombre,
         String programaTenido,
         Integer rollos,
-        BigDecimal pesoBrutoKg
+        BigDecimal pesoBrutoKg,
+        /**
+         * El texto de la descripcion TAL CUAL viene en la guia, sin interpretar.
+         * No se muestra al usuario: sirve para que el backend pueda VERIFICAR de
+         * forma determinista lo que la IA dijo haber leido (ver
+         * ArticuloMatchingService.desajusteDeAcabado). Es null en los flujos
+         * viejos que no lo piden, y ahi la verificacion simplemente no corre.
+         */
+        String descripcionOriginal
 ) {}

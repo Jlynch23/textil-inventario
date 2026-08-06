@@ -18,6 +18,43 @@ public class ArticuloMatchingService {
     private final ArticuloRepository articuloRepository;
     private final com.textil.inventario.catalogo.CatalogoService catalogoService;
 
+    /**
+     * Contrasta el acabado que devolvio la IA contra el texto literal de la guia.
+     * Devuelve el motivo del desajuste, o null si son coherentes.
+     *
+     * Solo mira la parte ANTERIOR a "Color": ahi va el acabado. Despues viene el
+     * nombre del color, que es texto libre y podria contener cualquier palabra
+     * (un color llamado "LISTON", por ejemplo, daria un falso positivo).
+     *
+     * Si la guia no trajo descripcion literal (flujos que no la piden), no hay
+     * nada que contrastar y no se bloquea nada.
+     */
+    String desajusteDeAcabado(ProductoExtraido p, String acabadoNombre) {
+        if (p.descripcionOriginal() == null || p.descripcionOriginal().isBlank()) return null;
+
+        String texto = p.descripcionOriginal().toUpperCase();
+        int corte = texto.indexOf("COLOR");
+        if (corte > 0) texto = texto.substring(0, corte);
+
+        String acabado = acabadoNombre.toUpperCase();
+
+        // "LIST" cubre tanto "LIST BLANCO" como "LISTADO BLANCO".
+        if (texto.contains("LIST") && !acabado.startsWith("LISTADO")) {
+            return "La guia dice un acabado LISTADO pero se leyo «" + acabadoNombre
+                 + "». Elige el acabado correcto antes de continuar.";
+        }
+        if (texto.contains("ACANALADO") && !acabado.equals("ACANALADO")) {
+            return "La guia dice ACANALADO pero se leyo el acabado «" + acabadoNombre
+                 + "». Elige el acabado correcto antes de continuar.";
+        }
+        // Al reves: se leyo un acabado que el texto no menciona.
+        if (acabado.startsWith("LISTADO") && !texto.contains("LIST")) {
+            return "Se leyo el acabado «" + acabadoNombre
+                 + "» pero la guia no menciona LISTADO. Verifica el acabado antes de continuar.";
+        }
+        return null;
+    }
+
     public LineaSugerida matchLinea(ProductoExtraido p) {
         // isBlank y no solo == null: el prompt pide null cuando el dato falta,
         // pero el modelo puede devolver "" y una cadena vacia no identifica nada.
@@ -66,6 +103,26 @@ public class ArticuloMatchingService {
         // Acabado extraido del PDF por la IA; si la guia no menciona ninguno,
         // aplica el defecto LISO (asi funcionan las guias reales de FAST DYE).
         String acabadoNombre = (p.acabado() == null || p.acabado().isBlank()) ? "LISO" : p.acabado().trim();
+
+        // VERIFICACION del acabado contra el texto original de la guia. Caso real
+        // (guia TG01-00020379, programa 472): la descripcion decia "Tela RIB 2X1
+        // 24/1 ALG LIST BLANCO Color 732631 NEGRO 2" y la lectura devolvio LISO.
+        // Como el defecto de arriba tambien es LISO, un acabado no leido y un LISO
+        // real eran indistinguibles: entraron 18 rollos al stock como LISO NEGRO
+        // cuando eran LISTADO BLANCO, y ademas no vincularon con su linea del
+        // programa (otro articulo), que quedo pendiente para siempre.
+        //
+        // El prompt YA describe bien esta regla (LIST X -> LISTADO X) e incluso usa
+        // esta misma guia como ejemplo; aun asi fallo. Por eso la garantia no puede
+        // ser el prompt: se pide ademas la descripcion literal y se contrasta aca.
+        // Ante desajuste NO se corrige solo -- se marca la linea como no resuelta
+        // para que una persona decida, que es la regla del proyecto para la IA.
+        String desajuste = desajusteDeAcabado(p, acabadoNombre);
+        if (desajuste != null) {
+            return new LineaSugerida(null, p.tipoTela(), p.titulo(), p.composicion(), p.acabado(), color.get().getId(),
+                    p.colorCodigo(), p.colorNombre(),
+                    p.programaTenido(), p.rollos(), p.pesoBrutoKg(), false, desajuste);
+        }
         Optional<Acabado> acabado = catalogoService.buscarAcabadoPorNombre(acabadoNombre);
         if (acabado.isEmpty()) {
             return new LineaSugerida(null, p.tipoTela(), p.titulo(), p.composicion(), p.acabado(), color.get().getId(), p.colorCodigo(), p.colorNombre(),
