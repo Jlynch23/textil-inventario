@@ -6,7 +6,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -79,12 +78,12 @@ public class DocumentoHistoricoClasificador {
         return empresas.stream().filter(e -> id.equals(e.getId())).findFirst().orElse(null);
     }
 
+    /**
+     * Solo aceptaba ISO, asi que una fecha copiada del papel ("05/08/2026")
+     * caia en el catch y el documento historico quedaba SIN fecha, en silencio.
+     * Se delega en FechaDocumento, que entiende los dos formatos.
+     */
     public LocalDate parseFecha(String fechaTexto) {
-        if (fechaTexto == null || fechaTexto.isBlank()) return null;
-        try {
-            return LocalDate.parse(fechaTexto.trim(), DateTimeFormatter.ISO_LOCAL_DATE);
-        } catch (Exception e) {
-            return null;
-        }
+        return com.textil.inventario.common.FechaDocumento.parse(fechaTexto);
     }
 }

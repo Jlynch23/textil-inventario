@@ -234,7 +234,10 @@ public class RecepcionController {
             ExtraccionRecepcionResponse response = new ExtraccionRecepcionResponse(
                     extraccion.numeroGuia(),
                     extraccion.numeroFactura(),
-                    extraccion.fechaGuia(),
+                    // El modelo copia la fecha como esta impresa (DD/MM/AAAA en
+                    // las guias peruanas); reordenarla es trabajo de Java, que
+                    // no confunde el dia con el mes. Ver FechaDocumento.
+                    com.textil.inventario.common.FechaDocumento.aIso(extraccion.fechaGuia()),
                     empresaIdSugerida,
                     extraccion.razonSocialDetectada(),
                     extraccion.emisorNombre(),

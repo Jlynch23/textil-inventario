@@ -87,7 +87,7 @@ public class AnthropicOcrService {
         {
           "numeroGuia": "string, el numero de guia principal del documento (ej: TG01-00022558), NO el numero de programa",
           "numeroFactura": "string, el numero de factura si aparece en el documento (puede llamarse Factura, Comprobante, o similar), o null si no aparece",
-          "fechaGuia": "string en formato YYYY-MM-DD, tomado de Fecha Emision",
+          "fechaGuia": "string, la FECHA DE EMISION copiada EXACTAMENTE como esta impresa en el documento, sin reordenarla ni convertirla a otro formato: si el papel dice 05/08/2026 devuelve \"05/08/2026\". NO uses la Fecha de Inicio de Traslado ni ninguna otra fecha del documento. Si no aparece, null",
           "razonSocialDetectada": "string, la razon social del DESTINATARIO (el cliente que recibe la tela), NO la del emisor",
           "rucDetectado": "string, el RUC del DESTINATARIO: 11 digitos, solo numeros, sin guiones ni espacios. null si no aparece",
           "emisorNombre": "string, la razon social del EMISOR (la tintoreria que emite la guia), o null si no se puede leer",
