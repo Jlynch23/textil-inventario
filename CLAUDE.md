@@ -220,14 +220,14 @@ Una guía tiene **dos** empresas y el sistema ya no confunde ninguna:
 
 ## Tests
 
-`src/test/java/...`, JUnit 5 + Spring Boot Test — **161 tests** (`./mvnw -B test`). El test vive en
+`src/test/java/...`, JUnit 5 + Spring Boot Test — **165 tests** (`./mvnw -B test`). El test vive en
 el paquete de lo que prueba (al mover una clase de paquete, mové su test).
 
 - **Servicios**: `RecepcionServiceTest` (incluye los guards de confirmación: líneas repetidas,
   líneas faltantes en el POST, factura de una sola empresa, y la constancia de las líneas
   excluidas al registrar), `ProgramaServiceTest` (cambiar el artículo/color de una línea
   ya existente, el guard que lo impide si esa línea ya recibió tela, y la traducción de los
-  filtros de la lista a la consulta), `TransferenciaServiceTest`,
+  filtros de la lista a la consulta, y los vecinos anterior/siguiente), `TransferenciaServiceTest`,
   `CatalogoServiceTest`, `ArchivoHistoricoServiceTest`, `DocumentoHistoricoClasificadorTest`,
   `DocumentoStorageServiceTest`, `StockPorColorTest`.
 - **OCR**: `ArticuloMatchingServiceTest` — matching de artículo/color/empresa **y** la verificación
@@ -408,13 +408,19 @@ Estado actual (ago-2026): **en vivo** en `texcontrol.pe` (dominio + HTTPS wildca
 
 ### Estado de trabajo (dónde quedamos — sesión 6-ago-2026)
 
-**⚠️ `develop` tiene ~15 commits SIN PROMOVER a `main`.** Todo probado por CI (161 tests verdes,
+**⚠️ `develop` tiene ~15 commits SIN PROMOVER a `main`.** Todo probado por CI (165 tests verdes,
 incluido el job contra MySQL real) y desplegado en `dev.texcontrol.pe`, pero **falta la prueba
 manual de punta a punta**: confirmar una recepción y cargar guías de a una sobre los programas.
 Recién después promover. No hay urgencia: **no hay clientes corriendo**, así que `main` no despliega
 a nadie — lo que importa es que esté sano para el próximo cliente que se dé de alta.
 
 Lo que entró hoy, por si hay que revisar algo puntual:
+- **Programas — botones de programa anterior/siguiente** en Seguimiento, con el **número del
+  vecino** en el botón y la posición («3 de 17»). Recorren el MISMO orden de la lista y **dentro
+  del filtro con el que se llegó** (los parámetros viajan en el link, y «Volver a Programas»
+  también los arrastra). Ojo con el defecto del estado: en el detalle es **TODOS**, no PROCESO —
+  entrando por un link pelado no hay filtro que respetar. Si el programa cae fuera del filtro, la
+  navegación se oculta en vez de mentir sobre la posición.
 - **Programas — la lista se filtra por empresa, estado y número** (`programas/lista.html`).
   Chips de empresa (solo si hay más de una), chips de estado con **«En proceso» por defecto**
   —lo completado sigue a un click, con su contador— y buscador por número. Todo viaja en la URL

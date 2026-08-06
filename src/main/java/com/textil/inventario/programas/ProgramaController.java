@@ -98,9 +98,29 @@ public class ProgramaController {
     }
 
     @GetMapping("/{id}")
-    public String verSeguimiento(@PathVariable Long id, Model model) {
+    public String verSeguimiento(@PathVariable Long id,
+                                 @RequestParam(required = false) Long empresa,
+                                 @RequestParam(required = false) String estado,
+                                 @RequestParam(required = false) String q,
+                                 Model model) {
         Programa programa = programaService.buscarPrograma(id);
         model.addAttribute("programa", programa);
+
+        // Navegación anterior/siguiente dentro del filtro con el que se venía
+        // mirando la lista. OJO con el defecto: acá es TODOS, no PROCESO. Si se
+        // entra por un link pelado (/programas/472) no hay filtro que respetar y
+        // lo natural es poder recorrerlos todos; el filtro solo aplica cuando
+        // viene explícito en la URL, o sea cuando se llegó desde la lista.
+        String numeroBuscado = (q == null || q.isBlank()) ? null : q.trim();
+        ProgramaService.EstadoFiltro estadoFiltro = (estado == null || estado.isBlank())
+                ? ProgramaService.EstadoFiltro.TODOS
+                : ProgramaService.EstadoFiltro.desde(estado);
+        model.addAttribute("nav", programaService.vecinosDe(id, empresa, estadoFiltro, numeroBuscado));
+        // Se devuelven tal cual para que los links (vecinos y «Volver») los
+        // arrastren y el filtro no se pierda al ir y venir.
+        model.addAttribute("empresaSeleccionada", empresa);
+        model.addAttribute("estadoSeleccionado", estado);
+        model.addAttribute("q", numeroBuscado);
 
         Map<Long, List<ProgramaService.HistorialGuiaView>> historialPorLinea = new HashMap<>();
         for (ProgramaDetalle d : programa.getDetalles()) {

@@ -12,6 +12,33 @@
         <span th:text="${error}"></span>
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
+    <!-- Anterior / siguiente en el MISMO orden de la lista y DENTRO del filtro
+         con el que se llegó (los parámetros viajan en el link). El número del
+         vecino va en el botón: una flecha pelada no dice a dónde te lleva.
+         Los extremos quedan deshabilitados, no ocultos — si desaparecieran, los
+         botones se moverían de lugar al llegar al borde. -->
+    <div class="d-flex justify-content-end align-items-center gap-2 mb-3" th:if="${nav.total > 1 and nav.posicion > 0}">
+        <a th:if="${nav.hayAnterior()}"
+           th:href="@{/programas/{id}(id=${nav.anteriorId}, empresa=${empresaSeleccionada}, estado=${estadoSeleccionado}, q=${q})}"
+           class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-chevron-left me-1"></i><span th:text="${nav.anteriorNumero}"></span>
+        </a>
+        <span th:unless="${nav.hayAnterior()}" class="btn btn-sm btn-outline-secondary disabled">
+            <i class="bi bi-chevron-left"></i>
+        </span>
+
+        <small class="text-muted" th:text="${nav.posicion} + ' de ' + ${nav.total}"></small>
+
+        <a th:if="${nav.haySiguiente()}"
+           th:href="@{/programas/{id}(id=${nav.siguienteId}, empresa=${empresaSeleccionada}, estado=${estadoSeleccionado}, q=${q})}"
+           class="btn btn-sm btn-outline-secondary">
+            <span th:text="${nav.siguienteNumero}"></span><i class="bi bi-chevron-right ms-1"></i>
+        </a>
+        <span th:unless="${nav.haySiguiente()}" class="btn btn-sm btn-outline-secondary disabled">
+            <i class="bi bi-chevron-right"></i>
+        </span>
+    </div>
+
     <div class="card mb-4">
         <div class="card-body p-4">
             <div class="row g-3">
@@ -191,7 +218,10 @@
             </div>
         </div>
     </div>
-    <a th:href="@{/programas}" class="btn btn-light mt-3">← Volver a Programas</a>
+    <!-- Volver al listado TAL COMO estaba (misma empresa, estado y búsqueda):
+         perder el filtro al volver obliga a re-filtrar en cada ida y vuelta. -->
+    <a th:href="@{/programas(empresa=${empresaSeleccionada}, estado=${estadoSeleccionado}, q=${q})}"
+       class="btn btn-light mt-3">← Volver a Programas</a>
     <a th:unless="${programa.completo}" th:href="@{/programas/{id}/editar(id=${programa.id})}"
        sec:authorize="hasAnyRole('ADMIN','SUPERADMIN')" class="btn btn-primary mt-3"><i class="bi bi-pencil"></i> Editar Programa</a>
 </section>

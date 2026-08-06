@@ -242,6 +242,68 @@ class ProgramaServiceTest {
         assertThat(conteos.todos()).isEqualTo(8);
     }
 
+    // --- Programa anterior / siguiente ---------------------------------------
+
+    /** Tres programas en el orden de la lista: 472, 502, 626. */
+    private void mockearOrdenDeLista() {
+        when(programaRepository.idYNumeroConFiltros(null, null, false, false)).thenReturn(List.of(
+                new Object[]{1L, "472"},
+                new Object[]{2L, "502"},
+                new Object[]{3L, "626"}));
+    }
+
+    @Test
+    void vecinos_enElMedio_traeLosDosLadosConSuNumero() {
+        mockearOrdenDeLista();
+
+        ProgramaService.Vecinos nav = service.vecinosDe(2L, null, ProgramaService.EstadoFiltro.TODOS, null);
+
+        assertThat(nav.anteriorNumero()).isEqualTo("472");
+        assertThat(nav.siguienteNumero()).isEqualTo("626");
+        assertThat(nav.posicion()).isEqualTo(2);
+        assertThat(nav.total()).isEqualTo(3);
+    }
+
+    @Test
+    void vecinos_enLosExtremos_noInventaElQueNoExiste() {
+        mockearOrdenDeLista();
+
+        ProgramaService.Vecinos primero = service.vecinosDe(1L, null, ProgramaService.EstadoFiltro.TODOS, null);
+        assertThat(primero.hayAnterior()).isFalse();
+        assertThat(primero.siguienteNumero()).isEqualTo("502");
+
+        ProgramaService.Vecinos ultimo = service.vecinosDe(3L, null, ProgramaService.EstadoFiltro.TODOS, null);
+        assertThat(ultimo.anteriorNumero()).isEqualTo("502");
+        assertThat(ultimo.haySiguiente()).isFalse();
+    }
+
+    @Test
+    void vecinos_delProgramaQueElFiltroNoMuestra_noNavegaNiMienteLaPosicion() {
+        // Entrar por link directo a un programa que queda fuera del filtro: la
+        // navegacion se oculta en vez de decir "3 de 17" estando fuera del set.
+        mockearOrdenDeLista();
+
+        ProgramaService.Vecinos nav = service.vecinosDe(99L, null, ProgramaService.EstadoFiltro.TODOS, null);
+
+        assertThat(nav.posicion()).isZero();
+        assertThat(nav.hayAnterior()).isFalse();
+        assertThat(nav.haySiguiente()).isFalse();
+    }
+
+    @Test
+    void vecinos_respetanElFiltroConElQueSeVenaMirandoLaLista() {
+        // "Clemente / en proceso": el siguiente tiene que ser el siguiente de
+        // ESE subconjunto, no el siguiente global.
+        when(programaRepository.idYNumeroConFiltros(7L, "62", true, false)).thenReturn(List.of(
+                new Object[]{20L, "620"},
+                new Object[]{26L, "626"}));
+
+        ProgramaService.Vecinos nav = service.vecinosDe(20L, 7L, ProgramaService.EstadoFiltro.PROCESO, " 62 ");
+
+        assertThat(nav.siguienteNumero()).isEqualTo("626");
+        assertThat(nav.total()).isEqualTo(2);
+    }
+
     @Test
     void sinLosDesplegablesEnElPost_soloSeActualizaLaCantidad() {
         // Compatibilidad: un POST que no trae artículo/color de las líneas

@@ -105,8 +105,10 @@
                                 <a th:href="@{/programas(estado='todos')}">Ver todos</a>.
                             </td>
                         </tr>
+                        <!-- El filtro viaja al detalle: de ahí salen los botones de
+                             programa anterior/siguiente, que recorren ESTE subconjunto. -->
                         <tr th:each="p : ${programas}" style="cursor:pointer;"
-                            th:onclick="'window.location=\'' + @{/programas/{id}(id=${p.id})} + '\''">
+                            th:onclick="'window.location=\'' + @{/programas/{id}(id=${p.id}, empresa=${empresaSeleccionada}, estado=${estadoSeleccionado}, q=${q})} + '\''">
                             <td>
                                 <span class="fs-4 fw-bold" th:text="${p.numero}"></span>
                             </td>

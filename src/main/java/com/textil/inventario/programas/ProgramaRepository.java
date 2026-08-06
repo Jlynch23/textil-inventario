@@ -71,4 +71,15 @@ public interface ProgramaRepository extends JpaRepository<Programa, Long> {
                           @Param("numero") String numero,
                           @Param("soloEnProceso") boolean soloEnProceso,
                           @Param("soloCompletos") boolean soloCompletos);
+
+    // Solo id y número, en el MISMO orden que la lista: alimenta los botones de
+    // programa anterior/siguiente del seguimiento. Proyección liviana a
+    // propósito — para saber cuál es el vecino no hace falta traer los
+    // programas enteros y menos sus líneas.
+    @Query("SELECT p.id, p.numero FROM Programa p" + FILTRO_LISTADO
+           + " ORDER BY p.fecha ASC, LENGTH(p.numero) ASC, p.numero ASC")
+    List<Object[]> idYNumeroConFiltros(@Param("empresaId") Long empresaId,
+                                       @Param("numero") String numero,
+                                       @Param("soloEnProceso") boolean soloEnProceso,
+                                       @Param("soloCompletos") boolean soloCompletos);
 }

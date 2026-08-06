@@ -101,6 +101,50 @@ public class ProgramaService {
         return (valor == null || valor.isBlank()) ? null : valor.trim();
     }
 
+    /**
+     * Los programas de al lado en el listado, para moverse de uno a otro sin
+     * volver a la lista. Los numeros van en el boton (no una flecha pelada):
+     * saber que el siguiente es el 502 vale mas que saber que hay uno.
+     *
+     * `posicion` es 1-based ("3 de 17"); si el programa no cae dentro del
+     * filtro actual, viene 0 y sin vecinos: la navegacion se oculta en vez de
+     * mentir sobre donde estas parado.
+     */
+    public record Vecinos(Long anteriorId, String anteriorNumero,
+                          Long siguienteId, String siguienteNumero,
+                          int posicion, int total) {
+        public boolean hayAnterior() { return anteriorId != null; }
+        public boolean haySiguiente() { return siguienteId != null; }
+    }
+
+    /**
+     * Vecinos DENTRO del filtro con el que se está mirando la lista: si venías
+     * viendo "Clemente / en proceso", siguiente es el siguiente de ese
+     * subconjunto. Navegar hacia un programa que el filtro no mostraba seria
+     * sacarte del conjunto que estabas recorriendo sin avisarte.
+     */
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public Vecinos vecinosDe(Long programaId, Long empresaId, EstadoFiltro estado, String numero) {
+        List<Object[]> filas = programaRepository.idYNumeroConFiltros(
+                empresaId, blancoANull(numero),
+                estado == EstadoFiltro.PROCESO, estado == EstadoFiltro.COMPLETOS);
+
+        int indice = -1;
+        for (int i = 0; i < filas.size(); i++) {
+            if (programaId.equals(filas.get(i)[0])) { indice = i; break; }
+        }
+        if (indice < 0) return new Vecinos(null, null, null, null, 0, filas.size());
+
+        Object[] anterior = indice > 0 ? filas.get(indice - 1) : null;
+        Object[] siguiente = indice < filas.size() - 1 ? filas.get(indice + 1) : null;
+        return new Vecinos(
+                anterior == null ? null : (Long) anterior[0],
+                anterior == null ? null : (String) anterior[1],
+                siguiente == null ? null : (Long) siguiente[0],
+                siguiente == null ? null : (String) siguiente[1],
+                indice + 1, filas.size());
+    }
+
     public Programa buscarPrograma(Long id) {
         // #9 (OSIV off): con las lineas precargadas para render/recorrido posterior.
         return programaRepository.findWithDetallesById(id).orElseThrow();
