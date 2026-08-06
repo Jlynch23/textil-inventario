@@ -50,6 +50,57 @@ public class ProgramaService {
         return programas;
     }
 
+    /** Estados por los que se puede filtrar el listado de programas. */
+    public enum EstadoFiltro {
+        PROCESO, COMPLETOS, TODOS;
+
+        /** Tolerante con lo que venga por la URL: cualquier cosa rara -> PROCESO. */
+        public static EstadoFiltro desde(String valor) {
+            if (valor == null) return PROCESO;
+            try {
+                return valueOf(valor.trim().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                return PROCESO;
+            }
+        }
+    }
+
+    /** Cuántos programas hay en cada estado, para los contadores de los chips. */
+    public record ConteoPorEstado(long enProceso, long completos, long todos) {}
+
+    /**
+     * Listado filtrado por empresa, estado y número. El filtro se aplica EN LA
+     * CONSULTA: abajo se recorren las lineas de cada programa (la barra de
+     * progreso las necesita), asi que filtrar despues significaria cargar el
+     * historial entero para mostrar tres filas.
+     */
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public List<Programa> listarProgramas(Long empresaId, EstadoFiltro estado, String numero) {
+        List<Programa> programas = programaRepository.buscarConFiltros(
+                empresaId, blancoANull(numero),
+                estado == EstadoFiltro.PROCESO, estado == EstadoFiltro.COMPLETOS);
+        // #9 (OSIV off): igual que arriba, la vista itera getDetalles().
+        programas.forEach(p -> p.getDetalles().size());
+        return programas;
+    }
+
+    /**
+     * Conteos para los chips de estado. Se calculan con el MISMO filtro de
+     * empresa y número que la lista, para que los números digan lo que se vería
+     * al hacer click y no el total global.
+     */
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public ConteoPorEstado contarPorEstado(Long empresaId, String numero) {
+        String num = blancoANull(numero);
+        long enProceso = programaRepository.contarConFiltros(empresaId, num, true, false);
+        long completos = programaRepository.contarConFiltros(empresaId, num, false, true);
+        return new ConteoPorEstado(enProceso, completos, enProceso + completos);
+    }
+
+    private String blancoANull(String valor) {
+        return (valor == null || valor.isBlank()) ? null : valor.trim();
+    }
+
     public Programa buscarPrograma(Long id) {
         // #9 (OSIV off): con las lineas precargadas para render/recorrido posterior.
         return programaRepository.findWithDetallesById(id).orElseThrow();

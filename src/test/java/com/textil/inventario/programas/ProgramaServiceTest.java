@@ -195,6 +195,53 @@ class ProgramaServiceTest {
         verify(auditLogService, never()).registrar(eq("EDITAR_LINEA_PROGRAMA"), any(), any(), any());
     }
 
+    // --- Listado filtrado (chips de empresa/estado + buscador por número) ----
+    // Lo que se prueba acá es la TRADUCCIÓN del chip a la consulta: que
+    // "en proceso" no traiga completos y viceversa, y que el filtro llegue a la
+    // BD en vez de aplicarse después de haber traído todo (que es justamente lo
+    // que haría inútil el filtro: la lista carga las líneas de cada programa
+    // para pintar la barra de progreso).
+
+    @Test
+    void estadoDeLaUrl_valorRaroOAusente_caeEnEnProceso() {
+        assertThat(ProgramaService.EstadoFiltro.desde(null)).isEqualTo(ProgramaService.EstadoFiltro.PROCESO);
+        assertThat(ProgramaService.EstadoFiltro.desde("cualquiera")).isEqualTo(ProgramaService.EstadoFiltro.PROCESO);
+        assertThat(ProgramaService.EstadoFiltro.desde(" Completos ")).isEqualTo(ProgramaService.EstadoFiltro.COMPLETOS);
+        assertThat(ProgramaService.EstadoFiltro.desde("TODOS")).isEqualTo(ProgramaService.EstadoFiltro.TODOS);
+    }
+
+    @Test
+    void listarEnProceso_pideALaConsultaSoloLosNoCompletos() {
+        when(programaRepository.buscarConFiltros(7L, "62", true, false)).thenReturn(List.of());
+
+        service.listarProgramas(7L, ProgramaService.EstadoFiltro.PROCESO, "  62  ");
+
+        verify(programaRepository).buscarConFiltros(7L, "62", true, false);
+    }
+
+    @Test
+    void listarTodos_noRestringeElEstado_yElNumeroEnBlancoNoFiltra() {
+        when(programaRepository.buscarConFiltros(null, null, false, false)).thenReturn(List.of());
+
+        service.listarProgramas(null, ProgramaService.EstadoFiltro.TODOS, "   ");
+
+        verify(programaRepository).buscarConFiltros(null, null, false, false);
+    }
+
+    @Test
+    void conteos_usanElMismoFiltroDeEmpresaYNumeroQueLaLista() {
+        // Si los contadores ignoraran empresa/número dirían el total global y no
+        // lo que se vería al hacer click en el chip.
+        when(programaRepository.contarConFiltros(7L, "62", true, false)).thenReturn(3L);
+        when(programaRepository.contarConFiltros(7L, "62", false, true)).thenReturn(5L);
+
+        ProgramaService.ConteoPorEstado conteos = service.contarPorEstado(7L, "62");
+
+        assertThat(conteos.enProceso()).isEqualTo(3);
+        assertThat(conteos.completos()).isEqualTo(5);
+        assertThat(conteos.todos()).isEqualTo(8);
+    }
+
     @Test
     void sinLosDesplegablesEnElPost_soloSeActualizaLaCantidad() {
         // Compatibilidad: un POST que no trae artículo/color de las líneas

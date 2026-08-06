@@ -34,8 +34,24 @@ public class ProgramaController {
     private final AcabadoRepository acabadoRepository;
 
     @GetMapping
-    public String listar(Model model) {
-        model.addAttribute("programas", programaService.listarProgramas());
+    public String listar(@RequestParam(required = false) Long empresa,
+                         @RequestParam(required = false) String estado,
+                         @RequestParam(required = false) String q,
+                         Model model) {
+        // El estado por defecto es "en proceso": lo terminado no tiene por qué
+        // llenar la pantalla todos los días, pero sigue a un click.
+        ProgramaService.EstadoFiltro estadoFiltro = ProgramaService.EstadoFiltro.desde(estado);
+        // Blanco -> null, para que el link de los chips no arrastre un "q=" vacío.
+        String numero = (q == null || q.isBlank()) ? null : q.trim();
+
+        model.addAttribute("programas", programaService.listarProgramas(empresa, estadoFiltro, numero));
+        model.addAttribute("conteos", programaService.contarPorEstado(empresa, numero));
+        // Los chips de empresa solo tienen sentido si hay más de una: un cliente
+        // con una sola empresa no necesita elegir entre ella y ella misma.
+        model.addAttribute("empresas", empresaRepository.findByActivoTrue());
+        model.addAttribute("empresaSeleccionada", empresa);
+        model.addAttribute("estadoSeleccionado", estadoFiltro.name().toLowerCase());
+        model.addAttribute("q", numero);
         return "programas/lista";
     }
 

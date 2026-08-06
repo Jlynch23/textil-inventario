@@ -18,6 +18,64 @@
             <i class="bi bi-plus-lg me-1"></i>Nuevo Programa
         </a>
     </div>
+    <!-- FILTROS: empresa, estado y número. Todo viaja en la URL
+         (/programas?empresa=3&estado=completos&q=62), así el link se puede
+         compartir y el filtro sobrevive un F5. -->
+    <div class="card mb-3">
+        <div class="card-body py-3">
+            <div class="d-flex flex-wrap align-items-center gap-3">
+
+                <!-- Empresa: solo si hay más de una. Con una sola, elegir no
+                     significa nada y el chip sería ruido. -->
+                <div class="btn-group btn-group-sm" role="group" th:if="${#lists.size(empresas) > 1}">
+                    <a th:href="@{/programas(estado=${estadoSeleccionado}, q=${q})}"
+                       class="btn" th:classappend="${empresaSeleccionada == null} ? 'btn-primary' : 'btn-outline-secondary'">
+                        Todas
+                    </a>
+                    <a th:each="e : ${empresas}"
+                       th:href="@{/programas(empresa=${e.id}, estado=${estadoSeleccionado}, q=${q})}"
+                       class="btn" th:text="${e.nombre}"
+                       th:classappend="${(empresaSeleccionada != null and empresaSeleccionada == e.id)} ? 'btn-primary' : 'btn-outline-secondary'">
+                    </a>
+                </div>
+
+                <!-- Estado. Los contadores respetan el filtro de empresa y de
+                     número: dicen lo que vas a ver al hacer click, no el total. -->
+                <div class="btn-group btn-group-sm" role="group">
+                    <a th:href="@{/programas(empresa=${empresaSeleccionada}, estado='proceso', q=${q})}"
+                       class="btn" th:classappend="${estadoSeleccionado == 'proceso'} ? 'btn-primary' : 'btn-outline-secondary'">
+                        En proceso <span class="badge bg-light text-dark ms-1" th:text="${conteos.enProceso}"></span>
+                    </a>
+                    <a th:href="@{/programas(empresa=${empresaSeleccionada}, estado='completos', q=${q})}"
+                       class="btn" th:classappend="${estadoSeleccionado == 'completos'} ? 'btn-primary' : 'btn-outline-secondary'">
+                        Completados <span class="badge bg-light text-dark ms-1" th:text="${conteos.completos}"></span>
+                    </a>
+                    <a th:href="@{/programas(empresa=${empresaSeleccionada}, estado='todos', q=${q})}"
+                       class="btn" th:classappend="${estadoSeleccionado == 'todos'} ? 'btn-primary' : 'btn-outline-secondary'">
+                        Todos <span class="badge bg-light text-dark ms-1" th:text="${conteos.todos}"></span>
+                    </a>
+                </div>
+
+                <!-- Buscar por número. Es lo que más se usa cuando la lista
+                     crece: no "los de tal empresa", sino "quiero el 626". -->
+                <form th:action="@{/programas}" method="get" class="d-flex align-items-center gap-2 ms-auto">
+                    <input type="hidden" name="empresa" th:if="${empresaSeleccionada != null}" th:value="${empresaSeleccionada}">
+                    <input type="hidden" name="estado" th:value="${estadoSeleccionado}">
+                    <div class="input-group input-group-sm" style="width: 12rem;">
+                        <span class="input-group-text">N.º</span>
+                        <label for="buscarNumero" class="visually-hidden">Número de programa</label>
+                        <input type="text" class="form-control" id="buscarNumero" name="q" th:value="${q}">
+                        <button class="btn btn-outline-secondary" type="submit" title="Buscar">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+                    <a th:if="${q != null}" th:href="@{/programas(empresa=${empresaSeleccionada}, estado=${estadoSeleccionado})}"
+                       class="btn btn-sm btn-link text-decoration-none" title="Quitar la búsqueda">Limpiar</a>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <div class="card">
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -32,8 +90,20 @@
                         </tr>
                     </thead>
                     <tbody>
+                        <!-- Vacío por el filtro ≠ vacío de verdad: decir "sin
+                             programas registrados" cuando lo que pasa es que el
+                             filtro los escondió manda a buscar un problema que
+                             no existe. -->
                         <tr th:if="${programas.empty}">
-                            <td colspan="5" class="text-center text-muted py-4">Sin programas registrados.</td>
+                            <td colspan="5" class="text-center text-muted py-4"
+                                th:if="${conteos.todos == 0 and q == null and empresaSeleccionada == null}">
+                                Sin programas registrados.
+                            </td>
+                            <td colspan="5" class="text-center text-muted py-4"
+                                th:unless="${conteos.todos == 0 and q == null and empresaSeleccionada == null}">
+                                Ningún programa coincide con el filtro.
+                                <a th:href="@{/programas(estado='todos')}">Ver todos</a>.
+                            </td>
                         </tr>
                         <tr th:each="p : ${programas}" style="cursor:pointer;"
                             th:onclick="'window.location=\'' + @{/programas/{id}(id=${p.id})} + '\''">
