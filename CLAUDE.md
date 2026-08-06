@@ -375,11 +375,31 @@ Es la pieza que habilita el modelo de negocio — **ya está**.
 > correcto, pero significa que un `clientes/` vacío por error se ve igual que "todo bien" en el log.
 > Al dar de alta un cliente, confirmá que su backup aparezca en `~/backups/backup.log`.
 
-**El demo quedó huérfano de los scripts (6-ago)**: `app_demo` y `db_demo` corren, pero su
-`clientes/demo/.env` no está, así que `actualizar-clientes.sh`, `backup-cliente.sh` y
-`endurecer-cliente.sh` no lo alcanzan. Las credenciales siguen dentro de los contenedores
-(`docker inspect app_demo --format '{{range .Config.Env}}{{println .}}{{end}}'`) y con eso se
-puede rearmar el `.env`; la otra opción es recrearlo con `nuevo-demo.sh` cuando haga falta.
+### ⚠️ En el VPS hay DOS clones del repo (y el `clientes/` del demo está en el equivocado)
+
+`scripts/deploy-dev.sh` usa un **clon separado** para staging, así que en el servidor conviven:
+
+| Directorio | Rama | Para qué | Tiene |
+|---|---|---|---|
+| `~/textil-inventario` | **`main`** | Producción: build de la imagen y `actualizar-clientes.sh` | `.env`, `clientes/` **vacío** |
+| `~/textil-inventario-dev` | **`develop`** | Lo que corre en `dev.texcontrol.pe` | `.env.dev`, `clientes/demo/` |
+
+Es a propósito (que desplegar dev no obligue a cambiar de rama en el clon de producción), pero
+**el `clientes/demo/` terminó en el clon de dev** — por eso `listar-clientes.sh` y
+`actualizar-clientes.sh` corridos desde `~/textil-inventario` dicen "no hay clientes" aunque
+`app_demo` esté corriendo. El demo NO está huérfano: su `.env` existe, está en el otro clon.
+
+**El riesgo**: `actualizar-clientes.sh` reconstruye la imagen **desde el clon donde se lo corra**.
+Corrido desde `~/textil-inventario-dev` le metería código de `develop` al demo, que debe correr
+`main`. El script avisa si la rama no es `main`, pero es un aviso, no un freno.
+
+**Pendiente**: mover `~/textil-inventario-dev/clientes/demo/` a `~/textil-inventario/clientes/`
+(es la carpeta con el `.env`; `clientes/` está en `.gitignore`, así que moverla no toca git) y
+verificar con `./scripts/listar-clientes.sh` desde el clon de producción. Recién ahí el demo
+vuelve a estar bajo los scripts de actualización, backup y endurecimiento.
+
+> Ojo también: `deploy-dev.sh` hace `git reset --hard origin/develop` sobre el clon de dev.
+> Lo versionado que edites a mano ahí se pierde en el siguiente despliegue.
 
 Falta, por orden de prioridad:
 

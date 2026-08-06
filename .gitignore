@@ -5,11 +5,19 @@ target/
 .DS_Store
 application-local.yml
 /documentos/
+# Credenciales: CUALQUIER .env y CUALQUIER variante. El patron amplio es a
+# proposito -- listar solo los nombres exactos (.env, .env.dev) dejaba fuera los
+# respaldos que uno hace a mano antes de tocar algo, y esos tienen las mismas
+# claves. En el VPS ya habia .env.dev.bak y .env.dev.save sin ignorar: un
+# `git add -A` desde ahi los commiteaba. Solo se salvan los .example, que van
+# vacios y SI deben versionarse.
 .env
+.env.*
+!.env.example
+!.env.dev.example
 
-# Entorno de PRUEBAS (staging, docker-compose.dev.yml): credenciales, datos y el
-# archivo de Basic Auth. NUNCA se commitea. Ver STAGING.md.
-.env.dev
+# Entorno de PRUEBAS (staging, docker-compose.dev.yml): datos y el archivo de
+# Basic Auth. Ver STAGING.md.
 /documentos-dev/
 /nginx/dev.htpasswd
 
