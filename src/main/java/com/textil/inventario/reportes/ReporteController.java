@@ -7,6 +7,7 @@ import com.textil.inventario.inventario.StockActual;
 import com.textil.inventario.recepciones.Recepcion;
 import com.textil.inventario.transferencias.Transferencia;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -29,7 +30,10 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ReporteController {
 
-    private static final int UMBRAL_STOCK_BAJO_DEFECTO = 10;
+    // Mismo umbral que el Dashboard (inventario.stock-bajo.umbral). Aca se puede
+    // pisar por query param para explorar otro corte sin tocar la config.
+    @Value("${inventario.stock-bajo.umbral:10}")
+    private int umbralStockBajoDefecto;
     private static final DateTimeFormatter FMT_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final DateTimeFormatter FMT_FECHA_HORA = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
@@ -190,7 +194,7 @@ public class ReporteController {
 
     @GetMapping("/stock-bajo")
     public String stockBajo(@RequestParam(required = false) Integer umbral, Model model) {
-        int umbralFinal = umbral != null ? umbral : UMBRAL_STOCK_BAJO_DEFECTO;
+        int umbralFinal = umbral != null ? umbral : umbralStockBajoDefecto;
         model.addAttribute("articulos", reporteService.articulosStockBajo(umbralFinal));
         model.addAttribute("filtroUmbral", umbralFinal);
         return "reportes/stock-bajo";
@@ -198,7 +202,7 @@ public class ReporteController {
 
     @GetMapping("/stock-bajo/excel")
     public ResponseEntity<org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody> stockBajoExcel(@RequestParam(required = false) Integer umbral) throws IOException {
-        int umbralFinal = umbral != null ? umbral : UMBRAL_STOCK_BAJO_DEFECTO;
+        int umbralFinal = umbral != null ? umbral : umbralStockBajoDefecto;
         List<String> encabezados = List.of("Tipo Tela", "Título", "Color", "Total Rollos (todas las ubicaciones)");
         List<List<Object>> filas = new ArrayList<>();
         for (Map.Entry<String, Integer> entry : reporteService.articulosStockBajo(umbralFinal).entrySet()) {

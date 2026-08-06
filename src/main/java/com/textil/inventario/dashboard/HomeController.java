@@ -11,6 +11,7 @@ import com.textil.inventario.recepciones.ProgramaService;
 import com.textil.inventario.transferencias.Transferencia;
 import com.textil.inventario.transferencias.TransferenciaRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,7 +31,12 @@ public class HomeController {
     private final UbicacionRepository ubicacionRepository;
     private final ProgramaService programaService;
 
-    private static final int UMBRAL_STOCK_BAJO = 10;
+    // Mismo umbral que el reporte de Stock Bajo (inventario.stock-bajo.umbral).
+    // Estaba hardcodeado en 10 aca y con default 10 alla: coincidian de casualidad
+    // y el del Dashboard no se podia cambiar. En el modelo multicliente cada copia
+    // maneja volumenes distintos, asi que tiene que ser configurable en los dos.
+    @Value("${inventario.stock-bajo.umbral:10}")
+    private int umbralStockBajo;
 
     @GetMapping({"/", "/dashboard"})
     public String dashboard(Model model) {
@@ -65,8 +71,13 @@ public class HomeController {
 
         // Por ARTICULO+COLOR (no por articulo entero): sumar todos los colores
         // escondia el color que quedo bajo (ej. Rojo en 4) detras del total del
-        // articulo. Mismo criterio que el reporte de stock bajo y que la alerta
-        // por correo (StockBajoEvent), que ya son por articulo+color.
+        // articulo. Mismo criterio que el reporte de Stock Bajo: TODAS las
+        // ubicaciones sumadas, con el umbral de inventario.stock-bajo.umbral.
+        //
+        // La alerta por correo NO usa este criterio y no tiene por que: mira UNA
+        // ubicacion y salta en el cruce hacia abajo, con su propio umbral
+        // (alerta.stock.umbral, por defecto 5). Que el Dashboard liste un item y
+        // no haya llegado correo es lo esperado, no una falla.
         Map<String, Integer> totalPorArticuloColor = stockDisponible.stream()
                 .collect(Collectors.groupingBy(
                         s -> s.getArticulo().getId() + ":" + s.getColor().getId(),
@@ -77,7 +88,7 @@ public class HomeController {
         Set<String> vistos = new HashSet<>();
         for (StockActual s : stockDisponible) {
             String clave = s.getArticulo().getId() + ":" + s.getColor().getId();
-            if (!vistos.contains(clave) && totalPorArticuloColor.get(clave) < UMBRAL_STOCK_BAJO) {
+            if (!vistos.contains(clave) && totalPorArticuloColor.get(clave) < umbralStockBajo) {
                 vistos.add(clave);
                 articulosStockBajo.add(s);
             }
@@ -93,7 +104,7 @@ public class HomeController {
         model.addAttribute("stockPorUbicacion", stockPorUbicacion);
         model.addAttribute("articulosStockBajo", articulosStockBajo);
         model.addAttribute("totalPorArticuloColor", totalPorArticuloColor);
-        model.addAttribute("umbralStockBajo", UMBRAL_STOCK_BAJO);
+        model.addAttribute("umbralStockBajo", umbralStockBajo);
 
         // #9 (OSIV off): el conteo se calcula en el servicio dentro de una
         // transaccion (isCompleto() itera detalles), sin exponer entidades con

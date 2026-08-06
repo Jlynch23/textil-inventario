@@ -127,6 +127,16 @@ anthropic:
 documentos:
   ruta-base: ${DOCUMENTOS_PATH:./documentos}
 
+# Cuántos rollos (sumando TODAS las ubicaciones, por artículo+color) marcan a un
+# item como "stock bajo" en el Dashboard y en el reporte de Stock Bajo. Es un
+# umbral de VISUALIZACIÓN y no tiene por qué coincidir con alerta.stock.umbral,
+# que es otra cosa: aquel avisa cuando UNA ubicación cruza hacia abajo.
+# Configurable porque el volumen cambia de un cliente a otro: 10 rollos es poco
+# para uno grande y mucho para uno chico.
+inventario:
+  stock-bajo:
+    umbral: ${STOCK_BAJO_UMBRAL:10}
+
 # Alerta de stock bajo por SMS (Twilio). Apagada por defecto: si no se configura,
 # la app funciona igual y no manda nada. Al activarla, cuando una SALIDA deja a un
 # artículo/color por debajo del umbral en la ubicación vigilada, se manda un SMS
