@@ -39,7 +39,10 @@
                                 No hay transferencias registradas.
                             </td>
                         </tr>
-                        <tr th:each="t : ${transferencias}">
+                        <!-- Toda la fila entra al detalle, igual que en Programas: antes solo
+                             era clickeable el numero, que es un blanco chico. -->
+                        <tr th:each="t : ${transferencias}" style="cursor:pointer;"
+                            th:onclick="'window.location=\'' + @{/transferencias/{id}/detalle(id=${t.id})} + '\''">
                             <td>
                                 <a th:href="@{/transferencias/{id}/detalle(id=${t.id})}"
                                    class="text-decoration-none" title="Ver detalle">
@@ -56,7 +59,7 @@
                                                 (${t.estado.name() == 'ANULADA'} ? 'badge bg-danger' : 'badge bg-secondary')))">
                                 </span>
                             </td>
-                            <td>
+                            <td onclick="event.stopPropagation()">
                                 <a th:if="${t.estado.name() == 'BORRADOR'}"
                                    th:href="@{/transferencias/{id}/confirmar-salida(id=${t.id})}"
                                    sec:authorize="hasAnyRole('ADMIN','SUPERADMIN')"

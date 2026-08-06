@@ -51,13 +51,24 @@
                                 <tr th:if="${recepciones.empty}">
                                     <td colspan="5" class="text-center text-muted py-4">No hay guías pendientes de facturar.</td>
                                 </tr>
-                                <tr th:each="r : ${recepciones}">
-                                    <td><input type="checkbox" class="form-check-input chk-recepcion" th:value="${r.id}"></td>
+                                <!-- Click en la fila = ver el detalle de la recepcion, igual que
+                                     en Programas, pero en una PESTAÑA NUEVA: esta pantalla existe
+                                     para marcar varias guias y asignarles una factura, y navegar
+                                     en la misma pestaña perderia lo ya tildado.
+                                     La celda del checkbox no navega (ahi se tilda). -->
+                                <tr th:each="r : ${recepciones}" style="cursor:pointer;"
+                                    th:onclick="'window.open(\'' + @{/recepciones/{id}/detalle(id=${r.id})} + '\', \'_blank\')'">
+                                    <td onclick="event.stopPropagation()">
+                                        <input type="checkbox" class="form-check-input chk-recepcion" th:value="${r.id}">
+                                    </td>
                                     <td>
                                         <code th:text="${r.numeroGuia}"></code>
-                                        <th:block th:if="${guiaPorRecepcion.containsKey(r.id)}">
+                                        <!-- El ojito ya abre el PDF en pestaña nueva; sin cortar la
+                                             propagacion, un click en el ojo abriria DOS pestañas
+                                             (la del enlace y la de la fila). -->
+                                        <span th:if="${guiaPorRecepcion.containsKey(r.id)}" onclick="event.stopPropagation()">
                                             <span th:replace="~{fragments/guias :: ojoGuia(${guiaPorRecepcion.get(r.id)})}"></span>
-                                        </th:block>
+                                        </span>
                                     </td>
                                     <td th:text="${r.empresa.nombre}"></td>
                                     <td th:text="${r.fechaGuia != null ? #temporals.format(r.fechaGuia, 'dd/MM/yyyy') : '-'}"></td>

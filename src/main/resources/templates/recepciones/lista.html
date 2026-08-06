@@ -38,7 +38,11 @@
                         <tr th:if="${recepciones.isEmpty()}">
                             <td colspan="7" class="text-center text-muted py-4">No hay recepciones registradas.</td>
                         </tr>
-                        <tr th:each="r : ${recepciones}">
+                        <!-- Toda la fila entra al detalle, igual que en Programas. La celda
+                             de acciones corta la propagacion para que sus botones sigan
+                             haciendo lo suyo y no naveguen al detalle. -->
+                        <tr th:each="r : ${recepciones}" style="cursor:pointer;"
+                            th:onclick="'window.location=\'' + @{/recepciones/{id}/detalle(id=${r.id})} + '\''">
                             <td th:text="${r.id}"></td>
                             <td th:text="${r.empresa.nombre}"></td>
                             <td><code th:text="${r.numeroGuia}"></code></td>
@@ -51,7 +55,7 @@
                                                 'badge bg-secondary')">
                                 </span>
                             </td>
-                            <td>
+                            <td onclick="event.stopPropagation()">
                                 <a th:href="@{/recepciones/{id}/detalle(id=${r.id})}"
                                    class="btn btn-sm btn-outline-primary" title="Ver detalle" aria-label="Ver detalle">
                                     <i class="bi bi-eye"></i>

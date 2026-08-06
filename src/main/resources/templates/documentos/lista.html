@@ -72,8 +72,14 @@
                         <tr th:if="${documentos.empty}">
                             <td colspan="7" class="text-center text-muted py-4">Sin documentos para estos filtros.</td>
                         </tr>
-                        <tr th:each="d : ${documentos}">
-                            <td><input type="checkbox" class="chk-doc" th:value="${d.id}"></td>
+                        <!-- Click en la fila = abrir el PDF, que es "entrar" al documento.
+                             En pestaña nueva a proposito: esta pantalla sirve para tildar
+                             varios y bajarlos en un zip, y navegar en la misma pestaña
+                             perderia lo ya marcado. La celda del checkbox y la de los
+                             botones no navegan. -->
+                        <tr th:each="d : ${documentos}" style="cursor:pointer;"
+                            th:onclick="'window.open(\'' + @{/documentos/{id}/ver(id=${d.id})} + '\', \'_blank\')'">
+                            <td onclick="event.stopPropagation()"><input type="checkbox" class="chk-doc" th:value="${d.id}"></td>
                             <td>
                                 <span th:if="${d.tipoDocumento == 'GUIA'}" class="badge bg-primary">Guía</span>
                                 <span th:if="${d.tipoDocumento == 'FACTURA'}" class="badge bg-success">Factura</span>
@@ -96,7 +102,7 @@
                                       th:text="${#temporals.format(d.recepcion.fechaGuia, 'dd/MM/yyyy')}"></span>
                             </td>
                             <td th:text="${#temporals.format(d.createdAt, 'dd/MM/yyyy HH:mm')}"></td>
-                            <td>
+                            <td onclick="event.stopPropagation()">
                                 <a th:href="@{/documentos/{id}/ver(id=${d.id})}" target="_blank" class="btn btn-sm btn-outline-secondary" title="Ver PDF">
                                     <i class="bi bi-eye"></i>
                                 </a>
