@@ -102,20 +102,28 @@
                             <!-- Vinculacion MANUAL: el match automatico exige articulo+color
                                  identicos, asi que cuando solo difiere el acabado hay que
                                  decir a mano "son la misma tela". Solo ADMIN/SUPERADMIN. -->
+                            <!-- Solo se ofrecen las lineas que todavia esperan tela. Una linea
+                                 ya completa (0 pendiente) no tiene nada que recibir: ofrecerla
+                                 solo agrega ruido a la lista y permite acreditarle rollos de
+                                 mas por un click equivocado. -->
                             <td sec:authorize="hasAnyRole('ADMIN','SUPERADMIN')">
-                                <form th:action="@{/programas/{id}/vincular-huerfana(id=${programa.id})}"
+                                <form th:if="${!lineasPendientes.isEmpty()}"
+                                      th:action="@{/programas/{id}/vincular-huerfana(id=${programa.id})}"
                                       method="post" class="d-flex gap-1 align-items-center">
                                     <input type="hidden" name="recepcionDetalleId" th:value="${h.recepcionDetalleId}">
                                     <select name="programaDetalleId" class="form-select form-select-sm" required
                                             style="min-width: 15rem;">
                                         <option value="">— Elige la línea —</option>
-                                        <option th:each="d : ${programa.detalles}"
+                                        <option th:each="d : ${lineasPendientes}"
                                                 th:value="${d.id}"
                                                 th:text="${d.articulo.acabado.nombre + ' · ' + d.color.nombreMostrar
                                                           + ' (' + d.cantidadPendiente + ' pend.)'}"></option>
                                     </select>
                                     <button type="submit" class="btn btn-sm btn-outline-warning">Vincular</button>
                                 </form>
+                                <small th:if="${lineasPendientes.isEmpty()}" class="text-muted">
+                                    Todas las líneas del programa están completas.
+                                </small>
                             </td>
                         </tr>
                     </tbody>

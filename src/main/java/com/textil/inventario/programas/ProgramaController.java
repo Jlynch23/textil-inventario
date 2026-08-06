@@ -102,6 +102,16 @@ public class ProgramaController {
         // stock ya tiene la tela, y nada en la pantalla explica la diferencia.
         model.addAttribute("lineasHuerfanas", programaService.lineasHuerfanas(programa.getNumero()));
 
+        // Líneas que todavía esperan tela: son las únicas que tiene sentido ofrecer
+        // en el desplegable de «Vincular». Una línea ya completa no tiene nada que
+        // recibir, y ofrecerla solo agrega ruido y permite acreditarle rollos de más
+        // por un click equivocado. Se filtra acá y no con una selección SpEL en la
+        // plantilla: un error de expresión ahí no lo cacha ningún test y revienta
+        // la página recién al abrirla.
+        model.addAttribute("lineasPendientes", programa.getDetalles().stream()
+                .filter(d -> d.getCantidadPendiente() > 0)
+                .toList());
+
         return "programas/seguimiento";
     }
 
