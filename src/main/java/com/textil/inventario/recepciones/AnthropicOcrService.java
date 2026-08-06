@@ -122,7 +122,7 @@ public class AnthropicOcrService {
         Formato exacto requerido:
         {
           "numeroFactura": "string, el numero de factura o comprobante del documento",
-          "fechaFactura": "string en formato YYYY-MM-DD",
+          "fechaFactura": "string, la FECHA DE EMISION copiada EXACTAMENTE como esta impresa en el documento, sin reordenarla ni convertirla a otro formato: si el papel dice 05/08/2026 devuelve \"05/08/2026\". Si no aparece, null",
           "razonSocialDetectada": "string, la razon social del DESTINATARIO (el cliente facturado), NO la del emisor",
           "rucDetectado": "string, el RUC del DESTINATARIO: 11 digitos, solo numeros, sin guiones ni espacios. null si no aparece",
           "emisorNombre": "string, la razon social del EMISOR (la tintoreria que emite la factura), o null si no se puede leer",

@@ -245,9 +245,9 @@ public class CatalogoService {
     // Usa iniciales por palabra del tipo de tela en vez de las primeras 3 letras del nombre concatenado,
     // y valida contra la base de datos para garantizar unicidad real (nunca depende solo de la suerte).
     //
-    // El Articulo ya NO incluye Color (ver V26): el codigo base ahora combina
-    // tela+titulo+composicion. El color se combina "al vuelo" con este codigo
-    // en cada movimiento especifico -- ver codigoConColor() mas abajo.
+    // El Articulo ya NO incluye Color (ver V26): el codigo base combina
+    // tela+titulo+composicion+acabado, y el color viaja aparte en cada
+    // movimiento (kardex, stock, detalle de recepcion).
     public String generarCodigoInterno(TipoTela tipoTela, Titulo titulo, Composicion composicion, Acabado acabado) {
         String base = abreviarTipoTela(tipoTela.getNombre())
                 + "-" + titulo.getValor().replace("/", "")

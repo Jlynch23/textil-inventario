@@ -181,8 +181,19 @@ public class RecepcionController {
     public ResponseEntity<?> extraerFactura(@RequestParam("file") MultipartFile file) {
         // La validacion del PDF (vacio / tamaño / no es PDF) lanza
         // IllegalArgumentException; el helper la traduce a 400 con su mensaje.
-        return RespuestaJson.responder("extraerFactura",
-                () -> anthropicOcrService.extraerDatosFactura(file));
+        return RespuestaJson.responder("extraerFactura", () -> {
+            ExtraccionFacturaResponse e = anthropicOcrService.extraerDatosFactura(file);
+            // Misma correccion que en la guia: el modelo copia la fecha como esta
+            // impresa (DD/MM/AAAA en Peru) y Java la reordena. El front la mete en
+            // un <input type="date">, que SOLO acepta YYYY-MM-DD: cualquier otra
+            // cosa se descarta en silencio y el campo queda vacio.
+            return new ExtraccionFacturaResponse(
+                    e.numeroFactura(),
+                    com.textil.inventario.common.FechaDocumento.aIso(e.fechaFactura()),
+                    e.razonSocialDetectada(), e.rucDetectado(),
+                    e.emisorNombre(), e.emisorRuc(),
+                    e.guiasReferenciadas(), e.advertencia());
+        });
     }
 
     @PostMapping("/asignar-factura")
