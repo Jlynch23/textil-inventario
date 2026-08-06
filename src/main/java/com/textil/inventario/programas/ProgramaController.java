@@ -159,6 +159,30 @@ public class ProgramaController {
         }
     }
 
+    /**
+     * Vincula a mano una línea de recepción huérfana con una línea de este
+     * programa (ver el aviso «Tela recibida que no descontó» en Seguimiento).
+     */
+    @PostMapping("/{id}/vincular-huerfana")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
+    public String vincularHuerfana(@PathVariable Long id,
+                                   @RequestParam Long recepcionDetalleId,
+                                   @RequestParam Long programaDetalleId,
+                                   RedirectAttributes ra) {
+        try {
+            programaService.vincularHuerfana(id, recepcionDetalleId, programaDetalleId);
+            ra.addFlashAttribute("mensaje", "Línea vinculada. El pendiente del programa quedó actualizado.");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            ra.addFlashAttribute("error", e.getMessage());
+        } catch (org.springframework.dao.OptimisticLockingFailureException e) {
+            // @Version en ProgramaDetalle: dos vinculaciones simultaneas sobre la
+            // misma linea. Se traduce a un mensaje reintentable en vez de un 500.
+            ra.addFlashAttribute("error",
+                    "Otra persona actualizó esa línea del programa al mismo tiempo. Recarga e intenta de nuevo.");
+        }
+        return "redirect:/programas/" + id;
+    }
+
     @PostMapping("/{id}/eliminar")
     @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
     public String eliminar(@PathVariable Long id, RedirectAttributes ra) {

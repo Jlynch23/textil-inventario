@@ -50,11 +50,16 @@
             <p class="text-muted small mb-3">
                 Estas líneas de recepción indican el programa
                 <strong th:text="${programa.numero}"></strong>, pero no coinciden con ninguna
-                línea de arriba, así que su cantidad <strong>no se restó del pendiente</strong>.
-                Lo más común es que sea el mismo color y tela pero con otra
+                línea de abajo, así que su cantidad <strong>no se restó del pendiente</strong>.
+                Lo más común es que sea la misma tela y color pero con otra
                 <strong>composición</strong> o <strong>acabado</strong>: para el sistema eso ya
-                es otro artículo. Compara con las columnas de la tabla y, si corresponde,
-                agrega esa línea al programa desde «Editar Programa».
+                es otro artículo. Compara columna por columna con la tabla de abajo.
+                <br>
+                Si es la misma tela, elige la línea que le corresponde y pulsa
+                <strong>Vincular</strong>: se descuenta del pendiente.
+                <span class="text-warning">Vincular no corrige el stock</span> — la tela ya
+                entró con el artículo que dice la guía. Si lo que está mal es la guía (el OCR
+                leyó mal el acabado), además hay que ajustar el inventario.
             </p>
             <div class="table-responsive">
                 <table class="table table-sm mb-0">
@@ -71,6 +76,7 @@
                             <th>Rollos</th>
                             <th>Guía</th>
                             <th>Estado</th>
+                            <th sec:authorize="hasAnyRole('ADMIN','SUPERADMIN')">Vincular con</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -92,6 +98,24 @@
                             <td>
                                 <span th:if="${h.confirmada}" class="badge bg-success">Ya afectó el stock</span>
                                 <span th:unless="${h.confirmada}" class="badge bg-secondary">Sin confirmar</span>
+                            </td>
+                            <!-- Vinculacion MANUAL: el match automatico exige articulo+color
+                                 identicos, asi que cuando solo difiere el acabado hay que
+                                 decir a mano "son la misma tela". Solo ADMIN/SUPERADMIN. -->
+                            <td sec:authorize="hasAnyRole('ADMIN','SUPERADMIN')">
+                                <form th:action="@{/programas/{id}/vincular-huerfana(id=${programa.id})}"
+                                      method="post" class="d-flex gap-1 align-items-center">
+                                    <input type="hidden" name="recepcionDetalleId" th:value="${h.recepcionDetalleId}">
+                                    <select name="programaDetalleId" class="form-select form-select-sm" required
+                                            style="min-width: 15rem;">
+                                        <option value="">— Elige la línea —</option>
+                                        <option th:each="d : ${programa.detalles}"
+                                                th:value="${d.id}"
+                                                th:text="${d.articulo.acabado.nombre + ' · ' + d.color.nombreMostrar
+                                                          + ' (' + d.cantidadPendiente + ' pend.)'}"></option>
+                                    </select>
+                                    <button type="submit" class="btn btn-sm btn-outline-warning">Vincular</button>
+                                </form>
                             </td>
                         </tr>
                     </tbody>

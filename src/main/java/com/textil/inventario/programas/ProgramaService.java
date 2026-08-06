@@ -29,6 +29,7 @@ public class ProgramaService {
     private final ComposicionRepository composicionRepository;
     private final AcabadoRepository acabadoRepository;
     private final CatalogoService catalogoService;
+    private final com.textil.inventario.auditoria.AuditLogService auditLogService;
 
     // Normaliza a mayusculas (recorta espacios), igual que en Catalogo y
     // Recepciones, para mantener consistencia aunque el numero de programa
@@ -334,7 +335,7 @@ public class ProgramaService {
      * comparan columna contra columna con la tabla de abajo, que es lo que uno
      * hace mirando esta pantalla.
      */
-    public record LineaHuerfanaView(Long recepcionId, String numeroGuia, Long documentoId,
+    public record LineaHuerfanaView(Long recepcionDetalleId, Long recepcionId, String numeroGuia, Long documentoId,
                                     String tipoTela, String titulo, String composicion, String acabado,
                                     String color, String codigoColor, Integer rollos, boolean confirmada) {}
 
@@ -353,6 +354,7 @@ public class ProgramaService {
         if (numeroPrograma == null || numeroPrograma.isBlank()) return List.of();
         return recepcionDetalleRepository.huerfanasDelPrograma(numeroPrograma.trim()).stream()
                 .map(d -> new LineaHuerfanaView(
+                        d.getId(),
                         d.getRecepcion().getId(),
                         d.getRecepcion().getNumeroGuia(),
                         idDocumentoGuia(d.getRecepcion().getId()),
@@ -365,6 +367,64 @@ public class ProgramaService {
                         d.getRollosRecibidos() != null ? d.getRollosRecibidos() : d.getRollosGuia(),
                         d.getRecepcion().getEstado() != Recepcion.EstadoRecepcion.PENDIENTE))
                 .toList();
+    }
+
+    /**
+     * Vincula A MANO una linea de recepcion huerfana con una linea de este
+     * programa, para el caso normal: la tela es la misma pero el articulo no
+     * coincide exacto (tipico, el acabado -- el programa pide LISTADO BLANCO y
+     * la guia trajo LISO). El match automatico de agregarDetalle exige
+     * articulo+color identicos y por eso no las une; esta es la salida manual.
+     *
+     * NO toca el stock ni el kardex, a proposito. El stock ya se movio cuando se
+     * confirmo la recepcion, y bajo el articulo que dice la recepcion. Si lo que
+     * esta mal es la recepcion (el OCR leyo mal el acabado), vincular deja el
+     * programa cuadrado pero el stock sigue con el articulo equivocado: eso se
+     * arregla aparte, con un ajuste. Vincular dice "estas dos lineas son la misma
+     * tela", no "corrige el inventario".
+     */
+    @Transactional
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
+    public void vincularHuerfana(Long programaId, Long recepcionDetalleId, Long programaDetalleId) {
+        RecepcionDetalle rd = recepcionDetalleRepository.findById(recepcionDetalleId)
+                .orElseThrow(() -> new IllegalArgumentException("La línea de recepción ya no existe."));
+
+        // Idempotencia: si ya esta vinculada, volver a hacerlo sumaria los rollos
+        // por segunda vez al programa (doble descuento). Un doble click o un
+        // reenvio del formulario alcanza para provocarlo.
+        if (rd.getProgramaDetalle() != null) {
+            throw new IllegalStateException(
+                    "Esa línea ya está vinculada a una línea del programa. Recarga la página.");
+        }
+
+        ProgramaDetalle pd = programaDetalleRepository.findById(programaDetalleId)
+                .orElseThrow(() -> new IllegalArgumentException("La línea del programa ya no existe."));
+        // La linea destino DEBE ser de este programa: sin este chequeo un POST
+        // manipulado acreditaria rollos al programa de otro.
+        if (!pd.getPrograma().getId().equals(programaId)) {
+            throw new IllegalArgumentException("Esa línea no pertenece a este programa.");
+        }
+
+        rd.setProgramaDetalle(pd);
+        recepcionDetalleRepository.save(rd);
+
+        // Solo se suma si la recepcion YA fue confirmada. Si sigue PENDIENTE, el
+        // que suma es confirmarRecepcion cuando se confirme; hacerlo aca tambien
+        // contaria los rollos dos veces.
+        boolean yaConfirmada = rd.getRecepcion().getEstado() != Recepcion.EstadoRecepcion.PENDIENTE;
+        if (yaConfirmada) {
+            int rollos = rd.getRollosRecibidos() != null ? rd.getRollosRecibidos() : 0;
+            pd.setCantidadRecibida(Math.addExact(pd.getCantidadRecibida(), rollos));
+            programaDetalleRepository.save(pd);
+        }
+
+        auditLogService.registrar("VINCULAR", "ProgramaDetalle", pd.getId(),
+                "Vinculo a mano la linea de recepcion " + rd.getId()
+                + " (guia " + rd.getRecepcion().getNumeroGuia() + ", "
+                + rd.getArticulo().getDescripcion() + " " + rd.getColor().getNombreMostrar() + ")"
+                + " con la linea del programa " + pd.getPrograma().getNumero()
+                + " (" + pd.getArticulo().getDescripcion() + " " + pd.getColor().getNombreMostrar() + ")"
+                + (yaConfirmada ? " sumando " + rd.getRollosRecibidos() + " rollos" : " (aun sin confirmar)"));
     }
 
     /**
