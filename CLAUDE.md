@@ -429,8 +429,9 @@ Estado actual (ago-2026): **en vivo** en `texcontrol.pe` (dominio + HTTPS wildca
 `fail2ban`, y Docker ya NO depende de Tailscale.
 
 **Clientes** (una instancia por cliente, cada uno con su BD propia y su clave de `jlynch`):
-- **Ninguno dado de alta al 6-ago-2026.** `textillaura` (Textil Laura + Textil Clemente) y
-  `textilcamargo` (Textil Camargo) estuvieron en vivo y **se borraron el 5-ago**; no quedan
+- **Ningún cliente de pago al 7-ago-2026.** El único inquilino corriendo es el **demo**
+  (`listar-clientes.sh` devuelve `demo` y nada más). `textillaura` (Textil Laura + Textil Clemente)
+  y `textilcamargo` (Textil Camargo) estuvieron en vivo y **se borraron el 5-ago**; no quedan
   contenedores ni volúmenes suyos. Se vuelven a levantar con `nuevo-cliente.sh <slug> "<Nombre>"`.
 - Futuro: **Textil Emilio**. Ojo al techo de RAM (~3 clientes en 4 GB): al sumar
   el 3.º pagando, subir la RAM del VPS.
@@ -438,7 +439,79 @@ Estado actual (ago-2026): **en vivo** en `texcontrol.pe` (dominio + HTTPS wildca
 > **Verificá antes de creer esta lista**: `./scripts/listar-clientes.sh` (o `docker ps`) es la
 > fuente de verdad. Este archivo se desactualiza cada vez que se da de alta o de baja a alguien.
 
-### Estado de trabajo (dónde quedamos — sesión 6-ago-2026)
+### Estado de trabajo (dónde quedamos — sesión 7-ago-2026)
+
+**`main` = `develop` = `2762bce`, CI verde, y los TRES ambientes al día.** No quedó nada a medio
+promover. Lo de esta sesión, en orden:
+
+**1. Se promovió la tanda del 6-ago** (19 commits) con fast-forward → `50236ca`. Ver la sección
+siguiente para el detalle de qué traía.
+
+**2. Kardex generalizado — `V47__kardex_documento_generalizado.sql`.** Es el paso que `ROADMAP.md`
+marca como obligatorio ANTES de la primera tabla de hilo de V2 (corrección 2). El detalle técnico
+está arriba, en "El kardex no tiene una columna por tipo de documento (V47)". En una línea: el
+vínculo con el documento pasó de una columna por tipo al par `(tipo_documento, documento_id)`, se
+sumaron `TRANSFORMACION_IN/OUT` + `operacion_id`, y los dos enums pasaron de `ENUM` de MySQL a
+VARCHAR. 171 tests (+6 en `KardexDocumentoTest`).
+
+> **Se hizo ahora justamente porque no hay clientes de pago**: `kardex_movimientos` es la tabla más
+> grande del sistema, y hoy tenía cero historial real encima. El mismo `ALTER` con datos de
+> producción de varios clientes adentro es otra cosa. Si aparece otro cambio estructural de este
+> tipo, el mismo razonamiento aplica: **cuanto antes, más barato**.
+
+**3. V47 se verificó contra bases reales, no solo en CI.** Importa el matiz: el `validar-esquema`
+de CI arranca con el **esquema vacío**, así que valida el DDL pero **los `UPDATE` del backfill
+corren sobre cero filas**. Las dos ramas se ejercitaron a mano:
+
+| Rama del backfill | Dónde | Filas |
+|---|---|---|
+| `RECEPCION_DETALLE` | `dev` | 5 |
+| `TRANSFERENCIA` | `demo` (`db_demo`) | 1 |
+
+Además se hizo una transferencia real en dev (salida → llegada) para probar la consulta reescrita
+`findFirstByTipoDocumentoAndDocumentoId...`, que en `confirmarLlegada` saca el peso unitario del
+movimiento de salida. **Ese es el punto frágil**: si no encuentra el `OUT` no falla a la vista, el
+peso simplemente llega en `0.00`. Salió bien (10 rollos, 229.97 kg, peso por rollo conservado
+exacto entre origen y destino). Al tocar esa consulta, probarla así — el test unitario usa mocks.
+
+**4. El `clientes/demo/` volvió al clon de producción** y el demo se actualizó a `2762bce`
+(ver "En el VPS hay DOS clones del repo"). Backups tomados antes de migrar: `~/backups-dev/
+post-V47.sql` y `backup-cliente.sh demo`.
+
+**Lo único abierto del kardex es una DECISIÓN, no una tarea**: `color_id` sigue `NOT NULL` y el
+stock sigue exigiendo rollos. Antes de la primera tabla de hilo hay que definir con el dueño si
+`Articulo` se generaliza a "material" (hilo / tela cruda / tela teñida, cada uno con su unidad) o
+si cada etapa lleva su propia entidad. No se prejuzgó a propósito — ver `ROADMAP.md`, "Tres cosas
+que NO aguantan V2", punto 3.
+
+> **Y el punto de fondo sigue igual** (corrección 0 del `ROADMAP.md`): el cuello de botella no es
+> programar, es **tener un cliente operando**. V2 se puede construir sin cliente; sus gates piden
+> ciclos productivos reales y no se pueden cerrar sin uno.
+
+#### Verificar una migración en dev o en un cliente
+
+Salió útil esta sesión y conviene tenerlo a mano. La clave sale del `.env`, no se tipea:
+
+```bash
+# dev
+cd ~/textil-inventario-dev
+PW="$(grep -E '^MYSQL_ROOT_PASSWORD=' .env.dev | cut -d= -f2-)"
+docker exec -e MYSQL_PWD="$PW" textil_mysql_dev mysql -uroot textil_inventario -e "..."
+
+# un cliente (demo, o el slug que sea)
+cd ~/textil-inventario
+PW="$(grep -E '^MYSQL_ROOT_PASSWORD=' clientes/demo/.env | cut -d= -f2-)"
+docker exec -e MYSQL_PWD="$PW" db_demo mysql -uroot textil_inventario -e "..."
+```
+
+Qué mirar: `SELECT version, success FROM flyway_schema_history ORDER BY installed_rank DESC` (la
+tabla es la fuente autoritativa — el perfil `prod` del stack de clientes no imprime las líneas
+INFO de Flyway en el log, así que no verlas ahí no significa nada), y después una consulta que
+compruebe el *dato*, no solo el esquema. **MySQL no tiene DDL transaccional**: si una migración se
+corta a la mitad queda medio aplicada y Flyway la marca fallida, así que **sacar backup antes** de
+cualquier migración que borre o transforme columnas.
+
+### Estado anterior (sesión 6-ago-2026)
 
 **✅ PROMOVIDO a `main` el 7-ago-2026.** Los 19 commits de la sesión del 6-ago pasaron la prueba
 manual de punta a punta en `dev.texcontrol.pe` (confirmar una recepción y cargar guías de a una
@@ -601,6 +674,12 @@ aunque los contenedores estén corriendo (le pasó al demo hasta el 7-ago-2026).
 
 Falta, por orden de prioridad:
 
+0. **Dar de alta un cliente que opere de verdad** (corrección 0 del `ROADMAP.md`). Está primero a
+   propósito: no es una tarea de programación, pero es la que destraba V2 — sus gates piden ciclos
+   productivos reales y hoy hay cero clientes de pago. Próximo candidato: **Textil Emilio**.
+0.b **Decidir el modelo de material** (`Articulo` generalizado vs. una entidad por etapa, con
+   `color_id` NULL-able y unidad de medida). Es lo único que bloquea la primera tabla de hilo de
+   V2 ahora que V47 cerró el kardex. Ver `ROADMAP.md`, "Tres cosas que NO aguantan V2", punto 3.
 1. **App móvil iOS/Android**: una app para celular para que **los usuarios ingresen desde el móvil**
    (los vendedores/almaceneros/gerentes de cada empresa). A definir: nativa contra una API REST
    (que hay que construir), PWA instalable sobre la web actual, o wrapper WebView. Pedido explícito
