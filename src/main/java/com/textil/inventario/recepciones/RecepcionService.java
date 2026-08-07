@@ -426,7 +426,7 @@ public class RecepcionService {
             // usa el kardex para ofrecer el ojito "ver guia" (StockController.
             // guiaDocPorDetalle). Nunca se seteaba, asi que el campo quedaba
             // siempre null y ese enlace no aparecia jamas.
-            k.setRecepcionDetalleId(d.getId());
+            k.vincularRecepcionDetalle(d.getId());
             kardexRepository.save(k);
         }
 

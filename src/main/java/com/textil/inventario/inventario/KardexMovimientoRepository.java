@@ -43,6 +43,10 @@ public interface KardexMovimientoRepository extends JpaRepository<KardexMovimien
     // M3 (auditoria): incluye colorId. Dos lineas del mismo articulo con distinto
     // color en la misma transferencia tomaban el peso de la primera salida OUT,
     // dejando mal el peso_kg de una de las lineas al confirmar la llegada.
-    Optional<KardexMovimiento> findFirstByTransferenciaIdAndArticuloIdAndColorIdAndTipoMovimiento(
-            Long transferenciaId, Long articuloId, Long colorId, KardexMovimiento.TipoMovimiento tipoMovimiento);
+    //
+    // V47: el vinculo dejo de ser transferencia_id y paso al par
+    // (tipo_documento, documento_id), asi que la busqueda arranca por el tipo.
+    Optional<KardexMovimiento> findFirstByTipoDocumentoAndDocumentoIdAndArticuloIdAndColorIdAndTipoMovimiento(
+            KardexMovimiento.TipoDocumento tipoDocumento, Long documentoId, Long articuloId, Long colorId,
+            KardexMovimiento.TipoMovimiento tipoMovimiento);
 }

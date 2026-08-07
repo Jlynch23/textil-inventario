@@ -180,7 +180,7 @@ public class TransferenciaService {
             k.setTipoMovimiento(KardexMovimiento.TipoMovimiento.TRANSFERENCIA_OUT);
             k.setRollos(cantidad);
             k.setPesoKg(pesoMovido);
-            k.setTransferenciaId(t.getId());
+            k.vincularTransferencia(t.getId());
             k.setUsuario(t.getUsuarioSolicita());
             k.setObservaciones("Salida transferencia " + t.getNumero());
             kardexRepository.save(k);
@@ -254,8 +254,9 @@ public class TransferenciaService {
             // Peso unitario de referencia según lo despachado en la salida de esta transferencia
             // (antes: kardexRepository.findAll() completo + filtro en memoria con String.contains())
             BigDecimal pesoUnitario = kardexRepository
-                .findFirstByTransferenciaIdAndArticuloIdAndColorIdAndTipoMovimiento(
-                        t.getId(), d.getArticulo().getId(), d.getColor().getId(), KardexMovimiento.TipoMovimiento.TRANSFERENCIA_OUT)
+                .findFirstByTipoDocumentoAndDocumentoIdAndArticuloIdAndColorIdAndTipoMovimiento(
+                        KardexMovimiento.TipoDocumento.TRANSFERENCIA, t.getId(),
+                        d.getArticulo().getId(), d.getColor().getId(), KardexMovimiento.TipoMovimiento.TRANSFERENCIA_OUT)
                 .map(km -> km.getRollos() > 0
                         ? km.getPesoKg().divide(new BigDecimal(km.getRollos()), 4, RoundingMode.HALF_UP)
                         : BigDecimal.ZERO)
@@ -304,7 +305,7 @@ public class TransferenciaService {
                 k.setTipoMovimiento(KardexMovimiento.TipoMovimiento.TRANSFERENCIA_IN);
                 k.setRollos(cantidad);
                 k.setPesoKg(pesoMovido);
-                k.setTransferenciaId(t.getId());
+                k.vincularTransferencia(t.getId());
                 k.setUsuario(t.getUsuarioSolicita());
                 k.setObservaciones("Llegada transferencia " + t.getNumero());
                 kardexRepository.save(k);

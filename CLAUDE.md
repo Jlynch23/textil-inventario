@@ -175,9 +175,38 @@ que se leyó contra lo que quedó elegido.
 
 - Todo cambio de esquema es una migración Flyway nueva en
   `src/main/resources/db/migration/V<n>__descripcion.sql`. **Nunca** editar una migración ya
-  aplicada; sumar una nueva con el siguiente número (actualmente van hasta **V46**). Las últimas:
-  V42 (UNIQUE en `numero_guia`), V43 (`@Version` en `programa_detalle`), V44 (celular de usuario),
-  V45 (emisor de la guía en `recepciones`), V46 (blancos `''` → NULL en guía/factura/color).
+  aplicada; sumar una nueva con el siguiente número (actualmente van hasta **V47**). Las últimas:
+  V43 (`@Version` en `programa_detalle`), V44 (celular de usuario), V45 (emisor de la guía en
+  `recepciones`), V46 (blancos `''` → NULL en guía/factura/color), V47 (kardex generalizado).
+
+### El kardex no tiene una columna por tipo de documento (V47)
+El vínculo con el papel que originó el movimiento es el par **`(tipo_documento, documento_id)`**,
+no una columna por tipo. Antes eran dos (`recepcion_detalle_id`, `transferencia_id`); V2 suma
+compra de hilo, orden de tejido y envío a tintorería, o sea **cinco columnas con cuatro siempre
+NULL** en cada fila y un `ALTER TABLE` sobre la tabla más grande del sistema por cada módulo nuevo.
+
+El precio consciente es que **se perdieron las FK reales**: la integridad la sostiene la app, no
+la base. Por eso el par **no tiene setters sueltos** — se escribe con `vincularDocumento(tipo, id)`
+(o los atajos `vincularRecepcionDetalle` / `vincularTransferencia`), que exigen los dos datos
+juntos, y se lee con `getRecepcionDetalleId()` / `getTransferenciaId()`, que devuelven el id **solo
+si el tipo calza**. Leer `documentoId` a secas invita a asumir un tipo que no es: el id 7 puede ser
+una recepción o una transferencia. Al sumar un tipo de documento, agregalo al enum `TipoDocumento`
+y usá los mismos accesores; **no** vuelvas a agregar una columna.
+
+Por el mismo criterio, `tipo_movimiento` y `tipo_documento` se guardan como **VARCHAR, no como
+`ENUM` de MySQL**: sumar un valor no debe obligar a un `ALTER`. A cambio MySQL ya no valida el
+conjunto, así que el largo del nombre lo cuida un test (`KardexDocumentoTest`, columnas de 30).
+
+`TipoMovimiento` incluye **`TRANSFORMACION_IN` / `TRANSFORMACION_OUT`**: los otros tipos mueven el
+*mismo* material o lo ajustan, y una transformación es otra cosa (entran 100 kg de hilo, salen 80
+de tela cruda — un material se consume y aparece otro). Las dos caras del mismo hecho se unen por
+**`operacion_id`**, que no es lo mismo que el documento: una orden de tejido puede tener varias
+transformaciones y sin ese id no se sabe qué hilo salió para qué rollo. Queda NULL hasta V2.
+
+> **Pendiente de diseño, a propósito**: `color_id` sigue **NOT NULL** y el stock sigue exigiendo
+> rollos. El hilo crudo no tiene color y se compra en **kilos**, así que V2 lo va a necesitar —
+> pero depende de una decisión abierta (generalizar `Articulo` a "material" vs. una entidad por
+> etapa) y no se prejuzgó. Ver `ROADMAP.md`, "Tres cosas que NO aguantan V2", punto 3.
 
 ### Blanco = NULL (no `''`)
 Un campo opcional vacío se guarda **NULL**, nunca cadena vacía: `''` rompe en silencio las
@@ -220,7 +249,7 @@ Una guía tiene **dos** empresas y el sistema ya no confunde ninguna:
 
 ## Tests
 
-`src/test/java/...`, JUnit 5 + Spring Boot Test — **165 tests** (`./mvnw -B test`). El test vive en
+`src/test/java/...`, JUnit 5 + Spring Boot Test — **171 tests** (`./mvnw -B test`). El test vive en
 el paquete de lo que prueba (al mover una clase de paquete, mové su test).
 
 - **Servicios**: `RecepcionServiceTest` (incluye los guards de confirmación: líneas repetidas,
@@ -232,6 +261,9 @@ el paquete de lo que prueba (al mover una clase de paquete, mové su test).
   `DocumentoStorageServiceTest`, `StockPorColorTest`.
 - **OCR**: `ArticuloMatchingServiceTest` — matching de artículo/color/empresa **y** la verificación
   del acabado contra el texto literal de la guía (`desajusteDeAcabado`).
+- **Inventario**: `KardexDocumentoTest` — el par `(tipo_documento, documento_id)` de V47: que los
+  accesores tipados no confundan una recepción con una transferencia del mismo id, que el vínculo
+  exija los dos datos juntos, y que los nombres de los enums entren en su columna.
 - **`common`**: `FechaDocumentoTest` (día/mes vs ISO), `NumeroDocumentoTest`, `ValidadorPdfTest`,
   `ValidadorImagenTest`, `VersionOptimistaTest`.
 - **Catálogo / seguridad**: `ArticuloDescripcionTest`, `GeneradorUsernameTest`, `CelularUsuarioTest`.

@@ -84,6 +84,21 @@ NO aguantan V2».
 → **Orden obligatorio**: `(tipo_documento, documento_id)` + `TRANSFORMACION_IN/OUT`
 + la decisión sobre `color_id`/unidad de medida **antes** de la primera tabla de hilo.
 
+**Estado (7-ago-2026): dos de tres hechos, en `V47__kardex_documento_generalizado.sql`.**
+- ✅ `(tipo_documento, documento_id)` reemplazó a `recepcion_detalle_id`/`transferencia_id`,
+  con backfill. Se perdieron las FK reales; la integridad la sostiene la app a través de
+  `KardexMovimiento.vincularDocumento(tipo, id)` (el par no tiene setters sueltos).
+- ✅ `TRANSFORMACION_IN` / `TRANSFORMACION_OUT` + `operacion_id` para unir las dos caras
+  de una misma transformación. `tipo_movimiento` pasó de `ENUM` de MySQL a VARCHAR por el
+  mismo motivo: sumar un valor no debe obligar a un `ALTER`.
+- ⏳ **`color_id` / unidad de medida sigue ABIERTO** — es una decisión, no una tarea, y
+  depende del punto 3 de «Tres cosas…»: no se prejuzgó a propósito. **Esto es lo que
+  bloquea la primera tabla de hilo.**
+
+Se hizo ahora y no más adelante por la razón que da esta misma corrección: no hay ningún
+cliente de pago dado de alta, o sea **cero historial real** sobre la tabla más grande del
+sistema. El mismo `ALTER` con datos de producción de varios clientes adentro es otra cosa.
+
 ### 3. V0.2 se parte en tres gates, no uno
 
 Hilo + tejeduría + teñido + costos bajo un solo gate es demasiado: si los costos se
@@ -217,28 +232,37 @@ Esto hay que resolverlo **en el diseño de V2, antes de escribir código**. Migr
 estas tablas con historial real de tres clientes cargado se paga una sola vez, y
 conviene que sea antes de que ese historial exista.
 
-**1. El kardex tiene una columna por tipo de documento.**
+**1. ✅ RESUELTO (V47) — El kardex tenía una columna por tipo de documento.**
 ```java
 private Long recepcionDetalleId;   // FK a recepcion_detalles
 private Long transferenciaId;      // FK a transferencias
 ```
-Hoy son dos. V2 suma compra de hilo, orden de tejido y envío a tintorería: serían
+Eran dos. V2 suma compra de hilo, orden de tejido y envío a tintorería: serían
 **cinco columnas, cuatro siempre NULL en cada fila**, más cinco FK y cinco índices.
-Cada módulo nuevo obliga a un `ALTER TABLE` sobre la tabla más grande del sistema.
-→ Reemplazar por `(tipo_documento VARCHAR, documento_id BIGINT)`, con la migración
-que traduzca las dos columnas actuales. Se pierde la FK real; a cambio, agregar un
-tipo de movimiento deja de tocar el esquema.
+Cada módulo nuevo obligaría a un `ALTER TABLE` sobre la tabla más grande del sistema.
+→ Reemplazado por `(tipo_documento VARCHAR, documento_id BIGINT)`, con backfill de
+las dos columnas. Se perdió la FK real; a cambio, agregar un tipo de documento ya no
+toca el esquema. Como la base dejó de vigilar el vínculo, lo vigila la app: el par no
+tiene setters sueltos (`vincularDocumento(tipo, id)`) y se lee con accesores tipados
+que devuelven el id **solo si el tipo calza**. Ver `CLAUDE.md`, "El kardex no tiene
+una columna por tipo de documento".
 
-**2. `TipoMovimiento` no sabe expresar una transformación.**
-Hoy: `INGRESO, TRANSFERENCIA_OUT, TRANSFERENCIA_IN, AJUSTE`. Todos mueven **el
+**2. ✅ RESUELTO (V47) — `TipoMovimiento` no sabía expresar una transformación.**
+Eran: `INGRESO, TRANSFERENCIA_OUT, TRANSFERENCIA_IN, AJUSTE`. Todos mueven **el
 mismo material** de un lado a otro o lo ajustan. V2 es otra cosa: entran 100 kg de
 hilo y salen 80 kg de tela cruda — **un material se consume y aparece otro
 distinto**, y los dos movimientos son las dos caras de un mismo hecho.
-→ Sumar `TRANSFORMACION_IN` / `TRANSFORMACION_OUT` ligados por un id de operación,
-para que el kardex pueda responder "de qué hilo salió este rollo" (que es la
-trazabilidad que pide V5).
+→ Sumados `TRANSFORMACION_IN` / `TRANSFORMACION_OUT`, ligados por `operacion_id`
+(NULL hasta V2), para que el kardex pueda responder "de qué hilo salió este rollo"
+(la trazabilidad que pide V5). El id de operación **no** es el del documento: una
+misma orden de tejido puede tener varias transformaciones.
 
-**3. El stock exige color y exige rollos.**
+**3. ⏳ ABIERTO — El stock exige color y exige rollos.**
+> **Es LA decisión que bloquea la primera tabla de hilo.** Los puntos 1 y 2 eran
+> tareas con una sola respuesta correcta; este es una bifurcación de diseño y por eso
+> V47 **no lo tocó** (`kardex.color_id` sigue NOT NULL). Hay que decidirlo con el
+> dueño antes de escribir la primera tabla de V2, no después.
+
 ```sql
 color_id BIGINT NOT NULL      -- el hilo crudo NO tiene color: se tiñe después
 rollos   INT    NOT NULL      -- el hilo se compra y se consume en KILOS

@@ -7,6 +7,7 @@ import com.textil.inventario.catalogo.Color;
 import com.textil.inventario.catalogo.ColorRepository;
 import com.textil.inventario.catalogo.Ubicacion;
 import com.textil.inventario.catalogo.UbicacionRepository;
+import com.textil.inventario.inventario.KardexMovimiento;
 import com.textil.inventario.inventario.KardexMovimientoRepository;
 import com.textil.inventario.inventario.StockActual;
 import com.textil.inventario.inventario.StockActualRepository;
@@ -235,8 +236,8 @@ class TransferenciaServiceTest {
 
         when(transferenciaRepository.findById(1L)).thenReturn(Optional.of(t));
         when(detalleRepository.findByTransferenciaId(1L)).thenReturn(List.of(d));
-        when(kardexRepository.findFirstByTransferenciaIdAndArticuloIdAndColorIdAndTipoMovimiento(
-                eq(1L), eq(10L), eq(20L), any()))
+        when(kardexRepository.findFirstByTipoDocumentoAndDocumentoIdAndArticuloIdAndColorIdAndTipoMovimiento(
+                eq(KardexMovimiento.TipoDocumento.TRANSFERENCIA), eq(1L), eq(10L), eq(20L), any()))
                 .thenReturn(Optional.empty());
         when(ubicacionRepository.findById(2L)).thenReturn(Optional.of(tienda));
         when(stockActualRepository.findByArticuloIdAndUbicacionIdAndColorId(10L, 2L, 20L))

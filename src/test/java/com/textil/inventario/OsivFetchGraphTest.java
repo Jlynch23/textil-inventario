@@ -87,13 +87,13 @@ class OsivFetchGraphTest {
         // Limpieza FK-safe de los agregados que toca esta prueba. RecepcionDetalle
         // referencia a ProgramaDetalle, así que va ANTES que programa_detalle.
         //
-        // El kardex va PRIMERO: kardex_movimientos apunta a recepcion_detalles y a
-        // transferencias (fk_kardex_recepcion_detalle / fk_kardex_transferencia,
-        // V13). Esta limpieza no lo borraba y pasaba igual solo porque
-        // recepcion_detalle_id quedaba SIEMPRE en NULL -- ese era justamente el
-        // defecto que rompía el enlace "ver guía" del kardex. Al empezar a
-        // llenarlo, los movimientos que deja ConfirmacionConcurrenteTest (corre
-        // antes en el mismo esquema) trababan este deleteAll con la FK.
+        // El kardex va PRIMERO. Historicamente era obligatorio: kardex_movimientos
+        // tenía FK a recepcion_detalles y a transferencias (V13), y los movimientos
+        // que deja ConfirmacionConcurrenteTest --corre antes en el mismo esquema--
+        // trababan este deleteAll. V47 quitó esas FK al generalizar el vínculo a
+        // (tipo_documento, documento_id), así que la base ya no lo impone; se
+        // mantiene el orden igual para no dejar movimientos colgados apuntando a
+        // documentos borrados, que es justo lo que la base dejó de vigilar.
         kardexMovimientoRepository.deleteAll();
         transferenciaDetalleRepository.deleteAll();
         transferenciaRepository.deleteAll();
