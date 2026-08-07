@@ -408,13 +408,14 @@ Estado actual (ago-2026): **en vivo** en `texcontrol.pe` (dominio + HTTPS wildca
 
 ### Estado de trabajo (dónde quedamos — sesión 6-ago-2026)
 
-**⚠️ `develop` tiene ~15 commits SIN PROMOVER a `main`.** Todo probado por CI (165 tests verdes,
-incluido el job contra MySQL real) y desplegado en `dev.texcontrol.pe`, pero **falta la prueba
-manual de punta a punta**: confirmar una recepción y cargar guías de a una sobre los programas.
-Recién después promover. No hay urgencia: **no hay clientes corriendo**, así que `main` no despliega
-a nadie — lo que importa es que esté sano para el próximo cliente que se dé de alta.
+**✅ PROMOVIDO a `main` el 7-ago-2026.** Los 19 commits de la sesión del 6-ago pasaron la prueba
+manual de punta a punta en `dev.texcontrol.pe` (confirmar una recepción y cargar guías de a una
+sobre los programas) y se promovieron con fast-forward — `main` y `develop` quedaron en el mismo
+commit. 165 tests verdes. No había clientes de pago corriendo, así que la promoción no desplegó a
+nadie: deja `main` sano para el próximo cliente que se dé de alta. **El demo (`demo.texcontrol.pe`)
+corre `main`, así que para que tome estos cambios hay que reconstruir su stack** (ver `DEMO.md`).
 
-Lo que entró hoy, por si hay que revisar algo puntual:
+Lo que entró en esa tanda, por si hay que revisar algo puntual:
 - **Programas — botones de programa anterior/siguiente** en Seguimiento, con el **número del
   vecino** en el botón y la posición («3 de 17»). Recorren el MISMO orden de la lista y **dentro
   del filtro con el que se llegó** (los parámetros viajan en el link, y «Volver a Programas»
