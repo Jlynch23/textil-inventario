@@ -465,10 +465,43 @@ Estado actual (ago-2026): **en vivo** en `texcontrol.pe` (dominio + HTTPS wildca
 > **Verificá antes de creer esta lista**: `./scripts/listar-clientes.sh` (o `docker ps`) es la
 > fuente de verdad. Este archivo se desactualiza cada vez que se da de alta o de baja a alguien.
 
-### Estado de trabajo (dónde quedamos — sesión 7-ago-2026)
+### Estado de trabajo (dónde quedamos — sesión 8-ago-2026)
+
+**`main` = `develop` = `c21f3fc`, CI verde en ambas, y los TRES ambientes al día.** Sesión corta,
+de mantenimiento: se aplicaron los PRs de Dependabot que estaban abiertos desde el 4-ago.
+
+**1. Bootstrap 5.3.0 → 5.3.8, bootstrap-icons 1.11.0 → 1.13.1, `actions/upload-artifact` v4 → v7.**
+Los dos de webjars **no se mergearon con el botón**, a propósito: el PR automático solo toca el
+`pom.xml` y la versión va también en la URL, escrita a mano en 6 archivos. Mergeado tal cual =
+404 en todo el CSS y el JS, con CI en verde. El procedimiento completo quedó arriba, en
+"Actualizar un webjar". Se subió `CACHE_VERSION` de `sw.js` a `texcontrol-v4`.
+
+**2. Se descartó el 4.º PR (#8, `eclipse-temurin` 21 → 22)** y se le puso una regla `ignore` de
+**major** en `dependabot.yml`. Cerrarlo a mano no alcanzaba: Dependabot corre semanal y lo reabría.
+La regla bloquea SOLO el salto de major — los parches de la línea 21 (21.0.x) siguen llegando.
+Al migrar a la próxima LTS hay que quitar la regla **y** subir `<java.version>` en el mismo commit.
+
+**3. `dependabot.yml` ahora apunta a `develop`, no a `main`.** Sin `target-branch` usaba la rama por
+defecto del repo, así que una actualización de dependencia entraba directo a la rama que corren los
+clientes sin pasar por staging — al revés del flujo de dos ramas. Ojo: Dependabot lee su config
+**desde `main`**, así que un cambio ahí no hace efecto hasta promoverlo.
+
+**4. Se corrigieron las referencias al proxy `textil_nginx`** (decomisionado en la migración a
+multicliente; hoy es `texcontrol_proxy_nginx`) en `STAGING.md`, `CLAUDE.md` y el encabezado de
+`docker-compose.dev.yml`. No era cosmético: la doc mandaba a `docker exec textil_nginx nginx -s
+reload` para cambiar la clave de Basic Auth de dev — el `htpasswd` funcionaba y el reload fallaba
+con "no such container", dejando a nginx sirviendo **la clave vieja**.
+
+> **Cómo se verificó lo de los webjars**, ya que ni CI ni los 171 tests pueden ver ese fallo: se
+> listaron las rutas dentro de los jars resueltos del classpath y se cruzaron contra las URLs que
+> pide el código (las 3 distintas resuelven), después prueba visual en `dev.texcontrol.pe`
+> —incluidas las tres de `/almacen`, que tienen `<head>` propio y **no** tienen enlace en el menú,
+> hay que entrar por URL— y por último, ya con el demo actualizado, `5.3.8` → 200 y `5.3.0` → 404.
+
+### Estado anterior (sesión 7-ago-2026)
 
 **`main` = `develop` = `2762bce`, CI verde, y los TRES ambientes al día.** No quedó nada a medio
-promover. Lo de esta sesión, en orden:
+promover. Lo de esa sesión, en orden:
 
 **1. Se promovió la tanda del 6-ago** (19 commits) con fast-forward → `50236ca`. Ver la sección
 siguiente para el detalle de qué traía.
