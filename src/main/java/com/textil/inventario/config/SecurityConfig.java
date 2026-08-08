@@ -255,29 +255,12 @@ public class SecurityConfig {
      * usuarios, asi que esto no puede convertirse en suplantacion de una persona
      * real ni por parametro.
      * <p>
-     * Entrar y salir son POST (con CSRF), no GET: con GET, un &lt;img src="..."&gt;
-     * en cualquier pagina externa podria cambiarle el rol a un SUPERADMIN sin que
-     * lo note -- el mismo motivo por el que el logout de este proyecto es POST.
-     * <p>
-     * <b>NO es un @Bean a proposito.</b> Spring Boot registra automaticamente en el
-     * contenedor de servlets cualquier bean de tipo Filter, asi que como @Bean este
-     * filtro quedaria montado DOS veces: una dentro de la cadena de seguridad (donde
-     * las reglas de URL lo protegen) y otra fuera de ella, delante de todo. Esa
-     * segunda copia correria SIN la autorizacion previa -- justo lo que la regla
-     * `/vista-previa -> hasRole('SUPERADMIN')` esta para impedir. Se construye a
-     * mano y se monta solo donde corresponde.
+     * La construccion vive en {@link VistaPreviaSwitchUserFilterFactory} -- ahi esta
+     * explicado por que NO es un @Bean y por que hay que llamarle afterPropertiesSet()
+     * a mano (sin eso el filtro no tiene successHandler y revienta al usarse).
      */
     private org.springframework.security.web.authentication.switchuser.SwitchUserFilter switchUserFilter() {
-        var filtro = new org.springframework.security.web.authentication.switchuser.SwitchUserFilter();
-        filtro.setUserDetailsService(vistaPreviaRolUserDetailsService);
-        filtro.setSwitchUserMatcher(new AntPathRequestMatcher("/vista-previa", "POST"));
-        filtro.setExitUserMatcher(new AntPathRequestMatcher("/vista-previa/salir", "POST"));
-        filtro.setUsernameParameter("rol");
-        filtro.setTargetUrl("/");
-        // Volver del modo vista previa deja al SUPERADMIN en la pantalla de
-        // usuarios, que es de donde se entra.
-        filtro.setSwitchFailureUrl("/usuarios?vistaPreviaError");
-        return filtro;
+        return VistaPreviaSwitchUserFilterFactory.crear(vistaPreviaRolUserDetailsService);
     }
 
     @Bean
