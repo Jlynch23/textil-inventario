@@ -62,6 +62,20 @@ negocio se personaliza con `NOMBRE_EMPRESA`). Cuentas semilla (estado tras V35):
 - **No hay cuenta del dueño pre-armada**: al entregar una copia, el SUPERADMIN crea la cuenta
   ADMIN del dueño (su nombre → username autogenerado).
 
+> ## ⛔ REGLA DE ORO: `jlynch` NUNCA se borra
+>
+> Ni en dev, ni en el demo, ni en un cliente, ni "para limpiar", ni en un script. Tampoco
+> ninguna otra cuenta con rol **SUPERADMIN**.
+>
+> Es la **única** cuenta capaz de entrar a una copia recién entregada, y en las que ya están
+> endurecidas (`endurecer-cliente.sh` borra las de prueba) suele ser la única que existe. Si se
+> borra, **la instancia queda inaccesible desde la web**: no hay pantalla de recuperación, hay
+> que meter un `INSERT` a mano en MySQL con un hash de bcrypt generado por fuera.
+>
+> Todo script que toque `usuarios` lleva la protección **clavada en el código**, nunca como
+> parámetro que se pueda pisar desde la línea de comandos —
+> ver `scripts/borrar-usuarios-dev-demo.sh`.
+
 **Username autogenerado** (`GeneradorUsername`): inicial del primer nombre + primer apellido, sin
 tildes, único ("Oscar Clemente" → `oclemente`). Alta y **edición** de usuarios (nombre → regenera
 username, + rol + contraseña) en `UsuarioController`. Cada quien rota su clave en **Mi cuenta**
