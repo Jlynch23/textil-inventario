@@ -19,15 +19,26 @@
             <div class="card">
                 <div class="card-body p-4">
                     <h6 class="fw-bold mb-3">Nuevo Usuario</h6>
-                    <form th:action="@{/usuarios/guardar}" method="post">
+                    <!-- autocomplete="off": el navegador ofrecía el último nombre
+                         tipeado como sugerencia (y pintaba el campo de amarillo).
+                         En una pantalla de alta de usuarios eso filtra a quién dio
+                         de alta antes el que está sentado ahí, y encima se le puede
+                         colar en el alta siguiente sin querer. -->
+                    <form th:action="@{/usuarios/guardar}" method="post" autocomplete="off">
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Nombre y apellido</label>
-                            <input type="text" class="form-control" name="nombre" required>
-                            <small class="text-muted">El usuario se genera solo (ej. "Oscar Clemente" → <code>oclemente</code>).</small>
+                            <input type="text" class="form-control" name="nombre" required autocomplete="off">
+                            <!-- El ejemplo va GENÉRICO, sin nombre de persona: esta
+                                 pantalla la ve el dueño de CADA copia vendida, y un
+                                 nombre real ahí es el de otro cliente. -->
+                            <small class="text-muted">El usuario se genera solo (ej. "Nombre Apellido" → <code>napellido</code>).</small>
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Contraseña</label>
-                            <input type="password" class="form-control" name="password" minlength="8" required>
+                            <!-- new-password (no "off"): es lo único que los navegadores
+                                 respetan para no autocompletar con la clave guardada
+                                 del que está logueado. -->
+                            <input type="password" class="form-control" name="password" minlength="8" required autocomplete="new-password">
                             <small class="text-muted">Mínimo 8 caracteres. Evita datos públicos como el DNI.</small>
                         </div>
                         <div class="mb-3">
@@ -122,7 +133,7 @@
                                                         <div class="modal-body">
                                                             <div class="mb-3">
                                                                 <label class="form-label fw-semibold">Nombre y apellido</label>
-                                                                <input type="text" class="form-control" name="nombre" th:value="${u.nombre}" required>
+                                                                <input type="text" class="form-control" name="nombre" th:value="${u.nombre}" required autocomplete="off">
                                                                 <small class="text-muted">Al guardar, el usuario se regenera del nombre.</small>
                                                             </div>
                                                             <div class="mb-3">
@@ -139,7 +150,7 @@
                                                             </div>
                                                             <div class="mb-2">
                                                                 <label class="form-label fw-semibold">Nueva contraseña <span class="text-muted fw-normal">(opcional)</span></label>
-                                                                <input type="password" class="form-control" name="password" minlength="8">
+                                                                <input type="password" class="form-control" name="password" minlength="8" autocomplete="new-password">
                                                                 <small class="text-muted">Dejar en blanco para no cambiarla. Mínimo 8 caracteres.</small>
                                                             </div>
                                                         </div>
@@ -163,8 +174,8 @@
                                                         </div>
                                                         <div class="modal-body">
                                                             <label class="form-label fw-semibold">Nueva contraseña</label>
-                                                            <input type="password" class="form-control" name="password" minlength="8" required>
-                                                            <small class="text-muted">Mínimo 6 caracteres.</small>
+                                                            <input type="password" class="form-control" name="password" minlength="8" required autocomplete="new-password">
+                                                            <small class="text-muted">Mínimo 8 caracteres.</small>
                                                         </div>
                                                         <div class="modal-footer">
                                                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
