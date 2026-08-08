@@ -112,15 +112,21 @@
              no desde el CDN de jsdelivr. El service worker solo cachea estaticos
              del mismo origen, asi que con el CDN la PWA quedaba sin estilos ni JS
              offline / con el CDN bloqueado. Se sirven en /webjars/**. -->
+        <!-- OJO al subir estas versiones: el numero va TAMBIEN en la URL
+             (/webjars/bootstrap/<version>/...), escrita a mano en las plantillas
+             y en el service worker. Cambiar solo el pom deja la app pidiendo una
+             ruta que ya no existe -> 404 en todo el CSS y el JS, y CI no lo ve
+             (compile + test no abren un navegador). Buscar y reemplazar en los
+             dos lados, y subir CACHE_VERSION en sw.js. -->
         <dependency>
             <groupId>org.webjars</groupId>
             <artifactId>bootstrap</artifactId>
-            <version>5.3.0</version>
+            <version>5.3.8</version>
         </dependency>
         <dependency>
             <groupId>org.webjars.npm</groupId>
             <artifactId>bootstrap-icons</artifactId>
-            <version>1.11.0</version>
+            <version>1.13.1</version>
         </dependency>
     </dependencies>
 

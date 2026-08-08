@@ -357,6 +357,32 @@ histórico y los PDFs de `documentos-dev/`) y **deja los programas y el catálog
   directo por IP. Ojo: Docker tenía un override de systemd que lo ataba a `tailscaled` — ya se quitó, si
   algo similar reaparece revisar `/etc/systemd/system/docker.service.d/override.conf`.
 
+### Actualizar un webjar (Bootstrap / bootstrap-icons): NO se mergea con el botón
+
+Los estáticos de Bootstrap se sirven **localmente** desde webjars (M11: antes venían del CDN de
+jsdelivr, que el service worker no podía cachear por ser otro origen → la PWA quedaba sin estilos
+offline). El precio es que **la versión va también en la URL** — `/webjars/bootstrap/5.3.8/css/…` —
+escrita a mano en **6 archivos**: `layout/base.html`, `error.html`, los tres de `almacen/`
+(`home`/`entrada`/`salida`) y `static/sw.js`.
+
+Un PR de Dependabot **solo toca el `pom.xml`**. Mergeado tal cual, el classpath pasa a servir la
+ruta nueva mientras las plantillas piden la vieja → **404 en todo el CSS y el JS**. La app arranca
+y responde; simplemente se ve sin un solo estilo.
+
+> **Y CI pasa en verde**: `mvn compile` + `mvn test` no abren un navegador, así que no hay ningún
+> test que lo agarre. Es el mismo patrón que el acabado del OCR — el fallo no avisa, hay que ir a
+> buscarlo. **Verificalo a ojo en `dev.texcontrol.pe` antes de promover.**
+
+Procedimiento (así se hizo el 8-ago con 5.3.0→5.3.8 y 1.11.0→1.13.1):
+1. Confirmar que el jar nuevo sirve las mismas rutas, no asumirlo:
+   `unzip -l ~/.m2/repository/org/webjars/bootstrap/<ver>/bootstrap-<ver>.jar | grep bootstrap.min.css`
+2. Subir la versión en `pom.xml`.
+3. Reemplazar la versión en las URLs de los 6 archivos (`grep -rn "webjars/bootstrap/<vieja>" src/`
+   debe quedar en cero).
+4. **Subir `CACHE_VERSION` en `sw.js`**. Si no, un celular que ya instaló la PWA sigue sirviendo el
+   CSS viejo desde su cache, aunque el servidor ya tenga el nuevo.
+5. `./mvnw -B clean compile test` y verificación visual en dev.
+
 ## Infraestructura (producción) — resumen; el detalle vive en `DEPLOY.md`
 
 - **VPS**: Vultr, Ubuntu 24.04, IP pública `64.176.3.149`. Acceso admin por

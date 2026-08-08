@@ -12,10 +12,10 @@ updates:
   # antes de poder mergearse.
   #
   # OJO con los webjars (bootstrap, bootstrap-icons): la version va TAMBIEN
-  # en la URL (`/webjars/bootstrap/5.3.0/...`), hardcodeada en las plantillas
-  # y en el service worker. Un PR de Dependabot solo toca el pom.xml, asi que
-  # pasa CI en verde y aun asi deja la app sin CSS ni JS. Al mergear uno de
-  # esos, actualizar a mano las referencias (ver CLAUDE.md, "Convenciones").
+  # en la URL (`/webjars/bootstrap/<version>/...`), hardcodeada en las
+  # plantillas y en el service worker. Un PR de Dependabot solo toca el
+  # pom.xml, asi que pasa CI en verde y aun asi deja la app sin CSS ni JS.
+  # NO mergearlos con el boton: ver CLAUDE.md, "Actualizar un webjar".
   - package-ecosystem: "maven"
     directory: "/"
     target-branch: "develop"

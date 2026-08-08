@@ -21,8 +21,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="TexControl">
     <script th:src="@{/js/pwa-register.js}" defer></script>
-    <link href="/webjars/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
-    <link href="/webjars/bootstrap-icons/1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="/webjars/bootstrap/5.3.8/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/webjars/bootstrap-icons/1.13.1/font/bootstrap-icons.css" rel="stylesheet">
     <!-- Fuentes de marca críticas precargadas (evita FOUT en cuerpo y títulos). -->
     <link rel="preload" href="/fonts/inter-400.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/fonts/manrope-700.woff2" as="font" type="font/woff2" crossorigin>
@@ -140,7 +140,7 @@
         <div th:replace="${contenido}">Contenido aquí</div>
     </div>
 
-    <script src="/webjars/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="/webjars/bootstrap/5.3.8/js/bootstrap.bundle.min.js"></script>
     <!-- #13: sidebar/acordeón/tema/scroll movidos a /js/layout.js (JS estático,
          sin th:inline). El único dato del servidor va por data-sidebar-colapsado
          en el <body>. Sin defer: corre tras parsear el sidebar y antes del paint. -->

@@ -16,7 +16,10 @@
 // v2 (M11): se agregan Bootstrap e iconos (servidos localmente en /webjars) al
 // precache. Antes venian del CDN de jsdelivr, que el SW NO podia cachear (otro
 // origen) -> offline / CDN bloqueado = app sin estilos ni JS.
-const CACHE_VERSION = 'texcontrol-v3';
+// v4: Bootstrap 5.3.0 -> 5.3.8 e iconos 1.11.0 -> 1.13.1. La version va en la
+// URL, asi que el cache viejo guarda las rutas anteriores: sin subir esto, un
+// celular que ya instalo la PWA sigue sirviendo el CSS de la version vieja.
+const CACHE_VERSION = 'texcontrol-v4';
 const OFFLINE_URL = '/offline.html';
 
 // Recursos minimos que se guardan al instalar (la "cascara" + la pagina offline).
@@ -28,9 +31,9 @@ const PRECACHE = [
   '/img/pwa/icon-192.png',
   '/img/pwa/icon-512.png',
   '/js/pwa-register.js',
-  '/webjars/bootstrap/5.3.0/css/bootstrap.min.css',
-  '/webjars/bootstrap/5.3.0/js/bootstrap.bundle.min.js',
-  '/webjars/bootstrap-icons/1.11.0/font/bootstrap-icons.css'
+  '/webjars/bootstrap/5.3.8/css/bootstrap.min.css',
+  '/webjars/bootstrap/5.3.8/js/bootstrap.bundle.min.js',
+  '/webjars/bootstrap-icons/1.13.1/font/bootstrap-icons.css'
 ];
 
 self.addEventListener('install', (event) => {
