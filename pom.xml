@@ -121,6 +121,19 @@
             <artifactId>h2</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Playwright SOLO para tests: maneja un Chromium de verdad contra la app
+             levantada en un puerto real. Es el ultimo tramo que MockMvc no cubre:
+             MockMvc prueba que el boton ESTE en el HTML, esto prueba que se VEA y
+             que se pueda hacer clic. En este entorno el navegador ya viene
+             preinstalado (PLAYWRIGHT_BROWSERS_PATH), no se descarga nada.
+             Marcado para NO correr en CI por defecto: ver el @EnabledIfEnvironment-
+             Variable de la clase de test. -->
+        <dependency>
+            <groupId>com.microsoft.playwright</groupId>
+            <artifactId>playwright</artifactId>
+            <version>1.47.0</version>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-ooxml</artifactId>

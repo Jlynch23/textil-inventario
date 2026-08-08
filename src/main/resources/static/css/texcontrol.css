@@ -265,9 +265,20 @@ body.sidebar-collapsed .main-content { margin-left: var(--tx-sidebar-rail); }
 .topbar h5 { font-family: var(--tx-font-head); font-weight: 700; color: var(--tx-ink); }
 body.sidebar-collapsed .topbar { margin-left: var(--tx-sidebar-rail); }
 
+/* Banda de la vista previa por rol. Lleva el MISMO corrimiento que .topbar y
+   .main-content: el sidebar es position:fixed, asi que sin margin-left la banda
+   se mete por debajo y el sidebar le tapa el texto de la izquierda -- se veia
+   "VENDEDOR." en vez de "Estas viendo la app como VENDEDOR". Lo agarro una
+   captura de Playwright; en el HTML el texto estaba entero, por eso ningun test
+   de MockMvc podia verlo.
+   En /almacen NO se usa esta clase (la banda va flotante y ahi no hay sidebar). */
+.banda-vista-previa { margin-left: var(--tx-sidebar-w); transition: margin-left .2s ease; }
+body.sidebar-collapsed .banda-vista-previa { margin-left: var(--tx-sidebar-rail); }
+
 @media (max-width: 768px) {
   body.sidebar-collapsed .sidebar { width: 0; }
-  body.sidebar-collapsed .main-content, body.sidebar-collapsed .topbar { margin-left: 0; }
+  body.sidebar-collapsed .main-content, body.sidebar-collapsed .topbar,
+  body.sidebar-collapsed .banda-vista-previa { margin-left: 0; }
   .main-content { padding: var(--tx-4); }
 }
 
