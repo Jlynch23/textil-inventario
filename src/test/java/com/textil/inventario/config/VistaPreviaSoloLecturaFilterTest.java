@@ -27,7 +27,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class VistaPreviaSoloLecturaFilterTest {
 
-    private final VistaPreviaSoloLecturaFilter filtro = new VistaPreviaSoloLecturaFilter();
+    private static final String REFUGIO = "/vista-previa/sin-permiso";
+    private final VistaPreviaSoloLecturaFilter filtro = new VistaPreviaSoloLecturaFilter(REFUGIO);
 
     @AfterEach
     void limpiar() {
@@ -59,13 +60,21 @@ class VistaPreviaSoloLecturaFilterTest {
     }
 
     @Test
-    void enVistaPrevia_seBloqueaCualquierEscritura() throws Exception {
+    void enVistaPrevia_seBloqueaCualquierEscritura_ySeDesviaAlRefugio() throws Exception {
         enVistaPrevia();
 
-        assertThat(pasar("POST", "/recepciones/nueva").getStatus()).isEqualTo(403);
-        assertThat(pasar("POST", "/transferencias/1/confirmar-salida").getStatus()).isEqualTo(403);
-        assertThat(pasar("DELETE", "/catalogo/colores/3").getStatus()).isEqualTo(403);
-        assertThat(pasar("PUT", "/programas/1").getStatus()).isEqualTo(403);
+        // Se REDIRIGE, no se escribe un 403 con el texto en la respuesta. Un 403
+        // crudo explica bien lo que paso y aun asi deja al usuario sin menu, sin
+        // banda y sin boton de salir: otra pantalla sin salida. Ya paso.
+        for (String[] caso : new String[][]{
+                {"POST", "/recepciones/nueva"},
+                {"POST", "/transferencias/1/confirmar-salida"},
+                {"DELETE", "/catalogo/colores/3"},
+                {"PUT", "/programas/1"}}) {
+            MockHttpServletResponse res = pasar(caso[0], caso[1]);
+            assertThat(res.getStatus()).as(caso[0] + " " + caso[1]).isEqualTo(302);
+            assertThat(res.getRedirectedUrl()).isEqualTo(REFUGIO + "?motivo=escritura");
+        }
     }
 
     @Test
@@ -87,14 +96,14 @@ class VistaPreviaSoloLecturaFilterTest {
     }
 
     @Test
-    void enVistaPrevia_miCuentaSeCortaConMensaje() throws Exception {
+    void enVistaPrevia_miCuentaSeDesviaAlRefugio() throws Exception {
         enVistaPrevia();
 
         // Es el UNICO GET que resuelve el usuario actual con la variante que lanza
         // (UsuarioController:360). Con un principal sintetico daria un 500 pelado.
         MockHttpServletResponse res = pasar("GET", "/usuarios/mi-cuenta");
-        assertThat(res.getStatus()).isEqualTo(403);
-        assertThat(res.getContentAsString()).contains("vista previa");
+        assertThat(res.getStatus()).isEqualTo(302);
+        assertThat(res.getRedirectedUrl()).isEqualTo(REFUGIO + "?motivo=mi-cuenta");
     }
 
     @Test
@@ -103,6 +112,14 @@ class VistaPreviaSoloLecturaFilterTest {
 
         assertThat(pasar("POST", "/recepciones/nueva").getStatus()).isEqualTo(200);
         assertThat(pasar("GET", "/usuarios/mi-cuenta").getStatus()).isEqualTo(200);
+    }
+
+    @Test
+    void elRefugio_seVeSiempre_aunqueSeLlegueDesdeUnBloqueo() throws Exception {
+        enVistaPrevia();
+
+        // Si el refugio quedara bloqueado, el desvio del filtro seria un bucle.
+        assertThat(pasar("GET", REFUGIO).getStatus()).isEqualTo(200);
     }
 
     @Test

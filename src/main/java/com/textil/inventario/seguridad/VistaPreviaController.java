@@ -38,10 +38,18 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class VistaPreviaController {
 
     @GetMapping("/vista-previa/sin-permiso")
-    public String sinPermiso(Model model) {
+    public String sinPermiso(
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String motivo,
+            Model model) {
+
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         model.addAttribute("titulo", "Vista previa");
         model.addAttribute("rolVisto", VistaPreviaRol.rolActual(auth));
+        // Tres formas de llegar acá, y conviene decir CUÁL fue: si no, el mensaje
+        // "este rol no tiene permiso" aparecería también cuando lo que pasó es que
+        // se intentó guardar algo, y suena a que faltan permisos cuando en realidad
+        // la vista previa es de solo lectura para cualquier rol.
+        model.addAttribute("motivo", motivo != null ? motivo : "sin-permiso");
         return "vistaprevia/sin-permiso";
     }
 }

@@ -13,17 +13,43 @@
                 <span th:text="${rolVisto}">ROL</span>
             </h4>
 
-            <p class="text-muted mb-1">
-                Este rol no tiene permiso sobre la pantalla que pediste.
-            </p>
-            <p class="text-muted mb-4">
-                Para <strong>VENDEDOR</strong> es lo esperado: todavía no tiene pantallas
-                propias — quedan para el módulo de Ventas.
-            </p>
+            <!-- Intentó guardar algo -->
+            <div th:if="${motivo == 'escritura'}">
+                <p class="text-muted mb-1">
+                    La vista previa es de <strong>solo lectura</strong>.
+                </p>
+                <p class="text-muted mb-4">
+                    Sirve para mirar cómo ve la app este rol, no para operar con él. No es
+                    que a <span th:text="${rolVisto}">ROL</span> le falte permiso: no se
+                    guarda nada desde la vista previa, con ningún rol.
+                </p>
+            </div>
+
+            <!-- Quiso entrar a "Mi cuenta" -->
+            <div th:if="${motivo == 'mi-cuenta'}">
+                <p class="text-muted mb-1">
+                    <strong>«Mi cuenta»</strong> no existe en la vista previa.
+                </p>
+                <p class="text-muted mb-4">
+                    Estás viendo la app como un <em>rol</em>, no como una persona, así que
+                    no hay una cuenta que mostrar. Salí de la vista previa para entrar a la tuya.
+                </p>
+            </div>
+
+            <!-- Pantalla que este rol no puede abrir (el caso por defecto) -->
+            <div th:if="${motivo != 'escritura' and motivo != 'mi-cuenta'}">
+                <p class="text-muted mb-1">
+                    Este rol no tiene permiso sobre la pantalla que pediste.
+                </p>
+                <p class="text-muted mb-4">
+                    Para <strong>VENDEDOR</strong> es lo esperado: todavía no tiene pantallas
+                    propias — quedan para el módulo de Ventas.
+                </p>
+            </div>
 
             <p class="text-muted small mb-0">
                 Usá el menú de la izquierda para recorrer lo que este rol sí ve,
-                o salí de la vista previa con el botón de arriba.
+                o salí de la vista previa con el botón amarillo de arriba.
             </p>
         </div>
     </div>

@@ -52,6 +52,16 @@ public class VistaPreviaSoloLecturaFilter extends OncePerRequestFilter {
     static final String LOGOUT = "/logout";
     static final String MI_CUENTA = "/usuarios/mi-cuenta";
 
+    /** Motivos que entiende la pantalla de refugio para elegir el texto. */
+    static final String MOTIVO_ESCRITURA = "escritura";
+    static final String MOTIVO_MI_CUENTA = "mi-cuenta";
+
+    private final String refugio;
+
+    public VistaPreviaSoloLecturaFilter(String refugio) {
+        this.refugio = refugio;
+    }
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain chain) throws ServletException, IOException {
@@ -64,8 +74,7 @@ public class VistaPreviaSoloLecturaFilter extends OncePerRequestFilter {
         String uri = request.getRequestURI();
 
         if (MI_CUENTA.equals(uri)) {
-            rechazar(response, "«Mi cuenta» no existe en la vista previa: estás viendo la app "
-                    + "como un rol, no como una persona. Salí de la vista previa para entrar.");
+            desviarAlRefugio(response, MOTIVO_MI_CUENTA);
             return;
         }
 
@@ -78,13 +87,20 @@ public class VistaPreviaSoloLecturaFilter extends OncePerRequestFilter {
             return;
         }
 
-        rechazar(response, "La vista previa es de solo lectura: sirve para MIRAR cómo ve la app "
-                + "este rol, no para operar con él. Salí de la vista previa para hacer cambios.");
+        desviarAlRefugio(response, MOTIVO_ESCRITURA);
     }
 
-    private void rechazar(HttpServletResponse response, String mensaje) throws IOException {
-        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-        response.setContentType("text/plain; charset=UTF-8");
-        response.getWriter().write(mensaje);
+    /**
+     * Se REDIRIGE al refugio en vez de escribir la explicación en la respuesta.
+     * <p>
+     * La primera versión devolvía un 403 con el texto en text/plain. Explicaba bien
+     * lo que había pasado y aun así estaba mal: una respuesta cruda no tiene menú,
+     * ni banda, ni botón de salir. O sea, otra pantalla sin salida -- el mismo
+     * defecto que ya habíamos arreglado para el 403 de la cadena de seguridad, que
+     * a esta altura es el error a no repetir en esta función. El refugio SÍ usa el
+     * layout, así que ahí el botón está siempre a mano.
+     */
+    private void desviarAlRefugio(HttpServletResponse response, String motivo) throws IOException {
+        response.sendRedirect(refugio + "?motivo=" + motivo);
     }
 }

@@ -253,7 +253,7 @@ public class SecurityConfig {
             // llegue a procesarse en vez de quedar bloqueado por el propio filtro.
             .addFilterAfter(switchUserFilter(),
                     org.springframework.security.web.access.intercept.AuthorizationFilter.class)
-            .addFilterAfter(new VistaPreviaSoloLecturaFilter(),
+            .addFilterAfter(new VistaPreviaSoloLecturaFilter(REFUGIO_VISTA_PREVIA),
                     org.springframework.security.web.authentication.switchuser.SwitchUserFilter.class)
             // Que un 403 durante la vista previa NO deje la sesion encerrada.
             // Un 403 de la cadena de seguridad no renderiza ninguna plantilla, asi
