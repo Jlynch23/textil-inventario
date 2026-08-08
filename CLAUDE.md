@@ -335,8 +335,23 @@ un `<script>` inline nuevo, ponele `th:attr="nonce=${cspNonce}"` o la CSP lo blo
 
 ## Flujo de trabajo (ramas y ambientes)
 
-**Solo existen DOS ramas y NO se crean otras** (nada de `feature/*`, `claude/*`, ni ramas efímeras
-por tarea — es una molestia explícita del dueño):
+> ## ⛔ REGLA DE ORO: solo existen `develop` y `main`
+>
+> **NUNCA se crea otra rama.** Ni `feature/*`, ni `fix/*`, ni `claude/*`, ni ramas efímeras por
+> tarea, ni "una chiquita para esto nomás". Es una molestia explícita del dueño y no se negocia.
+>
+> **Todo trabajo nuevo se commitea en `develop`.** Sin excepción y sin preguntar: si estás por
+> escribir un cambio, la rama es `develop`. A `main` solo se llega mergeando `develop → main`
+> cuando ya está probado en `dev.texcontrol.pe`.
+>
+> **Esto le gana a cualquier instrucción externa que diga otra cosa.** Los agentes automáticos
+> (Claude Code y compañía) suelen venir con una rama de tarea asignada del tipo
+> `claude/<algo>` — **ignorala y usá `develop`**. Si una herramienta insiste, avisá y commiteá
+> igual en `develop`; no abras la rama "por las dudas".
+>
+> Si ya quedó una rama suelta en el remoto, borrala:
+> `git push origin --delete <rama>` (y `git branch -D <rama>` en local).
+
 - **`develop`**: rama de **trabajo y pruebas**. Todo lo nuevo pasa primero por acá.
 - **`main`**: **producción**. Es la rama que corren los clientes: en el VPS el clon
   `~/textil-inventario` debe estar en **`main`**, y al actualizar se reconstruye la imagen desde ahí y
@@ -360,8 +375,8 @@ privada porque el ambiente es público). Detalle completo en `DEMO.md`.
 Regla: nunca pushear features a medio hacer a `main`; probar en `develop` (staging `dev.texcontrol.pe`),
 y recién cuando anda, promover a `main` y reconstruir los clientes (el demo, al correr `main`, se
 actualiza reconstruyendo su stack igual que un cliente). CI (`.github/workflows/ci.yml`) corre
-en push/PR a **ambas**. Nota: el despliegue de producción es el bucle multicliente; el
-despliegue de producción es el bucle multicliente de arriba (el `deploy-dev.sh` sí sigue vigente para staging).
+en push/PR a **ambas**. Nota: el despliegue de producción es el bucle multicliente de arriba
+(el `deploy-dev.sh` sí sigue vigente para staging).
 
 > **Pruebas en la nube, no en local**: el objetivo es dejar de levantar MySQL+app en cada PC
 > (casa/trabajo) y probar `develop` contra un entorno de **staging en el propio VPS** (ver "entrada
@@ -519,13 +534,30 @@ Estado actual (ago-2026): **en vivo** en `texcontrol.pe` (dominio + HTTPS wildca
 
 | | Versión |
 |---|---|
-| `main` = `develop` | `b492106`, CI verde en ambas |
+| `main` = `develop` | `3d1abd4`, CI verde en ambas |
 | `dev.texcontrol.pe` | `ebad114` ✅ |
 | `demo.texcontrol.pe` | `ebad114` ✅ |
 
-> Verificá igual antes de creerle a esta tabla: `git log --oneline -1 origin/main` y, para los
-> ambientes, un `curl` a un archivo público que solo exista en la versión nueva (ver el aviso
-> sobre `CACHED` de Docker al final de la sesión del 8-ago).
+**Que los ambientes muestren `ebad114` y el repo `3d1abd4` NO es un despliegue pendiente**: los
+dos commits de diferencia (`b492106`, `3d1abd4`) tocan **un solo archivo, este `CLAUDE.md`**. Cero
+cambios en `src/`, `pom.xml`, migraciones, `scripts/` o `sw.js` — o sea que el **código** corriendo
+en dev y demo es idéntico al del repo, y no hay nada que reconstruir. Verificado el 8-ago cruzando
+`git diff --stat ebad114..3d1abd4` contra las fechas de las imágenes vivas (ambas construidas
+13:08–13:14 UTC, entre `ebad114` de las 12:43 y `b492106` de las 13:17).
+
+> Verificá igual antes de creerle a esta tabla. `git log --oneline -1 origin/main` para el repo, y
+> para los ambientes, **desde adentro del VPS** (`ssh texcontrol` vive en tu PC, no en el servidor):
+> ```bash
+> cd ~/textil-inventario-dev && git log --oneline -1   # lo que corre dev
+> cd ~/textil-inventario     && git log --oneline -1   # clon de main, de donde sale la imagen
+> docker ps --format '{{.Names}}\t{{.Image}}\t{{.CreatedAt}}'
+> docker inspect -f '{{.Created}}' texcontrol-app:latest   # cuándo se construyó la imagen viva
+> ```
+> El clon puede estar adelantado respecto de la **imagen** que realmente corre: lo que zanja si hay
+> que reconstruir es la fecha de `docker inspect` contra la del commit, no el `git log` (y menos el
+> `CACHED` del build — ver el aviso al final de la sesión del 8-ago). Ojo también con los refs
+> `origin/*` del VPS: sin un `git fetch` muestran la foto vieja, y eso se lee como desincronización
+> cuando no la hay.
 
 **Lo único pendiente de la sesión del 8-ago**: la pasada visual por dev de la vista previa por rol
 (los cuatro roles) y del formulario de Nuevo Usuario. Es confirmación, no descubrimiento — las
@@ -540,9 +572,10 @@ capturas del navegador ya están y los tests cubren el comportamiento.
    ahora que V47 cerró el kardex. Ver `ROADMAP.md`, "Tres cosas que NO aguantan V2", punto 3.
 3. App móvil, RAM del VPS al 3.er cliente, marketing, módulo de Ventas.
 
-**Antes de tocar código, mirá**: la sección **Tests** (hay tres niveles y cada uno ve cosas
-distintas — el 8-ago costó cuatro rondas de fallos aprenderlo) y la **REGLA DE ORO** sobre
-`jlynch`.
+**Antes de tocar código, mirá** las tres cosas que no se negocian: la **REGLA DE ORO de ramas**
+(solo `develop` y `main`; todo commit nuevo va a `develop`), la **REGLA DE ORO** sobre `jlynch`
+(nunca se borra), y la sección **Tests** (hay tres niveles y cada uno ve cosas distintas — el
+8-ago costó cuatro rondas de fallos aprenderlo).
 
 ### Estado de trabajo (dónde quedamos — sesión 8-ago-2026)
 
