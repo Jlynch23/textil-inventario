@@ -31,6 +31,21 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 3
+    ignore:
+      # NO subir eclipse-temurin de major. El pom fija <java.version>21</java.version>
+      # y el Dockerfile compila con 21-jdk-jammy: un PR que suba SOLO la imagen del
+      # runtime (paso `stage-1`) dejaria el JAR corriendo sobre un JDK distinto al
+      # que lo compilo. Ademas 21 es LTS y 22 no.
+      #
+      # Se bloquea unicamente el salto de MAJOR: los updates de patch/minor de la
+      # linea 21 (21.0.x, que son los que traen los parches de seguridad de la JVM)
+      # siguen llegando normal. Es a proposito -- no se apaga el aviso, se apaga el
+      # salto de version.
+      #
+      # Al migrar a la proxima LTS hay que quitar esta regla Y subir <java.version>
+      # en el pom en el mismo commit; las dos mitades van juntas.
+      - dependency-name: "eclipse-temurin"
+        update-types: ["version-update:semver-major"]
 
   # Acciones usadas en .github/workflows/ci.yml (actions/checkout, etc.)
   - package-ecosystem: "github-actions"
