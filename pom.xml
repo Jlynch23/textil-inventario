@@ -102,6 +102,25 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Utilidades de test de Spring Security (@WithUserDetails, csrf(), ...). -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- H2 SOLO para tests: permite levantar la app entera (cadena de seguridad
+             real + plantillas Thymeleaf renderizadas de verdad) con MockMvc, sin
+             MySQL ni Docker. Es lo que faltaba: los fallos de la vista previa por
+             rol (redirecciones, pantallas sin salida, un bucle) no los podia ver
+             ningun test unitario, solo se veian abriendo la app.
+             OJO: NO reemplaza al job `validar-esquema` de CI, que valida el esquema
+             Flyway contra MySQL real. Aca Flyway va apagado y el esquema lo genera
+             Hibernate (ver application-mockmvc.yml). -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-ooxml</artifactId>

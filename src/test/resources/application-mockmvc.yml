@@ -1,0 +1,40 @@
+# Perfil para los tests que levantan la app ENTERA con MockMvc (sin MySQL ni Docker).
+#
+# Para que sirve: los defectos de la vista previa por rol --a donde redirige cada
+# rol, pantallas sin boton de salir, un bucle de redirecciones-- no los ve ningun
+# test unitario. Solo aparecen al abrir la app. Con esto se abren de verdad: corre
+# la cadena de seguridad completa y Thymeleaf renderiza las plantillas.
+#
+# NO reemplaza al job `validar-esquema` de CI, y la diferencia importa:
+#   * Aca Flyway va APAGADO y el esquema lo genera Hibernate (create-drop). Se
+#     prueba la APP, no las migraciones.
+#   * Alla corre Flyway contra MySQL 8 real con ddl-auto=validate. Se prueba que
+#     el esquema migrado calce con las entidades.
+# Un cambio de esquema tiene que pasar por los dos.
+
+spring:
+  datasource:
+    # MODE=MySQL para que H2 entienda los dialectos que usan las entidades.
+    url: jdbc:h2:mem:vistaprevia;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
+    username: sa
+    password: ""
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+  flyway:
+    enabled: false
+  thymeleaf:
+    # Que un error de plantilla FALLE el test en vez de quedar cacheado a medias.
+    cache: false
+
+# Obligatoria en SecurityConfig (la app no arranca sin ella).
+app:
+  remember-me-key: clave-solo-para-tests-0123456789abcdef
+
+# El OCR no se usa en estos tests.
+anthropic:
+  api-key: no-usada-en-tests
