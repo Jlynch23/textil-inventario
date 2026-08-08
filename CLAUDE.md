@@ -481,8 +481,10 @@ Estado actual (ago-2026): **en vivo** en `texcontrol.pe` (dominio + HTTPS wildca
 
 ### Estado de trabajo (dónde quedamos — sesión 8-ago-2026)
 
-**`main` = `develop` = `9f7f73b`, CI verde en ambas, y los TRES ambientes al día.** Sesión corta,
-de mantenimiento: se aplicaron los PRs de Dependabot que estaban abiertos desde el 4-ago.
+**`main` = `develop` = `ebad114`, CI verde en ambas, y los TRES ambientes al día** (dev y demo
+verificados corriendo ese commit). Arrancó como mantenimiento —los PRs de Dependabot abiertos
+desde el 4-ago— y terminó sumando la vista previa por rol y, sobre todo, **dos niveles de prueba
+que el proyecto no tenía**.
 
 **1. Bootstrap 5.3.0 → 5.3.8, bootstrap-icons 1.11.0 → 1.13.1, `actions/upload-artifact` v4 → v7.**
 Los dos de webjars **no se mergearon con el botón**, a propósito: el PR automático solo toca el
@@ -535,6 +537,51 @@ caminos y elegir mal cuesta el contenido del demo — están en `DEMO.md`.
 > - `docker exec -i` **se come stdin**. Dentro de un `while read` alimentado por stdin, el bucle
 >   procesaba UNA sola tabla. El SQL ya va por `-e`, así que `-i` sobraba. Es el clásico de
 >   ssh/docker en un while-read; el comentario quedó en el script para que nadie lo reponga.
+
+**7. «Ver como GERENTE / ADMIN / SUPERVISOR»** (`VistaPreviaRol`): el SUPERADMIN cambia el rol
+efectivo de SU sesión para ver la app como la ve otro rol. Usa el `SwitchUserFilter` de Spring
+Security. Es un **rol sintético, no un usuario real** (`vista:GERENTE`, que no existe en
+`usuarios`): suplantar a una persona ensuciaría el kardex y el log, y además no funcionaría —
+una copia recién entregada tiene UNA cuenta, y dev y el demo acaban de quedar solo con `jlynch`.
+De ahí que sea de **solo lectura**: sin usuario en base no hay a quién atribuir un alta.
+
+> **La regla de esta función, que costó cuatro rondas de fallos en dev aprender**: *cualquier
+> corte durante la vista previa tiene que terminar en una página que muestre el botón de salir.*
+> Nunca un 403 pelado, nunca texto plano, nunca un bucle. Lo que fue pasando: NPE al entrar y al
+> salir (el `SwitchUserFilter` sin `afterPropertiesSet()` queda sin `successHandler`); SUPERVISOR
+> a `/` daba 403 (esa ruta es GERENTE+ADMIN+SUPERADMIN); `/almacen` sin botón (tiene `<head>`
+> propio y no hereda del layout → la banda es un fragmento); y con VENDEDOR, **bucle infinito**
+> porque el manejador de 403 lo mandaba al inicio de su rol y ese rol no puede abrir nada → de
+> ahí el refugio `/vista-previa/sin-permiso`, autorizado por la autoridad del switch y no por rol.
+
+**8. Dos niveles de prueba nuevos** (219 tests). Son la respuesta al punto anterior: los cuatro
+fallos vivían en el armado, y **ningún test unitario podía verlos** porque no montan la cadena de
+filtros ni renderizan plantillas.
+- `VistaPreviaWebTest` — `@SpringBootTest` + MockMvc sobre **H2** (`application-mockmvc.yml`):
+  levanta la app entera sin MySQL ni Docker. Corre en CI. **No reemplaza a `validar-esquema`**:
+  ahí Flyway va apagado y el esquema lo genera Hibernate, así que prueba la APP, no las
+  migraciones. Un cambio de esquema tiene que pasar por los dos.
+- `VistaPreviaNavegadorTest` — **Playwright con un Chromium real** contra la app en un puerto,
+  y deja capturas en `target/capturas-vista-previa/`. Prueba que el botón se **vea** y se pueda
+  clickear, no solo que esté en el HTML. Encontró un fallo a la primera pasada: la banda sin
+  `margin-left` quedaba **debajo del sidebar** (que es `position:fixed`) y le tapaba el texto —
+  en el HTML estaba entero. Por eso ese test mide POSICIONES. No corre en CI: pide
+  `VISTA_PREVIA_UI=true` y el binario en `PLAYWRIGHT_CHROMIUM` (apuntar a
+  **`chromium_headless_shell`**, no a `chromium`: los Chrome nuevos quitaron el `--headless=old`
+  que usa Playwright 1.47 y el proceso muere al arrancar).
+
+**9. Alta de usuarios**: el ejemplo decía `"Oscar Clemente" → oclemente` — el nombre de una persona
+de otro cliente, en una pantalla que ve el dueño de CADA copia. Ahora es genérico
+(`"Nombre Apellido" → napellido`). Y `autocomplete` en **todos** los formularios de usuario: el
+navegador ofrecía el último nombre tipeado, y en *Editar usuario* / *Resetear contraseña*
+autocompletaba con la clave guardada del que está logueado — se le podía poner al otro usuario la
+contraseña propia sin notarlo. Va `new-password`, que es lo único que respetan ahí.
+
+> **`CACHED` en un `COPY` de Docker NO significa "no cambió el código"** — significa que esas
+> capas ya existen en el daemon, y el daemon es UNO solo para el clon de producción y el de dev.
+> Pasó dos veces en esta sesión y las dos veces despistó. Lo que zanja la duda no es razonar sobre
+> el caché sino preguntarle al servidor: `curl` a un archivo público que solo exista en la versión
+> nueva (ej. `curl -s https://demo.texcontrol.pe/css/texcontrol.css | grep -c banda-vista-previa`).
 
 ### Estado anterior (sesión 7-ago-2026)
 
