@@ -89,7 +89,11 @@
                 <button type="button" class="nav-section nav-toggle"><span>Análisis</span><i class="bi bi-chevron-down nav-chevron"></i></button>
                 <div class="nav-items">
                     <a th:href="@{/reportes}" th:classappend="${rutaMenuActiva == '/reportes'} ? ' active'" class="nav-link" title="Reportes"><i class="bi bi-bar-chart-line"></i><span class="nav-text">Reportes</span></a>
-                    <a th:href="@{/archivo-historico}" th:classappend="${rutaMenuActiva == '/archivo-historico'} ? ' active'" class="nav-link" title="Archivo Histórico"><i class="bi bi-archive"></i><span class="nav-text">Archivo Histórico</span></a>
+                    <!-- Solo SUPERADMIN: la carga masiva gasta la API key del proveedor
+                         (una llamada por documento del ZIP). El grupo "Análisis" es
+                         ADMIN+SUPERADMIN, así que el ADMIN ve el grupo con Reportes
+                         pero sin esta entrada. -->
+                    <a th:href="@{/archivo-historico}" th:classappend="${rutaMenuActiva == '/archivo-historico'} ? ' active'" sec:authorize="hasRole('SUPERADMIN')" class="nav-link" title="Archivo Histórico"><i class="bi bi-archive"></i><span class="nav-text">Archivo Histórico</span></a>
                 </div>
             </div>
 

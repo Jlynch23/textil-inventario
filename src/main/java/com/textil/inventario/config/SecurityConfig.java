@@ -119,6 +119,13 @@ public class SecurityConfig {
                 // Reporte de Errores del Sistema (diagnostico tecnico/OCR). Debe ir
                 // ANTES del anyRequest ADMIN+SUPERADMIN para que el ADMIN no lo alcance.
                 .requestMatchers("/reportes/errores").hasRole("SUPERADMIN")
+                // Archivo Historico: reservado por COSTO, no por confianza. Cada ZIP
+                // dispara una llamada a la API de Anthropic POR DOCUMENTO, contra la
+                // UNICA API key del proveedor, compartida por todas las instancias.
+                // Un ADMIN cargando un zip grande gasta plata que no es suya. El OCR
+                // de una guia suelta (Recepciones) sigue abierto al ADMIN: es el flujo
+                // central y es de a un documento.
+                .requestMatchers("/archivo-historico/**").hasRole("SUPERADMIN")
                 // La gestion de cuentas SUPERADMIN no se restringe por URL sino
                 // DENTRO de UsuarioController: el ADMIN entra a /usuarios pero no
                 // ve, ni crea, ni toca cuentas SUPERADMIN (quedan ocultas).

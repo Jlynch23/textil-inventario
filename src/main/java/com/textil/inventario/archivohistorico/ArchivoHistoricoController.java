@@ -23,9 +23,20 @@ import java.nio.file.Path;
 @Controller
 @RequestMapping("/archivo-historico")
 @RequiredArgsConstructor
-// M7 (auditoria): defensa en profundidad. Todo el modulo es ADMIN+SUPERADMIN por
-// las reglas de URL, pero era el unico controlador de escritura sin @PreAuthorize.
-@org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
+// RESERVADO AL PROVEEDOR (SUPERADMIN). No es una restriccion de confianza sino de
+// COSTO: subir un ZIP dispara una llamada a la API de Anthropic POR CADA documento
+// que trae adentro, y la API key es UNA SOLA del proveedor, compartida por todas las
+// instancias (ver DEPLOY.md 6.6, configurar-proveedor.sh). Un ADMIN subiendo un zip
+// de 500 guias "a ver que pasa" gasta plata que no es suya y que nadie le factura.
+// Peor en el demo, que es publico y esta pensado para prospectos.
+//
+// Antes era ADMIN+SUPERADMIN. El resto del OCR (el de una guia suelta en Recepciones)
+// SIGUE abierto al ADMIN a proposito: es el flujo central del producto y es un
+// documento por vez. Lo que se cierra es la carga MASIVA.
+//
+// M7 (auditoria): ademas es defensa en profundidad -- la regla de URL en
+// SecurityConfig ya lo cubre, pero este modulo no debe depender solo de eso.
+@org.springframework.security.access.prepost.PreAuthorize("hasRole('SUPERADMIN')")
 public class ArchivoHistoricoController {
 
     private final DocumentoHistoricoRepository documentoHistoricoRepository;
