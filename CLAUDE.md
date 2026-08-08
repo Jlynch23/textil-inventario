@@ -623,7 +623,9 @@ Guarda de CI `OsivFetchGraphTest` contra MySQL real. Validación de PDF (`%PDF-`
 **✅ Entrada secreta / staging YA EN VIVO y en uso desde casa**: `dev.texcontrol.pe` (OCULTO, Basic Auth)
 corre `develop` con su propia BD aislada (setup y uso en `STAGING.md`). El Basic Auth es usuario **`jlynch`**
 (el archivo untracked `nginx/dev.htpasswd`; se resetea con `htpasswd -B nginx/dev.htpasswd jlynch` + `docker
-exec textil_nginx nginx -s reload`). **Flujo de trabajo nuevo**: pushear a `develop` → en el VPS
+exec texcontrol_proxy_nginx nginx -s reload` — **corregido el 8-ago**: acá decía `textil_nginx`, que es el
+proxy single-cliente ya decomisionado, así que el reload fallaba y nginx seguía sirviendo la clave vieja).
+**Flujo de trabajo nuevo**: pushear a `develop` → en el VPS
 `cd ~/textil-inventario && ./scripts/deploy-dev.sh` → probar en `dev.texcontrol.pe` → cuando anda, promover
 `develop → main` + actualizar los clientes. Se acabó levantar MySQL/app en local.
 

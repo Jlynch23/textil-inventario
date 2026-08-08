@@ -1,15 +1,21 @@
 # Entorno de PRUEBAS (staging) — corre la rama `develop` con su PROPIA base de
 # datos, AISLADA de produccion. Se sirve en https://dev.texcontrol.pe, OCULTO
-# detras de Basic Auth en el nginx de produccion. Ver STAGING.md.
+# detras de Basic Auth en el proxy multicliente. Ver STAGING.md.
 #
 # Se levanta con el script (usa un clon aparte del repo, en develop):
 #   ./scripts/deploy-dev.sh
 # O a mano, desde un clon en develop:
 #   docker compose --env-file .env.dev -f docker-compose.dev.yml up -d --build
 #
-# app_dev se une a la red del stack de produccion (textil-inventario_default)
-# para que el nginx de produccion (textil_nginx) lo alcance por nombre. Su MySQL
-# vive en una red privada (dev_interna) que NUNCA se comparte -> datos aislados.
+# app_dev se une a la red compartida del proxy multicliente (texcontrol_red, la
+# crea el stack del proxy) para que `texcontrol_proxy_nginx` lo alcance por
+# nombre. Su MySQL vive en una red privada (dev_interna) que NUNCA se comparte
+# -> datos aislados.
+#
+# (Antes esto decia que se unia a `textil-inventario_default` y que lo ruteaba
+# `textil_nginx`: era el stack single-cliente, decomisionado en la migracion a
+# multicliente. La config de abajo ya apuntaba a texcontrol_red; el comentario
+# habia quedado viejo.)
 
 name: textil_dev
 
