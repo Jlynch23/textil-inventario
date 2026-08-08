@@ -241,7 +241,24 @@ public class SecurityConfig {
             .addFilterAfter(switchUserFilter(),
                     org.springframework.security.web.access.intercept.AuthorizationFilter.class)
             .addFilterAfter(new VistaPreviaSoloLecturaFilter(),
-                    org.springframework.security.web.authentication.switchuser.SwitchUserFilter.class);
+                    org.springframework.security.web.authentication.switchuser.SwitchUserFilter.class)
+            // Que un 403 durante la vista previa NO deje la sesion encerrada.
+            // Un 403 de la cadena de seguridad no renderiza ninguna plantilla, asi
+            // que tampoco aparece la banda con el boton de "salir de la vista
+            // previa": el unico camino de vuelta seria borrar la cookie. Se lo
+            // devuelve a la pantalla de inicio de SU rol --que por definicion puede
+            // abrir-- y desde ahi sale con el boton.
+            .exceptionHandling(ex -> ex.accessDeniedHandler((request, response, denegado) -> {
+                var auth = org.springframework.security.core.context.SecurityContextHolder
+                        .getContext().getAuthentication();
+                if (com.textil.inventario.seguridad.VistaPreviaRol.activa(auth)) {
+                    response.sendRedirect(
+                            com.textil.inventario.seguridad.DestinoPorRol.destinoPara(auth)
+                            + "?sinPermisoEnVistaPrevia");
+                    return;
+                }
+                response.sendError(jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN);
+            }));
 
         return http.build();
     }
@@ -279,18 +296,11 @@ public class SecurityConfig {
     @Bean
     public org.springframework.security.web.authentication.AuthenticationSuccessHandler authenticationSuccessHandler() {
         return (request, response, authentication) -> {
-            boolean esSupervisor = authentication.getAuthorities().stream()
-                    .anyMatch(a -> a.getAuthority().equals("ROLE_SUPERVISOR"));
-            boolean esSuperadmin = authentication.getAuthorities().stream()
-                    .anyMatch(a -> a.getAuthority().equals("ROLE_SUPERADMIN"));
-
             auditLogService.registrarLogin(authentication.getName());
-
-            if (esSupervisor && !esSuperadmin) {
-                response.sendRedirect("/almacen");
-            } else {
-                response.sendRedirect("/");
-            }
+            // Misma regla que usan la vista previa por rol y el manejo de 403, para
+            // que no se desincronicen: vive en DestinoPorRol.
+            response.sendRedirect(
+                    com.textil.inventario.seguridad.DestinoPorRol.destinoPara(authentication));
         };
     }
 

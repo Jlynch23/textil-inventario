@@ -1,5 +1,6 @@
 package com.textil.inventario.config;
 
+import com.textil.inventario.seguridad.DestinoPorRol;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.switchuser.SwitchUserFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
@@ -16,18 +17,24 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
  *
  * <h2>Por qué hay que llamar a afterPropertiesSet() a mano</h2>
  * Y ese es el precio de no ser un bean: nadie ejecuta su ciclo de vida.
- * {@code SwitchUserFilter.afterPropertiesSet()} no es una validación opcional --
- * es donde el filtro CONSTRUYE su successHandler a partir del targetUrl:
+ * {@code SwitchUserFilter.afterPropertiesSet()} no es una validación opcional: es
+ * donde nacen sus handlers. Con la configuración original ({@code setTargetUrl})
+ * era el successHandler el que se construía ahí:
  * <pre>
  *   if (this.targetUrl != null) {
  *       this.successHandler = new SimpleUrlAuthenticationSuccessHandler(this.targetUrl);
  *   }
  * </pre>
- * Sin esa llamada, {@code successHandler} queda en null y {@code doFilter} lo
- * desreferencia -- en la rama de ENTRAR y en la de SALIR. Resultado: NullPointer
- * en las dos direcciones, y como salta dentro de la cadena de filtros no pasa por
- * GlobalExceptionHandler, así que el usuario ve la página de error genérica y en el
- * log no aparece el "Error no controlado" que uno iría a buscar.
+ * Sin esa llamada quedaba en null y {@code doFilter} lo desreferenciaba -- en la
+ * rama de ENTRAR y en la de SALIR. Resultado: NullPointer en las dos direcciones,
+ * y como salta dentro de la cadena de filtros no pasa por GlobalExceptionHandler,
+ * así que el usuario ve la página de error genérica y en el log no aparece el
+ * "Error no controlado" que uno iría a buscar.
+ * <p>
+ * Hoy el successHandler se pasa armado (hace falta calcular el destino según el
+ * rol), así que el que sigue naciendo en {@code afterPropertiesSet()} es el
+ * <b>failureHandler</b>, a partir del switchFailureUrl. La llamada sigue siendo
+ * obligatoria por eso: sin ella, un rol inválido da NullPointer en vez del aviso.
  * <p>
  * Mordió de verdad (8-ago), y no lo agarró nada: compila, los tests unitarios no
  * montan la cadena, y el arranque de la app tampoco falla porque el NPE recién
@@ -52,7 +59,15 @@ final class VistaPreviaSwitchUserFilterFactory {
         filtro.setSwitchUserMatcher(new AntPathRequestMatcher(URL_ENTRAR, "POST"));
         filtro.setExitUserMatcher(new AntPathRequestMatcher(URL_SALIR, "POST"));
         filtro.setUsernameParameter(PARAM_ROL);
-        filtro.setTargetUrl("/");
+        // Adonde caer despues de entrar o salir. NO se usa setTargetUrl("/") fijo:
+        // el SUPERVISOR no tiene permiso sobre "/" (esa regla es GERENTE+ADMIN+
+        // SUPERADMIN), asi que previsualizarlo aterrizaba en un 403 -- y sin pagina,
+        // tampoco aparecia la banda con el boton de salir, o sea que la sesion
+        // quedaba encerrada en el rol. El destino se calcula del rol RESULTANTE,
+        // que sirve para las dos direcciones: al entrar es el rol previsualizado,
+        // al salir es el SUPERADMIN de vuelta.
+        filtro.setSuccessHandler((request, response, authentication) ->
+                response.sendRedirect(DestinoPorRol.destinoPara(authentication)));
         filtro.setSwitchFailureUrl("/usuarios?vistaPreviaError");
 
         // OBLIGATORIO. Ver el comentario de arriba: acá es donde nace el

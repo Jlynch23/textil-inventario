@@ -93,6 +93,20 @@ class VistaPreviaSwitchUserFilterFactoryTest {
     }
 
     @Test
+    void verComoSupervisor_aterrizaEnAlmacen_noEnElDashboard() throws Exception {
+        SecurityContextHolder.getContext().setAuthentication(superadmin());
+
+        MockHttpServletResponse res = enviar("/vista-previa", "SUPERVISOR");
+
+        // El SUPERVISOR NO tiene permiso sobre "/" (esa regla es GERENTE+ADMIN+
+        // SUPERADMIN). Con el redirect fijo a "/" que habia antes, elegir este rol
+        // daba 403 -- y sin pagina no se dibujaba la banda, asi que tampoco habia
+        // boton para salir: la sesion quedaba encerrada en el rol.
+        assertThat(res.getStatus()).isEqualTo(302);
+        assertThat(res.getRedirectedUrl()).isEqualTo("/almacen");
+    }
+
+    @Test
     void salirDeLaVistaPrevia_devuelveLaSesionOriginal() throws Exception {
         SecurityContextHolder.getContext().setAuthentication(superadmin());
         enviar("/vista-previa", "GERENTE");
