@@ -4,6 +4,10 @@ import com.textil.inventario.catalogo.EmpresaRepository;
 import com.textil.inventario.catalogo.Empresa;
 import com.textil.inventario.seguridad.Usuario;
 import com.textil.inventario.seguridad.UsuarioActualService;
+import com.textil.inventario.seguridad.VistaPreviaRol;
+import com.textil.inventario.seguridad.VistaPreviaRolUserDetailsService;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +32,7 @@ public class GlobalModelAttributes {
 
     private final UsuarioActualService usuarioActualService;
     private final EmpresaRepository empresaRepository;
+    private final VistaPreviaRolUserDetailsService vistaPreviaRolUserDetailsService;
 
     // Etiqueta del entorno (ej. "BETA" en staging), vacia en produccion.
     @Value("${app.entorno-etiqueta:}")
@@ -59,6 +64,37 @@ public class GlobalModelAttributes {
     public String nombreUsuarioActual() {
         Usuario usuario = usuarioActualService.obtenerUsuarioActualOrNull();
         return usuario != null ? usuario.getNombre() : "";
+    }
+
+    /**
+     * Rol que se está previsualizando ("GERENTE"), o vacío si no hay vista previa.
+     * La plantilla lo usa para pintar la banda de aviso; sin ella sería muy fácil
+     * olvidarse de que la sesión está en otro rol y creer que faltan permisos.
+     */
+    @ModelAttribute("vistaPreviaRol")
+    public String vistaPreviaRol() {
+        String rol = VistaPreviaRol.rolActual(auth());
+        return rol != null ? rol : "";
+    }
+
+    /** Roles que el SUPERADMIN puede previsualizar (todos menos SUPERADMIN). */
+    @ModelAttribute("rolesPrevisualizables")
+    public List<String> rolesPrevisualizables() {
+        try {
+            Authentication a = auth();
+            boolean esSuperadmin = a != null && a.getAuthorities().stream()
+                    .anyMatch(g -> "ROLE_SUPERADMIN".equals(g.getAuthority()));
+            // Durante la vista previa la sesion NO es SUPERADMIN, asi que la lista
+            // sale vacia y el lanzador no se dibuja. Es lo correcto: desde adentro
+            // se sale primero y despues se elige otro rol.
+            return esSuperadmin ? vistaPreviaRolUserDetailsService.rolesPrevisualizables() : List.of();
+        } catch (Exception ignore) {
+            return List.of();
+        }
+    }
+
+    private Authentication auth() {
+        return SecurityContextHolder.getContext().getAuthentication();
     }
 
     /**
@@ -111,9 +147,7 @@ public class GlobalModelAttributes {
      */
     @ModelAttribute("sidebarInicialColapsado")
     public boolean sidebarInicialColapsado() {
-        Usuario usuario = usuarioActualService.obtenerUsuarioActualOrNull();
-        return usuario != null && usuario.getRol() != null
-                && "GERENTE".equalsIgnoreCase(usuario.getRol().getNombre());
+        return tieneRol("GERENTE");
     }
 
     /**
@@ -127,10 +161,27 @@ public class GlobalModelAttributes {
      */
     @ModelAttribute("esAdmin")
     public boolean esAdmin() {
-        Usuario usuario = usuarioActualService.obtenerUsuarioActualOrNull();
-        if (usuario == null || usuario.getRol() == null) return false;
-        String rol = usuario.getRol().getNombre();
-        return "ADMIN".equalsIgnoreCase(rol) || "SUPERADMIN".equalsIgnoreCase(rol);
+        return tieneRol("ADMIN") || tieneRol("SUPERADMIN");
+    }
+
+    /**
+     * El rol sale de las AUTHORITIES de la sesión, no de releer `usuarios` en base.
+     * <p>
+     * Es lo correcto de por sí -- la autorización la decide el token autenticado, y
+     * de paso se ahorran dos consultas por request --, pero acá además es lo único
+     * que funciona: durante la vista previa por rol el principal es sintético y NO
+     * existe en la tabla, así que la búsqueda por username devolvía null y
+     * `esAdmin` daba false. O sea que "ver como ADMIN" se habría dibujado sin los
+     * paneles de escritura: la vista previa mintiendo justo en lo que se quiere
+     * mirar. Para una sesión normal el resultado es idéntico (las authorities se
+     * arman del rol de la BD al loguear, y al cambiarle el rol a alguien se le
+     * expira la sesión -- R-A1).
+     */
+    private boolean tieneRol(String rol) {
+        Authentication a = auth();
+        if (a == null) return false;
+        String buscada = "ROLE_" + rol.toUpperCase();
+        return a.getAuthorities().stream().anyMatch(g -> buscada.equals(g.getAuthority()));
     }
 
     /**

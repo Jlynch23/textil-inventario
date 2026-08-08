@@ -24,6 +24,8 @@ public class SecurityConfig {
 
     private final UsuarioDetailsService usuarioDetailsService;
     private final AuditLogService auditLogService;
+    private final com.textil.inventario.seguridad.VistaPreviaRolUserDetailsService
+            vistaPreviaRolUserDetailsService;
 
     // Clave que firma la cookie "recordar sesion" (remember-me). DEBE ser
     // estable entre reinicios/despliegues: si cambia, todas las cookies
@@ -119,6 +121,15 @@ public class SecurityConfig {
                 // Reporte de Errores del Sistema (diagnostico tecnico/OCR). Debe ir
                 // ANTES del anyRequest ADMIN+SUPERADMIN para que el ADMIN no lo alcance.
                 .requestMatchers("/reportes/errores").hasRole("SUPERADMIN")
+                // "Ver la app como GERENTE/ADMIN/..." (VistaPreviaRol). Entrar es
+                // SUPERADMIN; SALIR NO puede serlo: durante la vista previa la
+                // sesion ya NO tiene ROLE_SUPERADMIN (tiene el rol previsualizado),
+                // asi que pedirlo dejaria la sesion atrapada sin forma de volver.
+                // Lo que autoriza la salida es la autoridad que deja el
+                // SwitchUserFilter, que es exactamente "hay algo que restaurar".
+                .requestMatchers("/vista-previa/salir")
+                    .hasAuthority("ROLE_PREVIOUS_ADMINISTRATOR")
+                .requestMatchers("/vista-previa").hasRole("SUPERADMIN")
                 // Archivo Historico: reservado por COSTO, no por confianza. Cada ZIP
                 // dispara una llamada a la API de Anthropic POR DOCUMENTO, contra la
                 // UNICA API key del proveedor, compartida por todas las instancias.
@@ -220,9 +231,53 @@ public class SecurityConfig {
                 // (remember-me) ademas de invalidar la sesion.
                 .deleteCookies("JSESSIONID")
                 .permitAll()
-            );
+            )
+            // Vista previa por rol. El orden importa y es este:
+            //   AuthorizationFilter -> SwitchUserFilter -> VistaPreviaSoloLectura
+            // El switch va DESPUES de la autorizacion para que las reglas de URL de
+            // arriba lo protejan (si fuera antes, cualquiera podria cambiarse el rol).
+            // Y el de solo lectura va DESPUES del switch para que el POST de salida
+            // llegue a procesarse en vez de quedar bloqueado por el propio filtro.
+            .addFilterAfter(switchUserFilter(),
+                    org.springframework.security.web.access.intercept.AuthorizationFilter.class)
+            .addFilterAfter(new VistaPreviaSoloLecturaFilter(),
+                    org.springframework.security.web.authentication.switchuser.SwitchUserFilter.class);
 
         return http.build();
+    }
+
+    /**
+     * Cambia el rol efectivo de la sesion del SUPERADMIN para VER la app como otro
+     * rol. Usa el SwitchUserFilter de Spring Security (no hay nada casero acá).
+     * <p>
+     * Se le pasa el {@link com.textil.inventario.seguridad.VistaPreviaRolUserDetailsService},
+     * NO el de login: solo resuelve roles sinteticos y jamas consulta la tabla
+     * usuarios, asi que esto no puede convertirse en suplantacion de una persona
+     * real ni por parametro.
+     * <p>
+     * Entrar y salir son POST (con CSRF), no GET: con GET, un &lt;img src="..."&gt;
+     * en cualquier pagina externa podria cambiarle el rol a un SUPERADMIN sin que
+     * lo note -- el mismo motivo por el que el logout de este proyecto es POST.
+     * <p>
+     * <b>NO es un @Bean a proposito.</b> Spring Boot registra automaticamente en el
+     * contenedor de servlets cualquier bean de tipo Filter, asi que como @Bean este
+     * filtro quedaria montado DOS veces: una dentro de la cadena de seguridad (donde
+     * las reglas de URL lo protegen) y otra fuera de ella, delante de todo. Esa
+     * segunda copia correria SIN la autorizacion previa -- justo lo que la regla
+     * `/vista-previa -> hasRole('SUPERADMIN')` esta para impedir. Se construye a
+     * mano y se monta solo donde corresponde.
+     */
+    private org.springframework.security.web.authentication.switchuser.SwitchUserFilter switchUserFilter() {
+        var filtro = new org.springframework.security.web.authentication.switchuser.SwitchUserFilter();
+        filtro.setUserDetailsService(vistaPreviaRolUserDetailsService);
+        filtro.setSwitchUserMatcher(new AntPathRequestMatcher("/vista-previa", "POST"));
+        filtro.setExitUserMatcher(new AntPathRequestMatcher("/vista-previa/salir", "POST"));
+        filtro.setUsernameParameter("rol");
+        filtro.setTargetUrl("/");
+        // Volver del modo vista previa deja al SUPERADMIN en la pantalla de
+        // usuarios, que es de donde se entra.
+        filtro.setSwitchFailureUrl("/usuarios?vistaPreviaError");
+        return filtro;
     }
 
     @Bean
