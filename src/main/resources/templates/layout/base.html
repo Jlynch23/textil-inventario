@@ -160,22 +160,9 @@
         </div>
     </div>
 
-    <!-- Banda de la vista previa. Va SIEMPRE visible mientras dure: sin ella es
-         facilísimo olvidarse de que la sesión está en otro rol y leer los permisos
-         que faltan como un error del sistema. -->
-    <div th:if="${!#strings.isEmpty(vistaPreviaRol)}"
-         class="alert alert-warning border-0 rounded-0 mb-0 d-flex justify-content-between align-items-center py-2">
-        <span>
-            <i class="bi bi-eye-fill me-1"></i>
-            Estás viendo la app como <strong th:text="${vistaPreviaRol}">ROL</strong>.
-            <span class="small">Solo lectura: no se puede guardar nada.</span>
-        </span>
-        <form th:action="@{/vista-previa/salir}" method="post" class="m-0">
-            <button type="submit" class="btn btn-sm btn-warning">
-                <i class="bi bi-box-arrow-left me-1"></i>Salir de la vista previa
-            </button>
-        </form>
-    </div>
+    <!-- Banda de la vista previa (fragmento: las tres pantallas de /almacen
+         tienen <head> propio y lo llaman por separado). -->
+    <div th:replace="~{fragments/vista-previa :: banda('')}"></div>
 
     <!-- CONTENIDO -->
     <div class="main-content">

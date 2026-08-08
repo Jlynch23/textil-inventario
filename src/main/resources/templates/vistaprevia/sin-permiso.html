@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title/text()}, ~{::section})}">
+<head><title>Vista previa</title></head>
+<body>
+<section>
+    <div class="card border-0 shadow-sm">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-eye fs-1 text-secondary d-block mb-3"></i>
+
+            <h4 class="mb-3">
+                Estás viendo la app como
+                <span th:text="${rolVisto}">ROL</span>
+            </h4>
+
+            <p class="text-muted mb-1">
+                Este rol no tiene permiso sobre la pantalla que pediste.
+            </p>
+            <p class="text-muted mb-4">
+                Para <strong>VENDEDOR</strong> es lo esperado: todavía no tiene pantallas
+                propias — quedan para el módulo de Ventas.
+            </p>
+
+            <p class="text-muted small mb-0">
+                Usá el menú de la izquierda para recorrer lo que este rol sí ve,
+                o salí de la vista previa con el botón de arriba.
+            </p>
+        </div>
+    </div>
+</section>
+</body>
+</html>

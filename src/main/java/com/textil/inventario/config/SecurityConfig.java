@@ -22,6 +22,11 @@ import org.springframework.core.annotation.Order;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+    /** Pantalla de refugio de la vista previa (ver VistaPreviaController). Es la
+     *  unica alcanzable por CUALQUIER rol previsualizado, asi que redirigir ahi
+     *  nunca puede entrar en bucle. */
+    static final String REFUGIO_VISTA_PREVIA = "/vista-previa/sin-permiso";
+
     private final UsuarioDetailsService usuarioDetailsService;
     private final AuditLogService auditLogService;
     private final com.textil.inventario.seguridad.VistaPreviaRolUserDetailsService
@@ -127,7 +132,15 @@ public class SecurityConfig {
                 // asi que pedirlo dejaria la sesion atrapada sin forma de volver.
                 // Lo que autoriza la salida es la autoridad que deja el
                 // SwitchUserFilter, que es exactamente "hay algo que restaurar".
-                .requestMatchers("/vista-previa/salir")
+                // La pantalla de refugio y la salida se autorizan por la autoridad
+                // que deja el SwitchUserFilter, NO por rol: durante la vista previa
+                // la sesion ya no es SUPERADMIN, y pedirlo dejaria la sesion
+                // encerrada sin forma de volver.
+                // El refugio DEBE ser alcanzable por CUALQUIER rol previsualizado,
+                // incluido VENDEDOR (que hoy no tiene permiso sobre nada): es el
+                // unico destino que no puede rebotar, y por eso corta el bucle de
+                // redirecciones del manejador de 403.
+                .requestMatchers("/vista-previa/sin-permiso", "/vista-previa/salir")
                     .hasAuthority("ROLE_PREVIOUS_ADMINISTRATOR")
                 .requestMatchers("/vista-previa").hasRole("SUPERADMIN")
                 // Archivo Historico: reservado por COSTO, no por confianza. Cada ZIP
@@ -245,20 +258,15 @@ public class SecurityConfig {
             // Que un 403 durante la vista previa NO deje la sesion encerrada.
             // Un 403 de la cadena de seguridad no renderiza ninguna plantilla, asi
             // que tampoco aparece la banda con el boton de "salir de la vista
-            // previa": el unico camino de vuelta seria borrar la cookie. Se lo
-            // devuelve a la pantalla de inicio de SU rol --que por definicion puede
-            // abrir-- y desde ahi sale con el boton.
-            .exceptionHandling(ex -> ex.accessDeniedHandler((request, response, denegado) -> {
-                var auth = org.springframework.security.core.context.SecurityContextHolder
-                        .getContext().getAuthentication();
-                if (com.textil.inventario.seguridad.VistaPreviaRol.activa(auth)) {
-                    response.sendRedirect(
-                            com.textil.inventario.seguridad.DestinoPorRol.destinoPara(auth)
-                            + "?sinPermisoEnVistaPrevia");
-                    return;
-                }
-                response.sendError(jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN);
-            }));
+            // previa": el unico camino de vuelta seria borrar la cookie.
+            //
+            // Se redirige SIEMPRE al refugio, nunca a la pantalla de inicio del rol.
+            // El primer intento hacia el inicio del rol termino en BUCLE INFINITO de
+            // redirecciones: daba por hecho que todo rol puede abrir algo, y VENDEDOR
+            // no puede abrir nada (403 -> "/" -> 403 -> "/"...). El refugio esta
+            // permitido para cualquier rol previsualizado, asi que no puede rebotar.
+            .exceptionHandling(ex -> ex.accessDeniedHandler(
+                    new VistaPreviaAccessDeniedHandler(REFUGIO_VISTA_PREVIA)));
 
         return http.build();
     }

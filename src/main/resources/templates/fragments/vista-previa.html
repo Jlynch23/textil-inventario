@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--
+  Banda de la vista previa por rol.
+
+  Va SIEMPRE visible mientras dure: sin ella es facilísimo olvidarse de que la
+  sesión está en otro rol y leer los permisos que faltan como un error del
+  sistema. Y sobre todo, es el ÚNICO camino de vuelta — el botón de salir vive acá.
+
+  Por eso es un fragmento y no markup dentro de layout/base.html: las tres
+  pantallas de /almacen tienen <head> y <body> propios y NO heredan del layout.
+  Escrita solo en el layout, previsualizar SUPERVISOR aterrizaba en /almacen sin
+  banda y sin botón — o sea, encerrado en el rol. Mordió el 8-ago.
+
+  Dos formas de llamarlo:
+
+    <div th:replace="~{fragments/vista-previa :: banda('')}"></div>
+        En el flujo normal. Es lo que usa layout/base.html.
+
+    <div th:replace="~{fragments/vista-previa :: banda('flotante')}"></div>
+        Fija arriba de todo, sin ocupar lugar en el flujo. Para /almacen, cuyo
+        <body> es un flex centrado: metida en el flujo le agregaría un segundo
+        hijo al flex y le rompería el centrado de la pantalla.
+
+  Si mañana aparece otra plantilla con <head> propio, hay que llamarla también.
+-->
+<div th:fragment="banda(modo)"
+     th:if="${!#strings.isEmpty(vistaPreviaRol)}"
+     th:classappend="${modo == 'flotante'} ? ' position-fixed top-0 start-0 end-0' : ''"
+     th:style="${modo == 'flotante'} ? 'z-index:1080' : ''"
+     class="alert alert-warning border-0 rounded-0 mb-0 d-flex justify-content-between align-items-center flex-wrap gap-2 py-2">
+    <span>
+        <i class="bi bi-eye-fill me-1"></i>
+        Estás viendo la app como <strong th:text="${vistaPreviaRol}">ROL</strong>.
+        <span class="small">Solo lectura: no se puede guardar nada.</span>
+    </span>
+    <form th:action="@{/vista-previa/salir}" method="post" class="m-0">
+        <button type="submit" class="btn btn-sm btn-warning">
+            <i class="bi bi-box-arrow-left me-1"></i>Salir de la vista previa
+        </button>
+    </form>
+</div>
+
+</body>
+</html>

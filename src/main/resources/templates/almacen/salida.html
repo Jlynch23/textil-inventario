@@ -22,6 +22,12 @@
     </style>
 </head>
 <body>
+<!-- Banda de la vista previa. Estas pantallas NO heredan de layout/base
+     (tienen <head> propio), asi que la llaman por su cuenta. Sin esto,
+     previsualizar SUPERVISOR aterriza aca sin forma de volver. Va flotante
+     porque el <body> de abajo es un flex centrado. -->
+<div th:replace="~{fragments/vista-previa :: banda('flotante')}"></div>
+
 <div class="container">
     <a href="/almacen" class="btn btn-light mb-3"><i class="bi bi-arrow-left"></i> Volver</a>
     <h4 class="fw-bold mb-4 text-warning"><i class="bi bi-box-arrow-up me-2"></i>Registrar Salida</h4>

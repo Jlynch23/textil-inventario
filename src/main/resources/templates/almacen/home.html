@@ -22,6 +22,12 @@
     </style>
 </head>
 <body>
+<!-- Banda de la vista previa. Estas pantallas NO heredan de layout/base
+     (tienen <head> propio), asi que la llaman por su cuenta. Sin esto,
+     previsualizar SUPERVISOR aterriza aca sin forma de volver. Va flotante
+     porque el <body> de abajo es un flex centrado. -->
+<div th:replace="~{fragments/vista-previa :: banda('flotante')}"></div>
+
 <div class="container" style="max-width: 460px;">
     <div class="text-center mb-5 brand-almacen">
         <img th:src="@{/img/texcontrol-icono.png}" alt="TexControl" class="mb-2">
