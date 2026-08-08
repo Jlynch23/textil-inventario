@@ -481,7 +481,7 @@ Estado actual (ago-2026): **en vivo** en `texcontrol.pe` (dominio + HTTPS wildca
 
 ### Estado de trabajo (dónde quedamos — sesión 8-ago-2026)
 
-**`main` = `develop` = `c21f3fc`, CI verde en ambas, y los TRES ambientes al día.** Sesión corta,
+**`main` = `develop` = `9f7f73b`, CI verde en ambas, y los TRES ambientes al día.** Sesión corta,
 de mantenimiento: se aplicaron los PRs de Dependabot que estaban abiertos desde el 4-ago.
 
 **1. Bootstrap 5.3.0 → 5.3.8, bootstrap-icons 1.11.0 → 1.13.1, `actions/upload-artifact` v4 → v7.**
@@ -511,6 +511,30 @@ con "no such container", dejando a nginx sirviendo **la clave vieja**.
 > pide el código (las 3 distintas resuelven), después prueba visual en `dev.texcontrol.pe`
 > —incluidas las tres de `/almacen`, que tienen `<head>` propio y **no** tienen enlace en el menú,
 > hay que entrar por URL— y por último, ya con el demo actualizado, `5.3.8` → 200 y `5.3.0` → 404.
+
+**5. El Archivo Histórico pasó a ser SOLO del SUPERADMIN.** Es una restricción de **costo**, no de
+confianza: cada ZIP dispara una llamada a la API de Anthropic **por documento**, contra la única
+API key del proveedor, compartida por todas las instancias. Antes el módulo caía en el
+`anyRequest()` = ADMIN+SUPERADMIN, o sea que el **dueño de cada copia vendida** lo tenía a mano.
+Cerrado en los tres lugares que tienen que decir lo mismo (`SecurityConfig`, el `@PreAuthorize` del
+controlador y el `sec:authorize` del menú) + `ArchivoHistoricoReservadoTest`. **El OCR de una guía
+suelta en Recepciones sigue abierto al ADMIN a propósito**: es el flujo central y es de a un
+documento; lo que se cerró es la carga masiva.
+
+**6. `scripts/borrar-usuarios-dev-demo.sh`** — deja dev o el demo con una sola cuenta: `jlynch`.
+Vista previa por defecto, `mysqldump` antes, y solo acepta `dev`/`demo` (un cliente de pago no es
+destino posible ni escribiendo su slug). **Corrido en los dos**: dev quedó en `jlynch` (backup
+216K) y el demo también (56K, se fueron las 10 cuentas de prospectos). Para volver atrás hay dos
+caminos y elegir mal cuesta el contenido del demo — están en `DEMO.md`.
+
+> Dos cosas que salieron al construirlo y conviene no reaprender:
+> - Las FK a `usuarios` se **descubren de `information_schema`**, no van hardcodeadas: V3 borró y
+>   recreó `transferencias`, así que las columnas de V1 ya no existen. Son **9 columnas en 8
+>   tablas**, y cuatro son `NOT NULL` (`recepciones`, `kardex_movimientos`, `entradas_rapidas`,
+>   `salidas_rapidas`) → no admiten NULL: o se reasignan o el `DELETE` revienta por FK.
+> - `docker exec -i` **se come stdin**. Dentro de un `while read` alimentado por stdin, el bucle
+>   procesaba UNA sola tabla. El SQL ya va por `-e`, así que `-i` sobraba. Es el clásico de
+>   ssh/docker en un while-read; el comentario quedó en el script para que nadie lo reponga.
 
 ### Estado anterior (sesión 7-ago-2026)
 
