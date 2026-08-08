@@ -78,6 +78,28 @@ de jlynch se rota de nuevo** (sale una distinta): guárdala del output.
 > Los PDFs subidos en `clientes/demo/documentos` no se borran en el reset (son
 > archivos, no afectan la BD); bórralos a mano si quieres limpiarlos también.
 
+### Dejar el demo SIN cuentas (solo `jlynch`)
+
+Cuando el demo no se esté mostrando a nadie, conviene tenerlo cerrado en vez de con
+diez cuentas vivas en un sitio público:
+
+```bash
+cd ~/textil-inventario                              # el clon de PRODUCCIÓN
+./scripts/borrar-usuarios-dev-demo.sh demo          # vista previa, no toca nada
+./scripts/borrar-usuarios-dev-demo.sh demo --ejecutar
+```
+
+Borra las 10 cuentas demo y deja **solo `jlynch`** (nunca se borra — ver la regla de
+oro en `CLAUDE.md`). Saca `mysqldump` a `~/backups-usuarios/` antes.
+
+**Es reversible sin tocar el backup**: las 10 cuentas las crea `scripts/demo-seed.sql`,
+así que `resetear-demo.sh` las vuelve a sembrar. Ojo con la diferencia: el reset borra
+**también los datos** y rota de nuevo la clave de jlynch. Si solo querés las cuentas de
+vuelta conservando lo cargado, restaurá el backup de `~/backups-usuarios/`.
+
+Mientras esté vacío, **la tabla de credenciales de más arriba no aplica**: nadie entra
+salvo `jlynch`. Volvé a repartir recién después de re-sembrar.
+
 ## Notas
 
 - **Aislado**: `db_demo` y su volumen (`texcontrol_demo_db_data`) son propios. La
