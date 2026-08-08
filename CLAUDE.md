@@ -263,8 +263,21 @@ Una guía tiene **dos** empresas y el sistema ya no confunde ninguna:
 
 ## Tests
 
-`src/test/java/...`, JUnit 5 + Spring Boot Test — **171 tests** (`./mvnw -B test`). El test vive en
+`src/test/java/...`, JUnit 5 + Spring Boot Test — **219 tests** (`./mvnw -B test`). El test vive en
 el paquete de lo que prueba (al mover una clase de paquete, mové su test).
+
+Hay **tres niveles**, y la diferencia importa porque cada uno ve cosas que el otro no:
+
+| Nivel | Qué prueba | ¿CI? |
+|---|---|---|
+| Unitario (Mockito, sin contexto) | Lógica suelta: servicios, formatos, guards | sí |
+| **App levantada** (`@SpringBootTest` + MockMvc sobre **H2**) | El armado: cadena de filtros, autorización, HTML renderizado | sí |
+| **Navegador** (Playwright + Chromium real) | Que se **vea** y se pueda clickear; posiciones | no, bajo demanda |
+
+> Los dos últimos nacieron el 8-ago porque la vista previa por rol falló cuatro veces seguidas en
+> dev y **ningún test unitario podía verlo**: los defectos vivían en el armado y en el dibujo, no
+> en la lógica. Un test que no monta la cadena de filtros ni renderiza la plantilla no prueba casi
+> nada de una función de este tipo.
 
 - **Servicios**: `RecepcionServiceTest` (incluye los guards de confirmación: líneas repetidas,
   líneas faltantes en el POST, factura de una sola empresa, y la constancia de las líneas
@@ -282,15 +295,36 @@ el paquete de lo que prueba (al mover una clase de paquete, mové su test).
   `ValidadorImagenTest`, `VersionOptimistaTest`.
 - **Catálogo / seguridad**: `ArticuloDescripcionTest`, `GeneradorUsernameTest`, `CelularUsuarioTest`.
 - **Anti-regresión**: `AppendOnlyTest` (el kardex no se edita).
+- **Vista previa por rol** (`VistaPreviaRolTest`, `DestinoPorRolTest`,
+  `VistaPreviaSoloLecturaFilterTest`, `VistaPreviaAccessDeniedHandlerTest`,
+  `VistaPreviaSwitchUserFilterFactoryTest`): el rol sintético no resuelve personas, a qué pantalla
+  cae cada rol, y que ningún corte deje la sesión encerrada.
+- **App levantada**: `VistaPreviaWebTest` — `@SpringBootTest` + MockMvc con el perfil
+  `mockmvc` (`src/test/resources/application-mockmvc.yml`, H2 en memoria, **Flyway apagado**,
+  esquema por Hibernate). Levanta la app entera sin MySQL ni Docker.
+- **Navegador**: `VistaPreviaNavegadorTest` — Playwright contra la app en un puerto real; deja
+  capturas en `target/capturas-vista-previa/`. Se corre así:
+  ```bash
+  VISTA_PREVIA_UI=true PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 \
+  PLAYWRIGHT_CHROMIUM=/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell \
+  ./mvnw test -Dtest=VistaPreviaNavegadorTest
+  ```
+  Apuntar a **`chromium_headless_shell`**, NO a `chromium`: los Chrome nuevos quitaron el
+  `--headless=old` que usa Playwright 1.47 y el proceso muere al arrancar.
 
 CI (`.github/workflows/ci.yml`), en cada push/PR a `develop` y `main`, corre **dos jobs**:
-- `build-and-test`: `./mvnw -B clean compile` + `./mvnw -B test` (tests con Mockito, sin BD).
+- `build-and-test`: `./mvnw -B clean compile` + `./mvnw -B test`. Incluye los unitarios (Mockito)
+  y `VistaPreviaWebTest` (H2 en memoria, no necesita servicio de BD). NO corre el de Playwright.
 - `validar-esquema`: levanta un **MySQL 8** de servicio y corre los tests marcados
   `@EnabledIfEnvironmentVariable(RUN_DB_IT=true)` contra BD real: `EsquemaFlywayTest` (valida que
   el esquema Flyway calce con las entidades, `ddl-auto: validate`), `ConfirmacionConcurrenteTest`
   (concurrencia real de confirmación) y `OsivFetchGraphTest` (guarda anti-regresión de OSIV:
   verifica que las pantallas de detalle traigan sus asociaciones inicializadas). Al sumar un test
   de este tipo, agregalo al `-Dtest=...` del job `validar-esquema`.
+
+> **`VistaPreviaWebTest` NO reemplaza a `validar-esquema`.** Ahí Flyway va apagado y el esquema lo
+> genera Hibernate, así que prueba la APP; `validar-esquema` corre las migraciones contra MySQL
+> real con `ddl-auto: validate`, así que prueba el ESQUEMA. Un cambio de esquema pasa por los dos.
 
 ### Seguridad de front (CSP)
 `CspNonceFilter` emite una Content-Security-Policy con **nonce por request**: `script-src 'self'
@@ -478,6 +512,37 @@ Estado actual (ago-2026): **en vivo** en `texcontrol.pe` (dominio + HTTPS wildca
 
 > **Verificá antes de creer esta lista**: `./scripts/listar-clientes.sh` (o `docker ps`) es la
 > fuente de verdad. Este archivo se desactualiza cada vez que se da de alta o de baja a alguien.
+
+### ⇢ ARRANQUE RÁPIDO (leer esto primero al abrir un chat nuevo)
+
+**Todo al día al 8-ago-2026, nada a medio promover ni a medio desplegar.**
+
+| | Versión |
+|---|---|
+| `main` = `develop` | `b492106`, CI verde en ambas |
+| `dev.texcontrol.pe` | `ebad114` ✅ |
+| `demo.texcontrol.pe` | `ebad114` ✅ |
+
+> Verificá igual antes de creerle a esta tabla: `git log --oneline -1 origin/main` y, para los
+> ambientes, un `curl` a un archivo público que solo exista en la versión nueva (ver el aviso
+> sobre `CACHED` de Docker al final de la sesión del 8-ago).
+
+**Lo único pendiente de la sesión del 8-ago**: la pasada visual por dev de la vista previa por rol
+(los cuatro roles) y del formulario de Nuevo Usuario. Es confirmación, no descubrimiento — las
+capturas del navegador ya están y los tests cubren el comportamiento.
+
+**Lo que sigue, por prioridad** (detalle en "Falta, por orden de prioridad" más abajo):
+1. **Dar de alta un cliente que opere de verdad.** No es programar, y es lo que destraba V2:
+   sus gates piden ciclos productivos reales y hoy hay **cero clientes de pago**. Candidato:
+   Textil Emilio.
+2. **Decidir el modelo de material** (`Articulo` generalizado vs. una entidad por etapa, con
+   `color_id` NULL-able y unidad de medida). Es lo único que bloquea la primera tabla de hilo
+   ahora que V47 cerró el kardex. Ver `ROADMAP.md`, "Tres cosas que NO aguantan V2", punto 3.
+3. App móvil, RAM del VPS al 3.er cliente, marketing, módulo de Ventas.
+
+**Antes de tocar código, mirá**: la sección **Tests** (hay tres niveles y cada uno ve cosas
+distintas — el 8-ago costó cuatro rondas de fallos aprenderlo) y la **REGLA DE ORO** sobre
+`jlynch`.
 
 ### Estado de trabajo (dónde quedamos — sesión 8-ago-2026)
 
